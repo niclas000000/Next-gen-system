@@ -1,0 +1,202 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("user") // admin, manager, user
+  groups    String[] // Group IDs
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdWorkflows  Workflow[]         @relation("WorkflowCreator")
+  createdInstances  WorkflowInstance[] @relation("InstanceCreator")
+  assignedSteps     WorkflowStep[]     @relation("StepAssignee")
+  comments          Comment[]
+  uploadedFiles     Attachment[]
+  auditLogs         AuditLog[]
+}
+
+model Group {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  members     String[] // User IDs
+  createdAt   DateTime @default(now())
+}
+
+model Workflow {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  version     Int      @default(1)
+  status      String   @default("draft") // draft, published, archived
+  category    String?
+  tags        String[]
+  icon        String?
+  color       String?
+
+  // Canvas definition
+  nodes Json @default("[]")
+  edges Json @default("[]")
+
+  // Settings
+  settings Json @default("{}")
+
+  createdBy String
+  creator   User   @relation("WorkflowCreator", fields: [createdBy], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  instances WorkflowInstance[]
+  forms     WorkflowForm[]
+  rules     WorkflowRule[]
+}
+
+model WorkflowForm {
+  id         String   @id @default(cuid())
+  workflowId String
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  nodeId       String
+  name         String
+  fields       Json   @default("[]")
+  validations  Json   @default("[]")
+  calculations Json   @default("[]")
+  conditionals Json   @default("[]")
+  settings     Json   @default("{}")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([workflowId, nodeId])
+}
+
+model WorkflowRule {
+  id         String   @id @default(cuid())
+  workflowId String
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  nodeId     String?
+  type       String // condition, automation, validation, notification, sla
+  trigger    String // on_entry, on_exit, on_change, on_start, on_complete, scheduled
+  expression String
+  actions    Json    @default("[]")
+  priority   Int     @default(0)
+  active     Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model WorkflowInstance {
+  id         String   @id @default(cuid())
+  workflowId String
+  workflow   Workflow @relation(fields: [workflowId], references: [id])
+
+  title       String
+  status      String  @default("running") // running, completed, cancelled, error
+  currentStep String?
+
+  // Runtime data
+  variables Json @default("{}")
+
+  createdBy String
+  creator   User   @relation("InstanceCreator", fields: [createdBy], references: [id])
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime?
+
+  steps       WorkflowStep[]
+  comments    Comment[]
+  attachments Attachment[]
+  history     AuditLog[]
+}
+
+model WorkflowStep {
+  id         String           @id @default(cuid())
+  instanceId String
+  instance   WorkflowInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+
+  nodeId    String
+  stepName  String
+  stepType  String // task, decision, automation, notification, etc.
+  status    String @default("pending") // pending, in_progress, completed, skipped, error
+
+  assignedTo   String?
+  assignee     User?   @relation("StepAssignee", fields: [assignedTo], references: [id])
+  assignedRole String?
+
+  // Step data
+  formData Json?   // Form submission data
+  decision String? // For decision nodes
+  output   Json?   // Output from automation
+
+  // Timing
+  startedAt   DateTime?
+  completedAt DateTime?
+  dueAt       DateTime?
+
+  // Escalation
+  escalated   Boolean   @default(false)
+  escalatedAt DateTime?
+}
+
+model Comment {
+  id         String           @id @default(cuid())
+  instanceId String
+  instance   WorkflowInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+
+  stepId   String?
+  content  String
+  mentions String[] // User IDs
+
+  createdBy String
+  author    User   @relation(fields: [createdBy], references: [id])
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  attachments String[]  // File references
+}
+
+model Attachment {
+  id         String           @id @default(cuid())
+  instanceId String
+  instance   WorkflowInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+
+  stepId   String?
+  fileName String
+  fileSize Int
+  mimeType String
+  fileUrl  String
+
+  uploadedBy String
+  uploader   User   @relation(fields: [uploadedBy], references: [id])
+
+  uploadedAt DateTime @default(now())
+}
+
+model AuditLog {
+  id         String           @id @default(cuid())
+  instanceId String
+  instance   WorkflowInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+
+  action    String // step_started, step_completed, reassigned, cancelled, commented, etc.
+  actor     String
+  actorUser User   @relation(fields: [actor], references: [id])
+
+  timestamp DateTime @default(now())
+  details   Json     @default("{}")
+  changes   Json? // Before/after for data changes
+}

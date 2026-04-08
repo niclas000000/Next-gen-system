@@ -108,22 +108,36 @@ nexus/
 
 ## Implementation Phases
 
-### Fas 1: Core System
-1. Next.js + TypeScript + Tailwind + Shadcn/ui setup
-2. Layout: Sidebar (collapsible), TopBar, Breadcrumb
-3. Dashboard: stat cards, recent activity, quick actions
-4. Auth: NextAuth.js
+### Phase 1: Core System — DONE
+- Next.js + TypeScript + Tailwind + Shadcn/ui setup ✓
+- Layout: Sidebar (collapsible), TopBar, Breadcrumb ✓
+- Dashboard: stat cards, recent activity, quick actions (mock data) ✓
+- Auth: NextAuth.js configured (authorize callback not yet implemented)
+- Prisma schema: fully defined (10 models) ✓
+- UI component library (Radix/Shadcn): complete ✓
+- Docker/PostgreSQL setup ✓
 
-### Fas 2: Workflow Designer (Main focus)
-- Prisma schema (Workflow, WorkflowForm, WorkflowRule, WorkflowInstance, WorkflowStep, Comment, Attachment, AuditLog)
-- ReactFlow canvas with all node types
-- Properties panel per node type
-- Form Builder (drag & drop, all field types)
-- Logic Builder (expression editor, conditions, calculations, automations, SLA)
-- Workflow Engine (engine.ts, executor.ts, expression parser)
-- Runtime: instance list + case detail view with timeline, forms, comments, attachments
+### Phase 2: Workflow Designer — IN PROGRESS (current focus)
 
-### Fas 3: Admin
+#### Done (scaffolding only — all stubs):
+- File/folder structure for designer, runtime, engine, parser
+- Node type components (visual shells, no ReactFlow integration)
+- Properties panel, Form Builder, Logic Builder placeholders
+- Workflow engine stubs (engine.ts, executor.ts, validator.ts, evaluator.ts)
+- Expression parser stubs (parser.ts, tokenizer.ts) — functions.ts implemented
+- API routes stubs (workflows, instances, expressions)
+- Instance/case view pages (stubs)
+
+#### Next up (priority order):
+1. **Workflow Designer canvas** — ReactFlow integration, node drag/drop, connections, properties panel
+2. **API layer** — CRUD for workflows and instances wired to Prisma/PostgreSQL
+3. **Form Builder** — drag & drop fields, field types, preview
+4. **Workflow Engine** — state machine, step execution, decision branching
+5. **Expression Parser** — tokenizer, parser, evaluator
+6. **Instance/Case view** — timeline, form rendering, comments, attachments
+7. **Logic Builder** — conditions, calculations, automations, SLA rules
+
+### Phase 3: Admin — NOT STARTED
 - User management, roles, groups
 - System settings, email templates
 - Audit log, workflow management
@@ -177,5 +191,15 @@ Workflow: GET_VARIABLE, SET_VARIABLE, GET_STEP_DATA
 - Stage specific files by name — never `git add -A` or `git add .` blindly.
 - Do not push unless explicitly asked.
 
+## Language
+All UI text must be in English. No Swedish strings in components, pages, or data.
+
+## Startup
+1. `docker-compose up -d` — start PostgreSQL
+2. `npx prisma db push` — sync schema (first time or after schema changes)
+3. `npm run dev` — start Next.js dev server at http://localhost:3000
+- Use `cmd.exe` (not PowerShell) to avoid execution policy issues on Windows
+- Dashboard is at `/` (not `/dashboard`)
+
 ## Memory
-Persistent memory: `C:\Users\NiclasSvensson\.claude\projects\c--Users-NiclasSvensson-OneDrive---CANEA-Partner-Group-AB-Next-gen-system\memory\`
+Persistent memory: `C:\Users\NiclasSvensson\.claude\projects\c--Nexus\memory\`

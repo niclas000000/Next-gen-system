@@ -6,30 +6,30 @@ import { Button } from '@/components/ui/button'
 
 const stats = [
   {
-    label: 'Aktiva arenden',
+    label: 'Active Cases',
     value: '24',
-    change: '+3 denna vecka',
+    change: '+3 this week',
     icon: <Clock className="text-blue-600" size={20} />,
     color: 'bg-blue-50 dark:bg-blue-950',
   },
   {
-    label: 'Vanter pa godkannande',
+    label: 'Awaiting Approval',
     value: '7',
-    change: '2 forfallna',
+    change: '2 overdue',
     icon: <CheckCircle className="text-orange-500" size={20} />,
     color: 'bg-orange-50 dark:bg-orange-950',
   },
   {
-    label: 'Dokument',
+    label: 'Documents',
     value: '142',
-    change: '+5 denna manad',
+    change: '+5 this month',
     icon: <FileText className="text-green-600" size={20} />,
     color: 'bg-green-50 dark:bg-green-950',
   },
   {
-    label: 'Aktiva processer',
+    label: 'Active Processes',
     value: '8',
-    change: '3 publicerade',
+    change: '3 published',
     icon: <GitBranch className="text-purple-600" size={20} />,
     color: 'bg-purple-50 dark:bg-purple-950',
   },
@@ -38,61 +38,61 @@ const stats = [
 const recentActivity = [
   {
     id: '1',
-    title: 'Inkopsrekvisition - Laptops',
-    workflow: 'Inkopsprocess',
+    title: 'Purchase Requisition - Laptops',
+    workflow: 'Procurement Process',
     status: 'in_progress',
-    step: 'Chefsgodkannande',
+    step: 'Manager Approval',
     assignee: 'Anna Lindgren',
-    updated: '15 min sedan',
+    updated: '15 min ago',
   },
   {
     id: '2',
-    title: 'Semesteransokan - Sommar',
-    workflow: 'HR - Semesterprocess',
+    title: 'Vacation Request - Summer',
+    workflow: 'HR - Vacation Process',
     status: 'pending',
-    step: 'Vantar pa start',
+    step: 'Awaiting Start',
     assignee: 'Erik Johansson',
-    updated: '1 timme sedan',
+    updated: '1 hour ago',
   },
   {
     id: '3',
-    title: 'Nytt leverantorsavtal',
-    workflow: 'Avtalsgodkannande',
+    title: 'New Supplier Agreement',
+    workflow: 'Contract Approval',
     status: 'completed',
-    step: 'Avslutat',
+    step: 'Completed',
     assignee: '',
-    updated: '2 timmar sedan',
+    updated: '2 hours ago',
   },
   {
     id: '4',
-    title: 'Systemattkomst - CRM',
-    workflow: 'IT - Rattighetshantering',
+    title: 'System Access - CRM',
+    workflow: 'IT - Rights Management',
     status: 'in_progress',
-    step: 'IT-granskning',
+    step: 'IT Review',
     assignee: 'Marcus Berg',
-    updated: '3 timmar sedan',
+    updated: '3 hours ago',
   },
   {
     id: '5',
-    title: 'Budgetrevision Q2',
-    workflow: 'Ekonomigodkannande',
+    title: 'Budget Revision Q2',
+    workflow: 'Finance Approval',
     status: 'pending',
-    step: 'CFO-godkannande',
+    step: 'CFO Approval',
     assignee: 'Sofia Holm',
-    updated: 'Igar',
+    updated: 'Yesterday',
   },
 ]
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive'; className: string }> = {
-  in_progress: { label: 'Pagaende', variant: 'default', className: 'bg-blue-100 text-blue-700 hover:bg-blue-100 dark:bg-blue-900 dark:text-blue-300' },
-  pending: { label: 'Vantar', variant: 'secondary', className: 'bg-orange-100 text-orange-700 hover:bg-orange-100 dark:bg-orange-900 dark:text-orange-300' },
-  completed: { label: 'Klart', variant: 'outline', className: 'bg-green-100 text-green-700 hover:bg-green-100 border-green-200 dark:bg-green-900 dark:text-green-300' },
+  in_progress: { label: 'In Progress', variant: 'default', className: 'bg-blue-100 text-blue-700 hover:bg-blue-100 dark:bg-blue-900 dark:text-blue-300' },
+  pending: { label: 'Pending', variant: 'secondary', className: 'bg-orange-100 text-orange-700 hover:bg-orange-100 dark:bg-orange-900 dark:text-orange-300' },
+  completed: { label: 'Completed', variant: 'outline', className: 'bg-green-100 text-green-700 hover:bg-green-100 border-green-200 dark:bg-green-900 dark:text-green-300' },
 }
 
 const quickActions = [
-  { label: 'Starta arende', href: '/workflows/instances', icon: <Plus size={16} /> },
-  { label: 'Nytt workflow', href: '/workflows/design', icon: <GitBranch size={16} /> },
-  { label: 'Ladda upp dokument', href: '/documents', icon: <FileText size={16} /> },
+  { label: 'Start Case', href: '/workflows/instances', icon: <Plus size={16} /> },
+  { label: 'New Workflow', href: '/workflows/design', icon: <GitBranch size={16} /> },
+  { label: 'Upload Document', href: '/documents', icon: <FileText size={16} /> },
 ]
 
 export default function DashboardPage() {
@@ -101,9 +101,9 @@ export default function DashboardPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-          Gott morgon, Niclas
+          Good morning, Niclas
         </h1>
-        <p className="text-sm text-slate-500 mt-1">Har ar en oversikt over dina arenden och aktiviteter.</p>
+        <p className="text-sm text-slate-500 mt-1">Here is an overview of your cases and activities.</p>
       </div>
 
       {/* Stat cards */}
@@ -130,10 +130,10 @@ export default function DashboardPage() {
         {/* Recent activity */}
         <Card className="xl:col-span-2 shadow-sm">
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
-            <CardTitle className="text-base font-semibold">Senaste aktivitet</CardTitle>
+            <CardTitle className="text-base font-semibold">Recent Activity</CardTitle>
             <Button variant="ghost" size="sm" asChild>
               <Link href="/workflows/instances" className="text-blue-600 hover:text-blue-700 flex items-center gap-1 text-sm">
-                Se alla <ArrowRight size={14} />
+                See all <ArrowRight size={14} />
               </Link>
             </Button>
           </CardHeader>
@@ -169,7 +169,7 @@ export default function DashboardPage() {
         {/* Quick actions */}
         <Card className="shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold">Snabbatgarder</CardTitle>
+            <CardTitle className="text-base font-semibold">Quick Actions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {quickActions.map((action) => (

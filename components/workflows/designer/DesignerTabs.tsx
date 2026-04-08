@@ -1,5 +1,79 @@
 'use client'
 
+import { useState } from 'react'
+import { WorkflowCanvas } from './WorkflowCanvas'
+import { NodeProperties } from './PropertiesPanel/NodeProperties'
+import { WorkflowProperties } from './PropertiesPanel/WorkflowProperties'
+import { ConnectionProperties } from './PropertiesPanel/ConnectionProperties'
+import { useWorkflowDesignerStore } from '@/lib/stores/workflow-designer-store'
+import { cn } from '@/lib/utils'
+
+const tabs = [
+  { id: 'canvas', label: 'Canvas' },
+  { id: 'forms', label: 'Form Builder' },
+  { id: 'logic', label: 'Logic' },
+  { id: 'settings', label: 'Settings' },
+]
+
 export function DesignerTabs() {
-  return <div>Designer Tabs</div>
+  const [activeTab, setActiveTab] = useState('canvas')
+  const { selectedNodeId, selectedEdgeId } = useWorkflowDesignerStore()
+
+  return (
+    <div className="flex flex-col flex-1 overflow-hidden">
+      {/* Tab strip */}
+      <div className="flex border-b border-slate-200 bg-white shrink-0 px-3">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={cn(
+              'px-4 py-2.5 text-sm font-medium border-b-2 transition-colors',
+              activeTab === tab.id
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      <div className="flex flex-1 overflow-hidden">
+        {activeTab === 'canvas' && (
+          <>
+            <WorkflowCanvas />
+            <div className="w-72 border-l border-slate-200 bg-white overflow-y-auto shrink-0">
+              {selectedNodeId ? (
+                <NodeProperties nodeId={selectedNodeId} />
+              ) : selectedEdgeId ? (
+                <ConnectionProperties edgeId={selectedEdgeId} />
+              ) : (
+                <WorkflowProperties />
+              )}
+            </div>
+          </>
+        )}
+
+        {activeTab === 'forms' && (
+          <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">
+            Form Builder — coming soon
+          </div>
+        )}
+
+        {activeTab === 'logic' && (
+          <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">
+            Logic Builder — coming soon
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
+          <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">
+            Workflow Settings — coming soon
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }

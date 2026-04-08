@@ -17,14 +17,14 @@ import { Badge } from '@/components/ui/badge'
 
 const routeLabels: Record<string, string> = {
   dashboard: 'Dashboard',
-  documents: 'Dokument',
-  processes: 'Processer',
+  documents: 'Documents',
+  processes: 'Processes',
   workflows: 'Workflows',
   design: 'Design',
-  instances: 'Arenden',
+  instances: 'Cases',
   admin: 'Admin',
-  users: 'Anvandare',
-  settings: 'Installningar',
+  users: 'Users',
+  settings: 'Settings',
   system: 'System',
 }
 
@@ -78,7 +78,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
           className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
         />
         <Input
-          placeholder="Sok..."
+          placeholder="Search..."
           className="pl-9 h-9 text-sm bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700"
         />
       </div>
@@ -110,16 +110,16 @@ export function TopBar({ onMenuClick }: TopBarProps) {
           <DropdownMenuSeparator />
           <DropdownMenuItem>
             <User size={14} className="mr-2" />
-            Profil
+            Profile
           </DropdownMenuItem>
           <DropdownMenuItem>
             <Settings size={14} className="mr-2" />
-            Installningar
+            Settings
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem className="text-red-600">
             <LogOut size={14} className="mr-2" />
-            Logga ut
+            Log out
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

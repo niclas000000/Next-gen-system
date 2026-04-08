@@ -30,15 +30,15 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard size={18} /> },
-  { label: 'Dokument', href: '/documents', icon: <FileText size={18} /> },
-  { label: 'Processer', href: '/processes', icon: <GitBranch size={18} /> },
+  { label: 'Dashboard', href: '/', icon: <LayoutDashboard size={18} /> },
+  { label: 'Documents', href: '/documents', icon: <FileText size={18} /> },
+  { label: 'Processes', href: '/processes', icon: <GitBranch size={18} /> },
   {
     label: 'Workflows',
     icon: <Workflow size={18} />,
     children: [
       { label: 'Design', href: '/workflows/design', icon: <Workflow size={16} /> },
-      { label: 'Arenden', href: '/workflows/instances', icon: <FileText size={16} /> },
+      { label: 'Cases', href: '/workflows/instances', icon: <FileText size={16} /> },
     ],
   },
 ]
@@ -155,7 +155,7 @@ export function Sidebar() {
           )}
         >
           {darkMode ? <Sun size={16} /> : <Moon size={16} />}
-          {!collapsed && <span>{darkMode ? 'Ljust lage' : 'Morkt lage'}</span>}
+          {!collapsed && <span>{darkMode ? 'Light mode' : 'Dark mode'}</span>}
         </button>
 
         <Separator className="bg-slate-800" />

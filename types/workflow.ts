@@ -41,6 +41,8 @@ export interface WorkflowEdge {
   id: string
   source: string
   target: string
+  sourceHandle?: string
+  targetHandle?: string
   label?: string
   condition?: string
   style?: 'normal' | 'conditional' | 'default'

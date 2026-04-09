@@ -119,23 +119,37 @@ nexus/
 
 ### Phase 2: Workflow Designer — IN PROGRESS (current focus)
 
-#### Done (scaffolding only — all stubs):
-- File/folder structure for designer, runtime, engine, parser
-- Node type components (visual shells, no ReactFlow integration)
-- Properties panel, Form Builder, Logic Builder placeholders
-- Workflow engine stubs (engine.ts, executor.ts, validator.ts, evaluator.ts)
-- Expression parser stubs (parser.ts, tokenizer.ts) — functions.ts implemented
-- API routes stubs (workflows, instances, expressions)
-- Instance/case view pages (stubs)
+#### Done:
+- Workflow list page (`/workflows/design`) — cards, status badges, node count ✓
+- New Workflow dialog — creates in DB, redirects to designer ✓
+- Designer page layout — sidebar stays visible, canvas fills remaining space ✓
+- ReactFlow canvas — node rendering, connections, properties panel, minimap ✓
+- 9 node type components — Start, Task, Decision (diamond + Yes/No handles), Automation, Notification, Subprocess, Delay, Parallel, End ✓
+- Properties panel — edits node fields per type; connection label/condition; workflow name/description ✓
+- Auto-save — debounced 2s after any change ✓
+- Save + Publish buttons — wired to PATCH `/api/workflows/[id]` ✓
+- API routes — GET/POST `/api/workflows`, GET/PATCH/DELETE `/api/workflows/[id]` ✓
+- Form Builder — field palette, field list, field properties panel, live preview ✓
+- Form save API — PUT `/api/workflows/[id]/forms/[nodeId]` → Prisma WorkflowForm ✓
+- Zustand stores: `workflow-designer-store.ts`, `form-builder-store.ts` ✓
+- Canvas state: `useNodesState`/`useEdgesState` + `CanvasContext` for sharing RF state ✓
+
+#### Known issue:
+- Drag-and-drop from toolbar to canvas: cursor shows correctly (copy), drop is accepted, but nodes do not appear on canvas. Multiple approaches tried (document-level listeners, synthetic events, capture phase, refs). Root cause not yet identified — needs proper browser debugging.
 
 #### Next up (priority order):
-1. **Workflow Designer canvas** — ReactFlow integration, node drag/drop, connections, properties panel
-2. **API layer** — CRUD for workflows and instances wired to Prisma/PostgreSQL
-3. **Form Builder** — drag & drop fields, field types, preview
-4. **Workflow Engine** — state machine, step execution, decision branching
+1. **Fix canvas DnD** — debug with browser devtools / console.log to find exact failure point
+2. **Instance/Case view** — list page, case detail with timeline, form filling, comments
+3. **Workflow Engine** — state machine, step execution, decision branching
+4. **Logic Builder** — conditions, calculations, automations, SLA rules
 5. **Expression Parser** — tokenizer, parser, evaluator
-6. **Instance/Case view** — timeline, form rendering, comments, attachments
-7. **Logic Builder** — conditions, calculations, automations, SLA rules
+
+#### Architecture notes:
+- Canvas state lives in ReactFlow's `useNodesState`/`useEdgesState` (in `DesignerShell`), shared via `CanvasContext`
+- Zustand store (`workflow-designer-store`) holds metadata (name, status, dirty flag) + save/publish actions
+- Form Builder state in `form-builder-store`, forms saved to `WorkflowForm` table keyed by `workflowId + nodeId`
+- Placeholder user (`system-placeholder-user`) auto-upserted on first workflow create (auth not yet wired)
+- Designer uses `-m-6` on its layout to escape dashboard's `p-6` padding
 
 ### Phase 3: Admin — NOT STARTED
 - User management, roles, groups

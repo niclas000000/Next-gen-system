@@ -5,6 +5,7 @@ import { WorkflowCanvas } from './WorkflowCanvas'
 import { NodeProperties } from './PropertiesPanel/NodeProperties'
 import { WorkflowProperties } from './PropertiesPanel/WorkflowProperties'
 import { ConnectionProperties } from './PropertiesPanel/ConnectionProperties'
+import { FormBuilder } from './FormBuilder/FormBuilder'
 import { useWorkflowDesignerStore } from '@/lib/stores/workflow-designer-store'
 import { cn } from '@/lib/utils'
 
@@ -56,11 +57,7 @@ export function DesignerTabs() {
           </>
         )}
 
-        {activeTab === 'forms' && (
-          <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">
-            Form Builder — coming soon
-          </div>
-        )}
+        {activeTab === 'forms' && <FormBuilder />}
 
         {activeTab === 'logic' && (
           <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">

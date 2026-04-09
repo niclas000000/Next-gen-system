@@ -2,150 +2,112 @@
 
 import 'reactflow/dist/style.css'
 
-import { useCallback, useRef } from 'react'
+import { useCallback, useEffect } from 'react'
 import ReactFlow, {
   Background,
   Controls,
   MiniMap,
   type Connection,
   type Edge,
-  type NodeChange,
-  type EdgeChange,
-  applyNodeChanges,
-  applyEdgeChanges,
   ConnectionLineType,
   MarkerType,
-  useReactFlow,
   BackgroundVariant,
+  useReactFlow,
 } from 'reactflow'
 import { nodeTypes } from './NodeTypes'
+import { useCanvas } from './CanvasContext'
 import { useWorkflowDesignerStore } from '@/lib/stores/workflow-designer-store'
-import type { WorkflowEdge, NodeType } from '@/types/workflow'
+import type { NodeType } from '@/types/workflow'
+import { makeDefaultNodeData } from '@/lib/workflow-defaults'
+
+const DATA_TYPE = 'application/nexus-node-type'
 
 export function WorkflowCanvas() {
-  const {
-    nodes,
-    edges,
-    setNodes,
-    setEdges,
-    addNode,
-    addEdge: storeAddEdge,
-    setSelectedNode,
-    setSelectedEdge,
-    clearSelection,
-  } = useWorkflowDesignerStore()
-
-  const reactFlowWrapper = useRef<HTMLDivElement>(null)
+  const { rfNodes, rfEdges, setRfNodes, setRfEdges, onNodesChange, onEdgesChange } = useCanvas()
+  const { setSelectedNode, setSelectedEdge, clearSelection, markDirty } = useWorkflowDesignerStore()
   const { screenToFlowPosition } = useReactFlow()
 
-  const onNodesChange = useCallback(
-    (changes: NodeChange[]) => {
-      const filtered = changes.filter((c) => c.type !== 'remove')
-      setNodes(applyNodeChanges(filtered, nodes) as typeof nodes)
+  // Document-level dragover so cursor shows "copy" anywhere over the page during drag
+  useEffect(() => {
+    const handler = (e: DragEvent) => {
+      if (!e.dataTransfer?.types.includes(DATA_TYPE)) return
+      e.preventDefault()
+      e.dataTransfer.dropEffect = 'copy'
+    }
+    document.addEventListener('dragover', handler)
+    return () => document.removeEventListener('dragover', handler)
+  }, [])
+
+  // onDrop on the wrapper div — fires when user releases over the canvas area
+  const onDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault()
+      const type = e.dataTransfer.getData(DATA_TYPE) as NodeType
+      if (!type) return
+      // screenToFlowPosition is from useReactFlow() — always live, never stale
+      const position = screenToFlowPosition({ x: e.clientX, y: e.clientY })
+      const id = `${type}-${Date.now()}`
+      setRfNodes((nds) => [...nds, { id, type, position, data: makeDefaultNodeData(type) }])
+      markDirty()
     },
-    [nodes, setNodes]
+    [screenToFlowPosition, setRfNodes, markDirty]
   )
 
-  const onEdgesChange = useCallback(
-    (changes: EdgeChange[]) => {
-      const filtered = changes.filter((c) => c.type !== 'remove')
-      setEdges(applyEdgeChanges(filtered, edges as Edge[]) as unknown as typeof edges)
-    },
-    [edges, setEdges]
-  )
-
-  const onConnect = useCallback(
-    (connection: Connection) => {
-      const sourceNode = nodes.find((n) => n.id === connection.source)
-      let label: string | undefined
-      if (sourceNode?.type === 'decision') {
-        label = connection.sourceHandle === 'yes' ? 'Yes' : connection.sourceHandle === 'no' ? 'No' : undefined
-      }
-      const newEdge: WorkflowEdge = {
-        id: `e-${Date.now()}`,
-        source: connection.source!,
-        target: connection.target!,
-        sourceHandle: connection.sourceHandle ?? undefined,
-        targetHandle: connection.targetHandle ?? undefined,
-        label,
-      }
-      storeAddEdge(newEdge)
-    },
-    [nodes, storeAddEdge]
-  )
-
-  const onDragOver = useCallback((e: React.DragEvent) => {
+  const onDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'copy'
   }, [])
 
-  const onDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault()
-      const type = e.dataTransfer.getData('application/nexus-node-type') as NodeType
-      if (!type) return
-      const position = screenToFlowPosition({ x: e.clientX, y: e.clientY })
-      addNode(type, position)
+  const onConnect = useCallback(
+    (connection: Connection) => {
+      const sourceNode = rfNodes.find((n) => n.id === connection.source)
+      let label: string | undefined
+      if (sourceNode?.type === 'decision') {
+        label = connection.sourceHandle === 'yes' ? 'Yes' : connection.sourceHandle === 'no' ? 'No' : undefined
+      }
+      const newEdge: Edge = {
+        id: `e-${Date.now()}`,
+        source: connection.source!,
+        target: connection.target!,
+        sourceHandle: connection.sourceHandle,
+        targetHandle: connection.targetHandle,
+        label,
+        type: 'smoothstep',
+        markerEnd: { type: MarkerType.ArrowClosed },
+        style: { stroke: '#94a3b8', strokeWidth: 2 },
+        labelStyle: { fontSize: 11, fill: '#64748b', fontWeight: 500 },
+        labelBgStyle: { fill: 'white', fillOpacity: 0.9 },
+        labelBgPadding: [4, 3] as [number, number],
+        labelBgBorderRadius: 3,
+      }
+      setRfEdges((eds) => [...eds, newEdge])
+      markDirty()
     },
-    [screenToFlowPosition, addNode]
+    [rfNodes, setRfEdges, markDirty]
   )
-
-  const onNodeClick = useCallback(
-    (_e: React.MouseEvent, node: { id: string }) => {
-      setSelectedNode(node.id)
-    },
-    [setSelectedNode]
-  )
-
-  const onEdgeClick = useCallback(
-    (_e: React.MouseEvent, edge: Edge) => {
-      setSelectedEdge(edge.id)
-    },
-    [setSelectedEdge]
-  )
-
-  const onPaneClick = useCallback(() => {
-    clearSelection()
-  }, [clearSelection])
-
-  const rfEdges: Edge[] = (edges as WorkflowEdge[]).map((e) => ({
-    id: e.id,
-    source: e.source,
-    target: e.target,
-    sourceHandle: e.sourceHandle,
-    targetHandle: e.targetHandle,
-    label: e.label,
-    type: 'smoothstep',
-    markerEnd: { type: MarkerType.ArrowClosed },
-    style: { stroke: '#94a3b8', strokeWidth: 2 },
-    labelStyle: { fontSize: 11, fill: '#64748b', fontWeight: 500 },
-    labelBgStyle: { fill: 'white', fillOpacity: 0.9 },
-    labelBgPadding: [4, 3] as [number, number],
-    labelBgBorderRadius: 3,
-  }))
 
   return (
-    <div ref={reactFlowWrapper} className="flex-1 w-full h-full">
+    <div
+      className="flex-1 w-full h-full"
+      onDrop={onDrop}
+      onDragOver={onDragOver}
+    >
       <ReactFlow
-        nodes={nodes}
+        nodes={rfNodes}
         edges={rfEdges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        onDrop={onDrop}
-        onDragOver={onDragOver}
-        onNodeClick={onNodeClick}
-        onEdgeClick={onEdgeClick}
-        onPaneClick={onPaneClick}
+        onNodeClick={(_e, node) => setSelectedNode(node.id)}
+        onEdgeClick={(_e, edge) => setSelectedEdge(edge.id)}
+        onPaneClick={clearSelection}
         nodeTypes={nodeTypes}
         connectionLineType={ConnectionLineType.SmoothStep}
         deleteKeyCode={null}
-        fitView
-        fitViewOptions={{ padding: 0.3 }}
         minZoom={0.2}
         maxZoom={2}
         elevateNodesOnSelect
-        className="bg-slate-50"
+        className="bg-slate-50 w-full h-full"
       >
         <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#cbd5e1" />
         <Controls className="!shadow-sm !border !border-slate-200 !rounded-lg overflow-hidden" />

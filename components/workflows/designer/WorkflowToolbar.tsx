@@ -20,6 +20,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { useWorkflowDesignerStore } from '@/lib/stores/workflow-designer-store'
+import { useCanvas } from './CanvasContext'
+import { makeDefaultNodeData } from '@/lib/workflow-defaults'
 import type { NodeType } from '@/types/workflow'
 
 const nodepalette: { type: NodeType; label: string; icon: React.ReactNode; color: string }[] = [
@@ -40,7 +42,11 @@ const statusColors: Record<string, string> = {
   archived: 'bg-orange-100 text-orange-700 border-orange-200',
 }
 
-export function WorkflowToolbar() {
+interface ToolbarProps {
+  rfEdges: unknown[]
+}
+
+export function WorkflowToolbar({ rfEdges }: ToolbarProps) {
   const { zoomIn, zoomOut, fitView } = useReactFlow()
   const {
     workflowName,
@@ -53,10 +59,24 @@ export function WorkflowToolbar() {
     updateWorkflowMeta,
   } = useWorkflowDesignerStore()
 
+  const { setRfNodes, rfNodes } = useCanvas()
+  const { markDirty } = useWorkflowDesignerStore()
+
   const onDragStart = useCallback((e: React.DragEvent, type: NodeType) => {
     e.dataTransfer.setData('application/nexus-node-type', type)
     e.dataTransfer.effectAllowed = 'copy'
   }, [])
+
+  const onClickAdd = useCallback((type: NodeType) => {
+    // Place new node offset from the last node, or at a default position
+    const last = rfNodes[rfNodes.length - 1]
+    const position = last
+      ? { x: (last as { position: { x: number; y: number } }).position.x + 220, y: (last as { position: { x: number; y: number } }).position.y }
+      : { x: 250, y: 250 }
+    const id = `${type}-${Date.now()}`
+    setRfNodes((nds) => [...nds, { id, type, position, data: makeDefaultNodeData(type) }])
+    markDirty()
+  }, [rfNodes, setRfNodes, markDirty])
 
   const saveLabel = isSaving ? 'Saving…' : isDirty ? 'Unsaved' : lastSavedAt ? 'Saved' : 'Save'
 
@@ -94,14 +114,15 @@ export function WorkflowToolbar() {
                 <div
                   draggable
                   onDragStart={(e) => onDragStart(e, item.type)}
-                  className={`flex items-center gap-1 px-2 py-1 rounded border bg-white text-xs text-slate-600 cursor-grab active:cursor-grabbing select-none transition-colors shrink-0 ${item.color}`}
+                  onClick={() => onClickAdd(item.type)}
+                  className={`flex items-center gap-1 px-2 py-1 rounded border bg-white text-xs text-slate-600 cursor-pointer select-none transition-colors shrink-0 ${item.color}`}
                 >
                   {item.icon}
                   <span className="hidden lg:inline">{item.label}</span>
                 </div>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="text-xs">
-                Drag to add {item.label} node
+                Click or drag to add {item.label} node
               </TooltipContent>
             </Tooltip>
           ))}
@@ -144,7 +165,7 @@ export function WorkflowToolbar() {
           variant="outline"
           size="sm"
           className="h-8 shrink-0 gap-1.5 text-xs"
-          onClick={() => save()}
+          onClick={() => save(rfNodes, rfEdges)}
           disabled={isSaving || !isDirty}
         >
           <Save size={13} />
@@ -170,7 +191,7 @@ export function WorkflowToolbar() {
               </p>
               <DialogFooter>
                 <Button variant="outline" size="sm">Cancel</Button>
-                <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => publish()}>
+                <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => publish(rfNodes, rfEdges)}>
                   Publish
                 </Button>
               </DialogFooter>

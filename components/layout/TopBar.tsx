@@ -35,7 +35,9 @@ function Breadcrumb() {
   return (
     <nav className="flex items-center gap-1 text-sm text-slate-500" aria-label="Breadcrumb">
       {segments.map((seg, i) => {
-        const label = routeLabels[seg] ?? seg
+        // Hide raw IDs (cuid/uuid-like segments) — show "..." instead
+        const isId = !routeLabels[seg] && seg.length > 16
+        const label = isId ? '…' : (routeLabels[seg] ?? seg)
         const isLast = i === segments.length - 1
         return (
           <span key={i} className="flex items-center gap-1">

@@ -46,7 +46,7 @@ export function makeInitialNodes(): WorkflowNode[] {
       id: 'start-1',
       type: 'start',
       position: { x: 250, y: 100 },
-      data: makeDefaultNodeData('start') as WorkflowNode['data'],
+      data: makeDefaultNodeData('start') as unknown as WorkflowNode['data'],
     },
   ]
 }

@@ -48,8 +48,8 @@ interface WorkflowDesignerState {
   updateWorkflowMeta: (meta: Partial<{ name: string; description: string; settings: WorkflowSettings }>) => void
 
   markDirty: () => void
-  save: () => Promise<void>
-  publish: () => Promise<void>
+  save: (nodes?: unknown, edges?: unknown) => Promise<void>
+  publish: (nodes?: unknown, edges?: unknown) => Promise<void>
 }
 
 let nodeCounter = 1
@@ -97,7 +97,7 @@ export const useWorkflowDesignerStore = create<WorkflowDesignerState>((set, get)
       id,
       type,
       position,
-      data: makeDefaultNodeData(type) as WorkflowNode['data'],
+      data: makeDefaultNodeData(type) as unknown as WorkflowNode['data'],
     }
     set((s) => ({ nodes: [...s.nodes, newNode], isDirty: true }))
   },
@@ -137,7 +137,7 @@ export const useWorkflowDesignerStore = create<WorkflowDesignerState>((set, get)
 
   markDirty: () => set({ isDirty: true }),
 
-  save: async () => {
+  save: async (nodes?: unknown, edges?: unknown) => {
     const s = get()
     if (!s.workflowId) return
     set({ isSaving: true, saveError: null })
@@ -148,8 +148,8 @@ export const useWorkflowDesignerStore = create<WorkflowDesignerState>((set, get)
         body: JSON.stringify({
           name: s.workflowName,
           description: s.workflowDescription,
-          nodes: s.nodes,
-          edges: s.edges,
+          nodes: nodes ?? s.nodes,
+          edges: edges ?? s.edges,
           settings: s.workflowSettings,
         }),
       })
@@ -160,11 +160,10 @@ export const useWorkflowDesignerStore = create<WorkflowDesignerState>((set, get)
     }
   },
 
-  publish: async () => {
+  publish: async (nodes?: unknown, edges?: unknown) => {
     const s = get()
     if (!s.workflowId) return
-    // Save first, then publish
-    await get().save()
+    await get().save(nodes, edges)
     set({ isSaving: true })
     try {
       const res = await fetch(`/api/workflows/${s.workflowId}`, {

@@ -43,7 +43,7 @@ export default async function WorkflowDesignListPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {workflows.map((wf) => {
-            const nodeCount = Array.isArray(wf.nodes) ? (wf.nodes as WorkflowNode[]).length : 0
+            const nodeCount = Array.isArray(wf.nodes) ? (wf.nodes as unknown as WorkflowNode[]).length : 0
             return (
               <Link key={wf.id} href={`/workflows/design/${wf.id}`}>
                 <Card className="shadow-sm hover:shadow-md hover:border-blue-200 transition-all duration-200 cursor-pointer h-full">

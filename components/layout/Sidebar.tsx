@@ -54,7 +54,7 @@ export function Sidebar() {
     document.documentElement.classList.toggle('dark')
   }
 
-  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
+  const isActive = (href: string) => href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/')
 
   return (
     <aside

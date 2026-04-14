@@ -134,18 +134,15 @@ nexus/
 - Zustand stores: `workflow-designer-store.ts`, `form-builder-store.ts` ✓
 - Canvas state: `useNodesState`/`useEdgesState` + `CanvasContext` for sharing RF state ✓
 
-#### Known issue:
-- Drag-and-drop from toolbar to canvas: cursor shows correctly (copy), drop is accepted, but nodes do not appear on canvas. Multiple approaches tried (document-level listeners, synthetic events, capture phase, refs). Root cause not yet identified — needs proper browser debugging.
-
 #### Next up (priority order):
-1. **Fix canvas DnD** — debug with browser devtools / console.log to find exact failure point
-2. **Instance/Case view** — list page, case detail with timeline, form filling, comments
+1. **Instance/Case view** — list page, case detail with timeline, form filling, comments
 3. **Workflow Engine** — state machine, step execution, decision branching
 4. **Logic Builder** — conditions, calculations, automations, SLA rules
 5. **Expression Parser** — tokenizer, parser, evaluator
 
 #### Architecture notes:
-- Canvas state lives in ReactFlow's `useNodesState`/`useEdgesState` (in `DesignerShell`), shared via `CanvasContext`
+- Canvas state lives in `CanvasProvider` (isolated component in `CanvasContext.tsx`) — owns `useNodesState`/`useEdgesState` with no Zustand subscriptions, shared via `CanvasContext`
+- `AutoSave` is a child component inside `CanvasProvider` that reads `rfNodes`/`rfEdges` via `useCanvas()` and watches `isDirty` from Zustand
 - Zustand store (`workflow-designer-store`) holds metadata (name, status, dirty flag) + save/publish actions
 - Form Builder state in `form-builder-store`, forms saved to `WorkflowForm` table keyed by `workflowId + nodeId`
 - Placeholder user (`system-placeholder-user`) auto-upserted on first workflow create (auth not yet wired)

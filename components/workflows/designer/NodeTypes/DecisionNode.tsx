@@ -4,10 +4,12 @@ import { Handle, Position, type NodeProps } from 'reactflow'
 import { GitBranch } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { DecisionNodeData } from '@/types/workflow'
+import { NodeDeleteButton } from './NodeDeleteButton'
 
-export function DecisionNode({ data, selected }: NodeProps<DecisionNodeData>) {
+export function DecisionNode({ id, data, selected }: NodeProps<DecisionNodeData>) {
   return (
     <div className="relative w-36 h-36 flex items-center justify-center">
+      {selected && <NodeDeleteButton id={id} />}
       <Handle type="target" position={Position.Top} className="!bg-orange-500 !w-3 !h-3" style={{ top: 0 }} />
 
       <div className={cn(

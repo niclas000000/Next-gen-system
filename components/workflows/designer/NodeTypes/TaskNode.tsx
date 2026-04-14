@@ -4,13 +4,15 @@ import { Handle, Position, type NodeProps } from 'reactflow'
 import { ClipboardList } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { TaskNodeData } from '@/types/workflow'
+import { NodeDeleteButton } from './NodeDeleteButton'
 
-export function TaskNode({ data, selected }: NodeProps<TaskNodeData>) {
+export function TaskNode({ id, data, selected }: NodeProps<TaskNodeData>) {
   return (
     <div className={cn(
-      'rounded-lg border-2 bg-white shadow-md px-4 py-3 min-w-[160px] max-w-[220px]',
+      'relative rounded-lg border-2 bg-white shadow-md px-4 py-3 min-w-[160px] max-w-[220px]',
       selected ? 'border-blue-500 shadow-blue-100 shadow-lg' : 'border-blue-300'
     )}>
+      {selected && <NodeDeleteButton id={id} />}
       <Handle type="target" position={Position.Top} className="!bg-blue-500 !w-3 !h-3" />
       <div className="flex items-center gap-2">
         <div className="p-1.5 rounded bg-blue-50 shrink-0">

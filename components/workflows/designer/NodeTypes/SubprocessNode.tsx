@@ -4,13 +4,15 @@ import { Handle, Position, type NodeProps } from 'reactflow'
 import { Layers } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { SubprocessNodeData } from '@/types/workflow'
+import { NodeDeleteButton } from './NodeDeleteButton'
 
-export function SubprocessNode({ data, selected }: NodeProps<SubprocessNodeData>) {
+export function SubprocessNode({ id, data, selected }: NodeProps<SubprocessNodeData>) {
   return (
     <div className={cn(
-      'rounded-lg border-2 bg-white shadow-md px-4 py-3 min-w-[160px] max-w-[220px]',
+      'relative rounded-lg border-2 bg-white shadow-md px-4 py-3 min-w-[160px] max-w-[220px]',
       selected ? 'border-indigo-500 shadow-indigo-100 shadow-lg' : 'border-indigo-300'
     )}>
+      {selected && <NodeDeleteButton id={id} />}
       <Handle type="target" position={Position.Top} className="!bg-indigo-500 !w-3 !h-3" />
       <div className="flex items-center gap-2">
         <div className="p-1.5 rounded bg-indigo-50 shrink-0">

@@ -4,13 +4,15 @@ import { Handle, Position, type NodeProps } from 'reactflow'
 import { Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { DelayNodeData } from '@/types/workflow'
+import { NodeDeleteButton } from './NodeDeleteButton'
 
-export function DelayNode({ data, selected }: NodeProps<DelayNodeData>) {
+export function DelayNode({ id, data, selected }: NodeProps<DelayNodeData>) {
   return (
     <div className={cn(
-      'rounded-lg border-2 bg-white shadow-md px-4 py-3 min-w-[160px] max-w-[220px]',
+      'relative rounded-lg border-2 bg-white shadow-md px-4 py-3 min-w-[160px] max-w-[220px]',
       selected ? 'border-amber-500 shadow-amber-100 shadow-lg' : 'border-amber-300'
     )}>
+      {selected && <NodeDeleteButton id={id} />}
       <Handle type="target" position={Position.Top} className="!bg-amber-500 !w-3 !h-3" />
       <div className="flex items-center gap-2">
         <div className="p-1.5 rounded bg-amber-50 shrink-0">

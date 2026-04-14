@@ -21,7 +21,7 @@ export function DesignerTabs() {
   const { selectedNodeId, selectedEdgeId } = useWorkflowDesignerStore()
 
   return (
-    <div className="flex flex-col flex-1 overflow-hidden">
+    <div className="flex flex-col flex-1 overflow-hidden min-h-0">
       {/* Tab strip */}
       <div className="flex border-b border-slate-200 bg-white shrink-0 px-3">
         {tabs.map((tab) => (
@@ -41,7 +41,7 @@ export function DesignerTabs() {
       </div>
 
       {/* Tab content */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden min-h-0">
         {activeTab === 'canvas' && (
           <>
             <WorkflowCanvas />

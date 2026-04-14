@@ -4,14 +4,16 @@ import { Handle, Position, type NodeProps } from 'reactflow'
 import { GitMerge } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ParallelNodeData } from '@/types/workflow'
+import { NodeDeleteButton } from './NodeDeleteButton'
 
-export function ParallelNode({ data, selected }: NodeProps<ParallelNodeData>) {
+export function ParallelNode({ id, data, selected }: NodeProps<ParallelNodeData>) {
   const isSplit = data?.type === 'split'
   return (
     <div className={cn(
-      'rounded-lg border-2 bg-white shadow-md px-4 py-3 min-w-[160px] max-w-[220px]',
+      'relative rounded-lg border-2 bg-white shadow-md px-4 py-3 min-w-[160px] max-w-[220px]',
       selected ? 'border-teal-500 shadow-teal-100 shadow-lg' : 'border-teal-300'
     )}>
+      {selected && <NodeDeleteButton id={id} />}
       {!isSplit && <Handle type="target" position={Position.Top} className="!bg-teal-500 !w-3 !h-3" />}
       {isSplit && (
         <>

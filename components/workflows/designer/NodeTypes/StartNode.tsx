@@ -4,13 +4,15 @@ import { Handle, Position, type NodeProps } from 'reactflow'
 import { Play } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { StartNodeData } from '@/types/workflow'
+import { NodeDeleteButton } from './NodeDeleteButton'
 
-export function StartNode({ data, selected }: NodeProps<StartNodeData>) {
+export function StartNode({ id, data, selected }: NodeProps<StartNodeData>) {
   return (
     <div className={cn(
-      'rounded-full border-2 bg-white shadow-md px-5 py-3 min-w-[130px] flex items-center gap-2',
+      'relative rounded-full border-2 bg-white shadow-md px-5 py-3 min-w-[130px] flex items-center gap-2',
       selected ? 'border-green-500 shadow-green-100 shadow-lg' : 'border-green-400'
     )}>
+      {selected && <NodeDeleteButton id={id} />}
       <div className="p-1.5 rounded-full bg-green-50 shrink-0">
         <Play size={13} className="text-green-500 fill-green-500" />
       </div>

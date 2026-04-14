@@ -1,12 +1,12 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { ReactFlowProvider, useNodesState, useEdgesState, useReactFlow, type Node, type Edge, MarkerType } from 'reactflow'
+import { ReactFlowProvider, useReactFlow, type Node, type Edge, MarkerType } from 'reactflow'
 import { WorkflowToolbar } from '@/components/workflows/designer/WorkflowToolbar'
 import { DesignerTabs } from '@/components/workflows/designer/DesignerTabs'
-import { CanvasContext } from '@/components/workflows/designer/CanvasContext'
+import { CanvasProvider, useCanvas } from '@/components/workflows/designer/CanvasContext'
 import { useWorkflowDesignerStore } from '@/lib/stores/workflow-designer-store'
-import type { WorkflowNode, WorkflowEdge, WorkflowSettings, WorkflowStatus } from '@/types/workflow'
+import type { WorkflowEdge, WorkflowSettings, WorkflowStatus, WorkflowNode } from '@/types/workflow'
 
 interface Props {
   definition: {
@@ -38,23 +38,12 @@ function toRFEdge(e: WorkflowEdge): Edge {
   }
 }
 
-function DesignerShellInner({ definition }: Props) {
-  const [rfNodes, setRfNodes, onNodesChange] = useNodesState(definition.nodes as Node[])
-  const [rfEdges, setRfEdges, onEdgesChange] = useEdgesState(definition.edges.map(toRFEdge))
-
-  const { initialize, isDirty, isSaving, workflowId, workflowName, workflowDescription, workflowSettings } = useWorkflowDesignerStore()
-  const { fitView } = useReactFlow()
+// Handles auto-save. Lives inside CanvasProvider so it can read rfNodes/rfEdges via useCanvas().
+function AutoSave() {
+  const { rfNodes, rfEdges } = useCanvas()
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const { isDirty, workflowId, workflowName, workflowDescription, workflowSettings } = useWorkflowDesignerStore()
 
-  useEffect(() => {
-    initialize(definition)
-    setRfNodes(definition.nodes as Node[])
-    setRfEdges(definition.edges.map(toRFEdge))
-    setTimeout(() => fitView({ padding: 0.4, duration: 200 }), 100)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [definition.id])
-
-  // Auto-save: debounced 2s after any dirty change
   useEffect(() => {
     if (!isDirty) return
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
@@ -79,13 +68,37 @@ function DesignerShellInner({ definition }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDirty])
 
+  return null
+}
+
+// Handles initialization and fitView. Lives inside CanvasProvider and ReactFlowProvider.
+function DesignerContent({ definition }: Props) {
+  const { initialize } = useWorkflowDesignerStore()
+  const { fitView } = useReactFlow()
+
+  useEffect(() => {
+    initialize(definition)
+    setTimeout(() => fitView({ padding: 0.4, duration: 200 }), 150)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [definition.id])
+
   return (
-    <CanvasContext.Provider value={{ rfNodes, rfEdges, setRfNodes, setRfEdges, onNodesChange, onEdgesChange }}>
-      <div className="flex flex-col h-full">
-        <WorkflowToolbar rfEdges={rfEdges} />
-        <DesignerTabs />
-      </div>
-    </CanvasContext.Provider>
+    <div className="-mx-6 -mb-6 flex flex-col h-[calc(100vh-88px)] min-h-0">
+      <WorkflowToolbar />
+      <DesignerTabs />
+      <AutoSave />
+    </div>
+  )
+}
+
+function DesignerShellInner({ definition }: Props) {
+  return (
+    <CanvasProvider
+      initialNodes={definition.nodes as Node[]}
+      initialEdges={definition.edges.map(toRFEdge)}
+    >
+      <DesignerContent definition={definition} />
+    </CanvasProvider>
   )
 }
 

@@ -4,13 +4,15 @@ import { Handle, Position, type NodeProps } from 'reactflow'
 import { Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { AutomationNodeData } from '@/types/workflow'
+import { NodeDeleteButton } from './NodeDeleteButton'
 
-export function AutomationNode({ data, selected }: NodeProps<AutomationNodeData>) {
+export function AutomationNode({ id, data, selected }: NodeProps<AutomationNodeData>) {
   return (
     <div className={cn(
-      'rounded-lg border-2 bg-white shadow-md px-4 py-3 min-w-[160px] max-w-[220px]',
+      'relative rounded-lg border-2 bg-white shadow-md px-4 py-3 min-w-[160px] max-w-[220px]',
       selected ? 'border-purple-500 shadow-purple-100 shadow-lg' : 'border-purple-300'
     )}>
+      {selected && <NodeDeleteButton id={id} />}
       <Handle type="target" position={Position.Top} className="!bg-purple-500 !w-3 !h-3" />
       <div className="flex items-center gap-2">
         <div className="p-1.5 rounded bg-purple-50 shrink-0">

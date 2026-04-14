@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback } from 'react'
-import { useReactFlow } from 'reactflow'
+import { useReactFlow, type Node } from 'reactflow'
 import {
   Play, ClipboardList, GitBranch, Zap, Bell, Layers, Clock, GitMerge, Square,
   Save, Rocket, ZoomIn, ZoomOut, Maximize2, ChevronLeft,
@@ -24,7 +24,7 @@ import { useCanvas } from './CanvasContext'
 import { makeDefaultNodeData } from '@/lib/workflow-defaults'
 import type { NodeType } from '@/types/workflow'
 
-const nodepalette: { type: NodeType; label: string; icon: React.ReactNode; color: string }[] = [
+export const nodepalette: { type: NodeType; label: string; icon: React.ReactNode; color: string }[] = [
   { type: 'start',          label: 'Start',          icon: <Play size={13} className="fill-green-500 text-green-500" />,  color: 'border-green-300 hover:border-green-500 hover:bg-green-50' },
   { type: 'task',           label: 'Task',           icon: <ClipboardList size={13} className="text-blue-500" />,         color: 'border-blue-300 hover:border-blue-500 hover:bg-blue-50' },
   { type: 'decision',       label: 'Decision',       icon: <GitBranch size={13} className="text-orange-500" />,           color: 'border-orange-300 hover:border-orange-500 hover:bg-orange-50' },
@@ -42,12 +42,8 @@ const statusColors: Record<string, string> = {
   archived: 'bg-orange-100 text-orange-700 border-orange-200',
 }
 
-interface ToolbarProps {
-  rfEdges: unknown[]
-}
-
-export function WorkflowToolbar({ rfEdges }: ToolbarProps) {
-  const { zoomIn, zoomOut, fitView } = useReactFlow()
+export function WorkflowToolbar() {
+  const { zoomIn, zoomOut, fitView, getViewport } = useReactFlow()
   const {
     workflowName,
     workflowStatus,
@@ -57,26 +53,32 @@ export function WorkflowToolbar({ rfEdges }: ToolbarProps) {
     save,
     publish,
     updateWorkflowMeta,
+    markDirty,
   } = useWorkflowDesignerStore()
 
-  const { setRfNodes, rfNodes } = useCanvas()
-  const { markDirty } = useWorkflowDesignerStore()
-
-  const onDragStart = useCallback((e: React.DragEvent, type: NodeType) => {
-    e.dataTransfer.setData('application/nexus-node-type', type)
-    e.dataTransfer.effectAllowed = 'copy'
-  }, [])
+  const { setRfNodes, rfNodes, rfEdges } = useCanvas()
 
   const onClickAdd = useCallback((type: NodeType) => {
-    // Place new node offset from the last node, or at a default position
-    const last = rfNodes[rfNodes.length - 1]
-    const position = last
-      ? { x: (last as { position: { x: number; y: number } }).position.x + 220, y: (last as { position: { x: number; y: number } }).position.y }
-      : { x: 250, y: 250 }
+    const { selectedNodeId, setSelectedNode } = useWorkflowDesignerStore.getState()
+    const selectedNode = rfNodes.find((n) => n.id === selectedNodeId) as Node | undefined
+    let position: { x: number; y: number }
+    if (selectedNode) {
+      position = { x: selectedNode.position.x + 200, y: selectedNode.position.y + 60 }
+    } else if (rfNodes.length === 0) {
+      const { x: vx, y: vy, zoom } = getViewport()
+      position = { x: (-vx + window.innerWidth / 2) / zoom, y: (-vy + window.innerHeight / 2) / zoom }
+    } else {
+      const last = rfNodes[rfNodes.length - 1] as Node
+      position = { x: last.position.x + 220, y: last.position.y }
+    }
     const id = `${type}-${Date.now()}`
-    setRfNodes((nds) => [...nds, { id, type, position, data: makeDefaultNodeData(type) }])
+    setRfNodes((nds) => [
+      ...nds.map((n) => ({ ...n, selected: false })),
+      { id, type, position, data: makeDefaultNodeData(type), selected: true },
+    ])
+    setSelectedNode(id)
     markDirty()
-  }, [rfNodes, setRfNodes, markDirty])
+  }, [rfNodes, setRfNodes, markDirty, getViewport])
 
   const saveLabel = isSaving ? 'Saving…' : isDirty ? 'Unsaved' : lastSavedAt ? 'Saved' : 'Save'
 
@@ -112,8 +114,6 @@ export function WorkflowToolbar({ rfEdges }: ToolbarProps) {
             <Tooltip key={item.type}>
               <TooltipTrigger asChild>
                 <div
-                  draggable
-                  onDragStart={(e) => onDragStart(e, item.type)}
                   onClick={() => onClickAdd(item.type)}
                   className={`flex items-center gap-1 px-2 py-1 rounded border bg-white text-xs text-slate-600 cursor-pointer select-none transition-colors shrink-0 ${item.color}`}
                 >
@@ -122,7 +122,7 @@ export function WorkflowToolbar({ rfEdges }: ToolbarProps) {
                 </div>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="text-xs">
-                Click or drag to add {item.label} node
+                Click to add {item.label} node
               </TooltipContent>
             </Tooltip>
           ))}

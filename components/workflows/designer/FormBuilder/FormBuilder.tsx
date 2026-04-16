@@ -10,7 +10,8 @@ import { FieldProperties } from './FieldProperties'
 import { FormPreview } from './FormPreview'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Save, Eye, EyeOff } from 'lucide-react'
+import { Save, Eye, EyeOff, Library } from 'lucide-react'
+import { ImportFormDialog } from './ImportFormDialog'
 
 export function FormBuilder() {
   const { rfNodes } = useCanvas()
@@ -19,6 +20,7 @@ export function FormBuilder() {
   const store = useFormBuilderStore()
   const [showPreview, setShowPreview] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [showImport, setShowImport] = useState(false)
 
   const { workflowId: wfId } = useWorkflowDesignerStore()
 
@@ -97,6 +99,9 @@ export function FormBuilder() {
           <Badge variant="outline" className="text-xs text-slate-500">
             {fields.length} field{fields.length !== 1 ? 's' : ''}
           </Badge>
+          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => setShowImport(true)}>
+            <Library size={13} /> Use existing form
+          </Button>
           <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => setShowPreview(!showPreview)}>
             {showPreview ? <EyeOff size={13} /> : <Eye size={13} />}
             {showPreview ? 'Edit' : 'Preview'}
@@ -115,6 +120,17 @@ export function FormBuilder() {
       <div className="w-64 border-l border-slate-200 bg-white overflow-y-auto shrink-0">
         <FieldProperties />
       </div>
+
+      <ImportFormDialog
+        open={showImport}
+        onClose={() => setShowImport(false)}
+        onImport={(importedFields, mode) => {
+          const current = useFormBuilderStore.getState().fields
+          const next = mode === 'append' ? [...current, ...importedFields] : importedFields
+          useFormBuilderStore.setState({ fields: next, isDirty: true })
+          setShowImport(false)
+        }}
+      />
     </div>
   )
 }

@@ -11,7 +11,9 @@ import { formatDistanceToNow } from 'date-fns'
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
   const userName = (session?.user as { name?: string } | undefined)?.name ?? 'there'
-  const firstName = userName.split(' ')[0]
+  const firstName = userName.split(' ')[0].replace(/^\w/, (c) => c.toUpperCase())
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
   const [
     activeCases,
@@ -110,7 +112,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div>
-        <h1 className="text-2xl font-semibold text-slate-900">Good morning, {firstName}</h1>
+        <h1 className="text-2xl font-semibold text-slate-900">{greeting}, {firstName}</h1>
         <p className="text-sm text-slate-500 mt-1">Here&apos;s what&apos;s going on today.</p>
       </div>
 

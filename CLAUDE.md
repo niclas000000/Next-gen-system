@@ -39,31 +39,64 @@ Handles documents, processes, and workflows with focus on modern tech and UX.
 ```
 nexus/
 ├── app/
-│   ├── (auth)/login/ & register/
+│   ├── (auth)/login/
 │   ├── (dashboard)/
-│   │   ├── layout.tsx              # Sidebar + TopBar
-│   │   ├── page.tsx                # Dashboard
+│   │   ├── layout.tsx                  # Sidebar + TopBar (wrapped in Suspense for useSearchParams)
+│   │   ├── page.tsx                    # Dashboard (live stats, greeting, recent cases/docs)
 │   │   ├── documents/
 │   │   ├── processes/
+│   │   ├── cases/                      # Cases hub with view library
+│   │   │   ├── page.tsx
+│   │   │   └── CasesClient.tsx
+│   │   ├── design/                     # Design top-level section
+│   │   │   ├── workflows/page.tsx      # Workflow list (same as old /workflows/design)
+│   │   │   ├── processes/page.tsx      # Redirects to /processes
+│   │   │   ├── forms/                  # Standalone form designer
+│   │   │   │   ├── page.tsx            # Form list
+│   │   │   │   ├── NewFormButton.tsx
+│   │   │   │   └── [id]/
+│   │   │   │       ├── page.tsx
+│   │   │   │       └── FormDesigner.tsx
+│   │   │   └── document-types/         # Document type stubs
+│   │   │       ├── page.tsx            # Cards per type
+│   │   │       └── [type]/page.tsx     # Per-type stub
 │   │   ├── workflows/
-│   │   │   ├── design/[id]/        # Workflow designer (Canvas/Forms/Logic/Settings/Test tabs)
-│   │   │   └── instances/[id]/     # Case management
-│   │   └── admin/users|settings|system
-│   └── api/workflows|instances|expressions
+│   │   │   ├── design/[id]/            # Workflow designer (Canvas/Forms/Logic/Settings tabs)
+│   │   │   └── instances/[id]/         # Case detail (unchanged)
+│   │   └── admin/users|settings|register|appearance|system
+│   └── api/
+│       ├── workflows|instances|expressions
+│       ├── forms/                      # Standalone forms CRUD
+│       ├── views/                      # Saved case views CRUD
+│       ├── processes/
+│       ├── registry/
+│       └── settings/
 ├── components/
-│   ├── layout/Sidebar.tsx TopBar.tsx Breadcrumb.tsx
+│   ├── layout/
+│   │   ├── Sidebar.tsx                 # Collapsible, isActive handles query params
+│   │   ├── TopBar.tsx
+│   │   └── DashboardBackground.tsx     # Background image with opacity overlay
 │   └── workflows/
-│       ├── designer/               # Canvas, toolbar, node types, properties panel, form builder, logic builder
-│       ├── runtime/                # WorkflowRenderer, FormRenderer, StepTimeline, WorkflowProgress
-│       └── shared/
+│       ├── designer/
+│       │   ├── FormBuilder/
+│       │   │   ├── FormBuilder.tsx     # Workflow node form builder
+│       │   │   ├── ImportFormDialog.tsx # Import standalone form into workflow node
+│       │   │   ├── FieldPalette.tsx
+│       │   │   ├── FieldList.tsx
+│       │   │   ├── FieldProperties.tsx
+│       │   │   └── FormPreview.tsx
+│       │   └── ...
+│       └── runtime/
 ├── lib/
-│   ├── db/                         # Prisma client
-│   ├── auth/                       # NextAuth config
-│   ├── workflow-engine/            # engine.ts, executor.ts, validator.ts, evaluator.ts
-│   └── expression-parser/         # parser.ts, tokenizer.ts, functions.ts
+│   ├── db/
+│   ├── auth/
+│   ├── workflow-engine/
+│   ├── expression-parser/
+│   └── settings-context.tsx            # React context for app-wide settings (background, theme)
 ├── prisma/schema.prisma
-├── types/                          # workflow.ts, node.ts, field.ts, expression.ts, user.ts
-└── docker-compose.yml              # PostgreSQL
+├── proxy.ts                            # Next.js 16 route protection (renamed from middleware.ts)
+├── types/
+└── docker-compose.yml
 ```
 
 ---
@@ -77,6 +110,11 @@ nexus/
 - Warning: `orange-500` — pending, decisions
 - Danger: `red-600` — cancelled, errors
 - Info: `sky-500` — information
+
+### Background image pattern
+- Background image stored in `SystemSetting` table (key: `backgroundImage`, `backgroundOpacity`)
+- Applied via `DashboardBackground` component with configurable opacity
+- Content rows over background use `bg-white/85 backdrop-blur-sm` for WCAG AA compliance
 
 ### Node Colors (Workflow Canvas)
 | Node | Color |
@@ -106,107 +144,77 @@ nexus/
 
 ---
 
-## Implementation Phases
+## Prisma Schema (current models)
 
-### Phase 1: Core System — DONE
-- Next.js + TypeScript + Tailwind + Shadcn/ui setup ✓
-- Layout: Sidebar (collapsible), TopBar, Breadcrumb ✓
-- Dashboard: stat cards, recent activity, quick actions (mock data) ✓
-- Auth: NextAuth.js configured (authorize callback not yet implemented)
-- Prisma schema: fully defined (10 models) ✓
-- UI component library (Radix/Shadcn): complete ✓
-- Docker/PostgreSQL setup ✓
+`User`, `Group`, `Document`, `Workflow`, `WorkflowForm`, `WorkflowRule`, `WorkflowInstance`, `WorkflowStep`, `Comment`, `Attachment`, `AuditLog`, `SystemSetting`, `RegistryItem`, `Process`, `ProcessDocument`, `ProcessWorkflow`, `Form`, `SavedView`
 
-### Phase 2: Workflow Designer — IN PROGRESS (current focus)
-
-#### Done:
-- Workflow list page (`/workflows/design`) — cards, status badges, node count ✓
-- New Workflow dialog — creates in DB, redirects to designer ✓
-- Designer page layout — sidebar stays visible, canvas fills remaining space ✓
-- ReactFlow canvas — node rendering, connections, properties panel, minimap ✓
-- 9 node type components — Start, Task, Decision (diamond + Yes/No handles), Automation, Notification, Subprocess, Delay, Parallel, End ✓
-- Properties panel — edits node fields per type; connection label/condition; workflow name/description ✓
-- Auto-save — debounced 2s after any change ✓
-- Save + Publish buttons — wired to PATCH `/api/workflows/[id]` ✓
-- API routes — GET/POST `/api/workflows`, GET/PATCH/DELETE `/api/workflows/[id]` ✓
-- Form Builder — field palette, field list, field properties panel, live preview ✓
-- Form save API — PUT `/api/workflows/[id]/forms/[nodeId]` → Prisma WorkflowForm ✓
-- Zustand stores: `workflow-designer-store.ts`, `form-builder-store.ts` ✓
-- Canvas state: `useNodesState`/`useEdgesState` + `CanvasContext` for sharing RF state ✓
-- Workflow Engine — `engine.ts`: startInstance, completeStep, cancelInstance, auto-advance through auto-nodes ✓
-- Instance/Case list page (`/workflows/instances`) — running/completed cases with status badges ✓
-- Instance detail page (`/workflows/instances/[id]`) — active step panel, form filling, decision branching, cancel ✓
-- FormRenderer — all field types (text, textarea, number, date, select, multiselect, radio, checkbox, etc.) ✓
-- StepTimeline — visual step history with form data summary ✓
-- StartWorkflowButton — on published workflow cards, creates instance + redirects ✓
-- Logic Builder — visual condition builder per decision node branch ✓
-- Settings tab — WorkflowSettings form (permissions, notifications, title template, archive) ✓
-- `components/ui/textarea.tsx` added to UI library ✓
-
-- Expression Parser — full tokenizer + recursive descent parser + evaluator ✓
-- Expression functions — Math, String, Date, Logic, Array built-ins in `functions.ts` ✓
-- Condition evaluation in engine — decision branches auto-evaluated via `ExpressionParser.evaluateBoolean()` ✓
-- Edge conditions serialized to DB (AutoSave + store save both include `condition` field) ✓
-- ExpressionEditor — inline component with live validation (green/red indicator) ✓
-- LogicBuilder — visual mode + expression mode toggle per branch ✓
-
-- Admin Users page — table with search, role badges, active toggle, edit/delete/create dialogs ✓
-- Admin Groups page — group cards, member management dialog ✓
-- Admin System page — live stats (users, workflows, cases), recent activity, env info ✓
-- API routes — `/api/admin/users`, `/api/admin/users/[id]`, `/api/admin/groups`, `/api/admin/groups/[id]` ✓
-- Real authentication — NextAuth `authorize` wired against DB with scrypt password hashing ✓
-- Password hashing — Node.js `crypto` (scrypt + timingSafeEqual), no external dependency ✓
-- Sidebar — Admin section (Users/Groups/System) with collapsible toggle, general section-toggle system ✓
-
-- Dashboard — live DB stats (active cases, completed today, published workflows, total cases) + recent cases list ✓
-- Login page — real form wired to NextAuth `signIn`, error handling, redirect on success ✓
-
-- Route protection — `middleware.ts` using NextAuth, covers all routes except `/api/auth`, `/login`, static files ✓
-- NextAuth API route — `app/api/auth/[...nextauth]/route.ts` (was missing, caused login to not work) ✓
-- Comments on cases — `CommentThread` component, `GET/POST /api/instances/[id]/comments`, shown in instance detail ✓
-
-- Audit log — engine writes entries for all events (instance_started/completed/cancelled, step_started/completed, decision_made/auto_evaluated) ✓
-- AuditLog component — timeline with icons, actor, relative timestamp, hover for exact time ✓
-- Instance detail right panel — tabbed (Timeline / Comments / Audit log) with count badges ✓
-- `GET /api/instances/[id]/audit` — returns full audit trail ✓
-
-- Session user in engine — all API routes (start/complete/cancel/comment) now read session and pass real userId ✓
-- `user.id` propagated through JWT → session via NextAuth callbacks ✓
-- Document model added to Prisma schema ✓
-- Documents page — list with search/filter, create/edit/view/delete dialogs, category + tags + status ✓
-- `GET/POST /api/documents`, `GET/PATCH/DELETE /api/documents/[id]` ✓
-
-**Important:** Run `npx prisma db push` to apply the new Document model to the database.
-
-#### Next up (priority order):
-1. **Document content editor** — TipTap rich text editor in view/edit dialog (TipTap already installed)
-2. **Processes page** — needs Process model in schema
-3. **Sidebar** — add Documents link (currently missing from nav)
-
-#### Architecture notes:
-- Canvas state lives in `CanvasProvider` (isolated component in `CanvasContext.tsx`) — owns `useNodesState`/`useEdgesState` with no Zustand subscriptions, shared via `CanvasContext`
-- `AutoSave` is a child component inside `CanvasProvider` that reads `rfNodes`/`rfEdges` via `useCanvas()` and watches `isDirty` from Zustand
-- Zustand store (`workflow-designer-store`) holds metadata (name, status, dirty flag) + save/publish actions
-- Form Builder state in `form-builder-store`, forms saved to `WorkflowForm` table keyed by `workflowId + nodeId`
-- Placeholder user (`system-placeholder-user`) auto-upserted on first workflow create (auth not yet wired)
-- Designer uses `-m-6` on its layout to escape dashboard's `p-6` padding
-- Logic Builder reads/writes `rfEdges` via `useCanvas()` — conditions stored on `edge.data.condition` as expression strings (e.g. `variables.amount > 1000`)
-- Engine currently matches decision branches by edge label/id/sourceHandle — condition evaluation not yet implemented
-
-#### Next.js 16 breaking change (important):
-- `params` in both page files and API routes is a `Promise` — must be awaited: `const { id } = await params`
-- Type signature: `{ params: Promise<{ id: string }> }` not `{ params: { id: string } }`
-
-### Phase 3: Admin — NOT STARTED
-- User management, roles, groups
-- System settings, email templates
-- Audit log, workflow management
+Key additions vs original:
+- `Form` — standalone reusable forms (fields JSON, settings JSON)
+- `SavedView` — user-saved case view filters (userId, filters JSON)
+- `RegistryItem.isProcessRoot` — marks which registry item is the process tree root
+- `Process` — full process tree with canvas (nodes/edges JSON), KPIs, linked documents/workflows
 
 ---
 
-## Key Node Types
+## Implementation Status
 
-`start | task | decision | automation | notification | subprocess | delay | parallel-split | parallel-join | end`
+### Done ✓
+- Full layout: Sidebar (collapsible, query-param-aware isActive), TopBar, dark theme
+- Dashboard: live DB stats, time-based greeting (morning/afternoon/evening), capitalized first name
+- Auth: NextAuth with scrypt password hashing, JWT with user.id, route protection via `proxy.ts`
+- Documents: list, create/edit/view/delete, TipTap rich text editor, categories/tags/status
+- Processes: tree navigation (right-click context menu), inline detail panel with tabs (Overview, Canvas, Documents, Workflows, KPIs), ReactFlow canvas per process
+- Workflow designer: canvas, 9 node types, properties panel, form builder, logic builder, expression editor, auto-save, publish
+- Workflow engine: startInstance, completeStep, cancelInstance, auto-advance, condition evaluation
+- Case management: list, detail page, form filling, decision branching, comments, audit log, step timeline
+- Admin: Users, Groups, Register (categories/tags/RegistryItems), Appearance (background image + opacity), System
+- **Cases hub** (`/cases`): two-panel layout, predefined views (All/Running/Completed/Cancelled/My cases/Per workflow), saved views (POST/DELETE `/api/views`), per-workflow accordion grouping, `bg-white/85` for WCAG contrast over background image
+- **Design section** (`/design`): top-level nav with Workflows, Processes (redirect), Forms, Document Types
+- **Standalone Form Designer** (`/design/forms`, `/design/forms/[id]`): full three-panel designer (FieldPalette / FieldList / FieldProperties), FormPreview toggle, auto-save 2s, inline name editing
+- **Import form into workflow**: "Use existing form" button in workflow Form tab → `ImportFormDialog` → replace or append fields from form library
+- **Document Types** (`/design/document-types`): cards for Policy, Work Instruction, Procedure, Template, Guide, Contract + per-type stub pages
+- Settings: `GET/PATCH /api/settings`, `SettingsProvider` context, `DashboardBackground` component
+
+### Navigation structure (Sidebar)
+```
+Dashboard
+Documents
+Processes
+Cases (expanded by default)
+  ├── All cases        /cases
+  ├── Running          /cases?status=running
+  ├── Completed        /cases?status=completed
+  ├── Cancelled        /cases?status=cancelled
+  ├── My cases         /cases?view=mine
+  └── Per workflow     /cases?view=by-workflow
+Design
+  ├── Workflows        /design/workflows
+  ├── Processes        /design/processes  → redirect /processes
+  ├── Forms            /design/forms
+  └── Document Types   /design/document-types
+Admin
+  ├── Users, Groups, Register, Appearance, System
+```
+
+### Possible next areas
+- BPMN 2.0 node types for process canvas
+- Document content approval/review workflow
+- `isProcessRoot` usage in process tree UI
+- Notifications system
+- Full-text search across documents/cases
+- Dashboard widgets customization
+
+---
+
+## Architecture Notes
+
+- `CanvasProvider` owns `useNodesState`/`useEdgesState`, shared via `CanvasContext` — no Zustand
+- `AutoSave` is a child of `CanvasProvider`, reads canvas state via `useCanvas()`
+- `form-builder-store` (Zustand) is shared between workflow FormBuilder and standalone FormDesigner — both call `loadForm(id, fields, settings)`
+- Designer and Cases pages use `-m-6` to escape dashboard's `p-6` padding for full-height layouts
+- Sidebar uses `useSearchParams()` — requires Suspense boundary in `layout.tsx`
+- `proxy.ts` replaces `middleware.ts` (Next.js 16 convention change)
+- `params` in pages and API routes is a `Promise` — always `await params`
 
 ---
 
@@ -257,8 +265,9 @@ All UI text must be in English. No Swedish strings in components, pages, or data
 ## Startup
 1. `docker-compose up -d` — start PostgreSQL
 2. `npx prisma db push` — sync schema (first time or after schema changes)
-3. `npx prisma db seed` — create default admin user (idempotent, safe to re-run)
-4. `npm run dev` — start Next.js dev server at http://localhost:3000
+3. `npx prisma generate` — regenerate client after schema changes (stop dev server first — EPERM otherwise)
+4. `npx prisma db seed` — create default admin user (idempotent, safe to re-run)
+5. `npm run dev` — start Next.js dev server at http://localhost:3000
 - Use `cmd.exe` (not PowerShell) to avoid execution policy issues on Windows
 - Dashboard is at `/` (not `/dashboard`)
 
@@ -268,4 +277,4 @@ All UI text must be in English. No Swedish strings in components, pages, or data
 - Change password after first login via Admin → Users
 
 ## Memory
-Persistent memory: `C:\Users\NiclasSvensson\.claude\projects\c--Nexus\memory\`
+Persistent memory: `C:\Users\NiclasSvensson\.claude\projects\c--Project-Nexus\memory\`

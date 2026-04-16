@@ -143,11 +143,25 @@ nexus/
 - Settings tab — WorkflowSettings form (permissions, notifications, title template, archive) ✓
 - `components/ui/textarea.tsx` added to UI library ✓
 
+- Expression Parser — full tokenizer + recursive descent parser + evaluator ✓
+- Expression functions — Math, String, Date, Logic, Array built-ins in `functions.ts` ✓
+- Condition evaluation in engine — decision branches auto-evaluated via `ExpressionParser.evaluateBoolean()` ✓
+- Edge conditions serialized to DB (AutoSave + store save both include `condition` field) ✓
+- ExpressionEditor — inline component with live validation (green/red indicator) ✓
+- LogicBuilder — visual mode + expression mode toggle per branch ✓
+
+- Admin Users page — table with search, role badges, active toggle, edit/delete/create dialogs ✓
+- Admin Groups page — group cards, member management dialog ✓
+- Admin System page — live stats (users, workflows, cases), recent activity, env info ✓
+- API routes — `/api/admin/users`, `/api/admin/users/[id]`, `/api/admin/groups`, `/api/admin/groups/[id]` ✓
+- Real authentication — NextAuth `authorize` wired against DB with scrypt password hashing ✓
+- Password hashing — Node.js `crypto` (scrypt + timingSafeEqual), no external dependency ✓
+- Sidebar — Admin section (Users/Groups/System) with collapsible toggle, general section-toggle system ✓
+
 #### Next up (priority order):
-1. **Condition evaluation in engine** — evaluate `variables.field operator value` expressions when choosing decision branches
-2. **Expression Parser** — tokenizer, parser, evaluator for full expression support
-3. **Admin pages** — user management, roles, groups
-4. **Real authentication** — wire NextAuth authorize callback, replace system-placeholder-user
+1. **Dashboard** — wire up real data (replace mock stats with DB queries)
+2. **Login page** — wire up the login form to NextAuth
+3. **Documents/Processes pages** — currently empty stubs
 
 #### Architecture notes:
 - Canvas state lives in `CanvasProvider` (isolated component in `CanvasContext.tsx`) — owns `useNodesState`/`useEdgesState` with no Zustand subscriptions, shared via `CanvasContext`

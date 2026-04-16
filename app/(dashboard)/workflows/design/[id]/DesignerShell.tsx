@@ -58,6 +58,7 @@ function AutoSave() {
           edges: rfEdges.map(e => ({
             id: e.id, source: e.source, target: e.target,
             sourceHandle: e.sourceHandle, targetHandle: e.targetHandle, label: e.label,
+            condition: (e.data as Record<string, unknown>)?.condition ?? undefined,
           })),
           settings: workflowSettings,
         }),

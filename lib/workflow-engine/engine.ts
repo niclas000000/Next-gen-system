@@ -1,5 +1,8 @@
 import { prisma } from '@/lib/db/client'
 import type { WorkflowNode, WorkflowEdge, NodeType } from '@/types/workflow'
+import { ExpressionParser } from '@/lib/expression-parser/parser'
+
+const exprParser = new ExpressionParser()
 
 const SYSTEM_USER_ID = 'system-placeholder-user'
 
@@ -160,16 +163,39 @@ export class WorkflowEngine {
     let nextNodeId: string | null = null
 
     if (currentNode.type === 'decision') {
-      // User picked a branch — find the edge matching the decision
       const outgoing = getOutgoingEdges(currentNode.id, edges)
+      const currentVars = (await prisma.workflowInstance.findUnique({
+        where: { id: instanceId },
+        select: { variables: true },
+      }))?.variables as Record<string, unknown> ?? {}
+      const evalContext = { variables: currentVars }
+
       if (payload.decision) {
-        // Match by edge id, label, or sourceHandle
+        // Explicit user decision: match by edge id, label, or sourceHandle
         const matched = outgoing.find(
           (e) => e.id === payload.decision || e.label === payload.decision || e.sourceHandle === payload.decision
         )
         nextNodeId = matched?.target ?? outgoing[0]?.target ?? null
       } else {
-        nextNodeId = outgoing[0]?.target ?? null
+        // Auto-evaluate conditions: first branch whose condition evaluates to true wins
+        // Last branch is treated as default (no condition check)
+        let matched: WorkflowEdge | null = null
+        for (let i = 0; i < outgoing.length - 1; i++) {
+          const edge = outgoing[i]
+          const condition = edge.condition
+          if (condition) {
+            try {
+              if (exprParser.evaluateBoolean(condition, evalContext)) {
+                matched = edge
+                break
+              }
+            } catch {
+              // condition evaluation error — skip branch
+            }
+          }
+        }
+        // Fall back to last edge (default) if no condition matched
+        nextNodeId = matched?.target ?? outgoing[outgoing.length - 1]?.target ?? null
       }
     } else {
       // Task or other — follow first outgoing edge

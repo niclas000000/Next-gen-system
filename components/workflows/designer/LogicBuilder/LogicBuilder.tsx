@@ -5,7 +5,8 @@ import { useCanvas } from '../CanvasContext'
 import { useWorkflowDesignerStore } from '@/lib/stores/workflow-designer-store'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { GitBranch, ChevronRight, Info } from 'lucide-react'
+import { ExpressionEditor } from './ExpressionEditor'
+import { GitBranch, ChevronRight, Info, Code2 } from 'lucide-react'
 
 const OPERATORS = [
   { value: '==', label: 'equals' },
@@ -66,6 +67,7 @@ interface ConditionRowProps {
 }
 
 function ConditionRow({ edgeId, label, condition, targetName, isDefault, onChange }: ConditionRowProps) {
+  const [exprMode, setExprMode] = useState(false)
   const parsed = parseCondition(condition)
   const noValueOp = parsed.operator === 'is_empty' || parsed.operator === 'is_not_empty'
 
@@ -92,33 +94,53 @@ function ConditionRow({ edgeId, label, condition, targetName, isDefault, onChang
 
       {!isDefault && (
         <div className="space-y-2">
-          <Label className="text-[10px] text-slate-500 uppercase tracking-wide">Condition</Label>
-          <div className="flex gap-2 flex-wrap">
-            <Input
-              value={parsed.field}
-              onChange={(e) => onChange(edgeId, label, buildCondition(e.target.value, parsed.operator, parsed.value))}
-              className="h-7 text-xs flex-1 min-w-[100px]"
-              placeholder="variables.fieldName"
-            />
-            <select
-              value={parsed.operator}
-              onChange={(e) => onChange(edgeId, label, buildCondition(parsed.field, e.target.value, parsed.value))}
-              className="h-7 text-xs rounded-md border border-slate-200 px-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          <div className="flex items-center justify-between">
+            <Label className="text-[10px] text-slate-500 uppercase tracking-wide">Condition</Label>
+            <button
+              onClick={() => setExprMode((v) => !v)}
+              className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded transition-colors ${exprMode ? 'bg-blue-100 text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+              title="Toggle expression mode"
             >
-              {OPERATORS.map((op) => (
-                <option key={op.value} value={op.value}>{op.label}</option>
-              ))}
-            </select>
-            {!noValueOp && (
-              <Input
-                value={parsed.value}
-                onChange={(e) => onChange(edgeId, label, buildCondition(parsed.field, parsed.operator, e.target.value))}
-                className="h-7 text-xs flex-1 min-w-[80px]"
-                placeholder="value"
-              />
-            )}
+              <Code2 size={10} />
+              Expression
+            </button>
           </div>
-          {condition && (
+
+          {exprMode ? (
+            <ExpressionEditor
+              value={condition}
+              onChange={(val) => onChange(edgeId, label, val)}
+              placeholder="variables.amount > 1000 AND variables.type == 'urgent'"
+            />
+          ) : (
+            <div className="flex gap-2 flex-wrap">
+              <Input
+                value={parsed.field}
+                onChange={(e) => onChange(edgeId, label, buildCondition(e.target.value, parsed.operator, parsed.value))}
+                className="h-7 text-xs flex-1 min-w-[100px]"
+                placeholder="variables.fieldName"
+              />
+              <select
+                value={parsed.operator}
+                onChange={(e) => onChange(edgeId, label, buildCondition(parsed.field, e.target.value, parsed.value))}
+                className="h-7 text-xs rounded-md border border-slate-200 px-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {OPERATORS.map((op) => (
+                  <option key={op.value} value={op.value}>{op.label}</option>
+                ))}
+              </select>
+              {!noValueOp && (
+                <Input
+                  value={parsed.value}
+                  onChange={(e) => onChange(edgeId, label, buildCondition(parsed.field, parsed.operator, e.target.value))}
+                  className="h-7 text-xs flex-1 min-w-[80px]"
+                  placeholder="value"
+                />
+              )}
+            </div>
+          )}
+
+          {condition && !exprMode && (
             <p className="text-[10px] font-mono text-slate-400 bg-slate-50 rounded px-2 py-1 break-all">{condition}</p>
           )}
         </div>

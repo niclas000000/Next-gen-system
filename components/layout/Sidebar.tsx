@@ -16,6 +16,8 @@ import {
   Sun,
   LogOut,
   User,
+  Users,
+  Server,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -41,13 +43,25 @@ const navItems: NavItem[] = [
       { label: 'Cases', href: '/workflows/instances', icon: <FileText size={16} /> },
     ],
   },
+  {
+    label: 'Admin',
+    icon: <Settings size={18} />,
+    children: [
+      { label: 'Users', href: '/admin/users', icon: <Users size={16} /> },
+      { label: 'Groups', href: '/admin/settings', icon: <Users size={16} /> },
+      { label: 'System', href: '/admin/system', icon: <Server size={16} /> },
+    ],
+  },
 ]
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
   const [darkMode, setDarkMode] = useState(false)
-  const [workflowsOpen, setWorkflowsOpen] = useState(true)
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({ Workflows: true, Admin: false })
   const pathname = usePathname()
+
+  const toggleSection = (label: string) =>
+    setOpenSections((prev) => ({ ...prev, [label]: !prev[label] }))
 
   const toggleDark = () => {
     setDarkMode(!darkMode)
@@ -82,10 +96,11 @@ export function Sidebar() {
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1">
         {navItems.map((item) => {
           if (item.children) {
+            const isOpen = openSections[item.label] ?? false
             return (
               <div key={item.label}>
                 <button
-                  onClick={() => !collapsed && setWorkflowsOpen(!workflowsOpen)}
+                  onClick={() => !collapsed && toggleSection(item.label)}
                   className={cn(
                     'w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition-colors',
                     collapsed && 'justify-center'
@@ -97,12 +112,12 @@ export function Sidebar() {
                       <span className="flex-1 text-left">{item.label}</span>
                       <ChevronDown
                         size={14}
-                        className={cn('transition-transform', workflowsOpen && 'rotate-180')}
+                        className={cn('transition-transform', isOpen && 'rotate-180')}
                       />
                     </>
                   )}
                 </button>
-                {!collapsed && workflowsOpen && (
+                {!collapsed && isOpen && (
                   <div className="ml-4 mt-1 space-y-1 pl-3 border-l border-slate-700">
                     {item.children.map((child) => (
                       <Link

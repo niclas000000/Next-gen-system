@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { StepTimeline } from '@/components/workflows/runtime/StepTimeline'
 import { FormRenderer } from '@/components/workflows/runtime/FormRenderer'
+import { CommentThread } from '@/components/workflows/runtime/CommentThread'
+import { AuditLog } from '@/components/workflows/runtime/AuditLog'
 import type { FormDefinition } from '@/types/field'
 import {
   CheckCircle2,
@@ -39,12 +41,30 @@ interface StepInfo {
   decision: string | null
 }
 
+interface Comment {
+  id: string
+  content: string
+  createdAt: string
+  author: { id: string; name: string; email: string }
+}
+
+interface AuditEntry {
+  id: string
+  action: string
+  actor: string
+  actorName: string
+  timestamp: string
+  details: Record<string, unknown>
+}
+
 interface Props {
   instance: InstanceInfo
   steps: StepInfo[]
   activeStep: { id: string; stepName: string; stepType: string } | null
   activeForm: FormDefinition | null
   decisionOptions: Array<{ id: string; label: string }>
+  comments: Comment[]
+  auditEntries: AuditEntry[]
 }
 
 const statusConfig: Record<string, { label: string; class: string; icon: React.ReactNode }> = {
@@ -54,10 +74,11 @@ const statusConfig: Record<string, { label: string; class: string; icon: React.R
   error: { label: 'Error', class: 'bg-red-100 text-red-700 border-red-200', icon: <AlertCircle size={12} /> },
 }
 
-export function InstanceDetailClient({ instance, steps, activeStep, activeForm, decisionOptions }: Props) {
+export function InstanceDetailClient({ instance, steps, activeStep, activeForm, decisionOptions, comments, auditEntries }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [submitting, setSubmitting] = useState(false)
+  const [rightTab, setRightTab] = useState<'timeline' | 'comments' | 'audit'>('timeline')
 
   const cfg = statusConfig[instance.status] ?? statusConfig.running
 
@@ -254,14 +275,43 @@ export function InstanceDetailClient({ instance, steps, activeStep, activeForm, 
           )}
         </div>
 
-        {/* Timeline */}
+        {/* Right panel: Timeline / Comments / Audit */}
         <div className="lg:col-span-2">
           <Card className="shadow-sm">
-            <CardHeader className="pb-3 border-b border-slate-100">
-              <CardTitle className="text-sm font-semibold text-slate-600">Timeline</CardTitle>
-            </CardHeader>
+            {/* Tab strip */}
+            <div className="flex border-b border-slate-100">
+              {([
+                { id: 'timeline', label: 'Timeline', count: steps.length },
+                { id: 'comments', label: 'Comments', count: comments.length },
+                { id: 'audit',    label: 'Audit log', count: auditEntries.length },
+              ] as const).map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setRightTab(tab.id)}
+                  className={`flex items-center gap-1.5 px-4 py-3 text-xs font-medium border-b-2 transition-colors ${
+                    rightTab === tab.id
+                      ? 'border-blue-600 text-blue-600'
+                      : 'border-transparent text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  {tab.label}
+                  {tab.count > 0 && (
+                    <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                      rightTab === tab.id ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500'
+                    }`}>
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+
             <CardContent className="p-5">
-              <StepTimeline steps={steps} />
+              {rightTab === 'timeline' && <StepTimeline steps={steps} />}
+              {rightTab === 'comments' && (
+                <CommentThread instanceId={instance.id} initialComments={comments} />
+              )}
+              {rightTab === 'audit' && <AuditLog entries={auditEntries} />}
             </CardContent>
           </Card>
         </div>

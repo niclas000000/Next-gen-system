@@ -6,7 +6,6 @@ const exprParser = new ExpressionParser()
 
 const SYSTEM_USER_ID = 'system-placeholder-user'
 
-// Node types that auto-advance (no user interaction required)
 const AUTO_NODE_TYPES: NodeType[] = ['start', 'automation', 'notification', 'delay', 'parallel-split', 'parallel-join']
 
 function getOutgoingEdges(nodeId: string, edges: WorkflowEdge[]): WorkflowEdge[] {
@@ -17,10 +16,6 @@ function findNode(nodeId: string, nodes: WorkflowNode[]): WorkflowNode | undefin
   return nodes.find((n) => n.id === nodeId)
 }
 
-/**
- * Recursively advance through auto-nodes until we reach an interactive node (task, decision, end).
- * Returns the node where we stopped, or null if we reached a dead end.
- */
 function resolveNextInteractiveNode(
   fromNodeId: string,
   nodes: WorkflowNode[],
@@ -33,22 +28,26 @@ function resolveNextInteractiveNode(
   const node = findNode(fromNodeId, nodes)
   if (!node) return null
 
-  // Stop at interactive nodes
-  if (node.type === 'task' || node.type === 'decision' || node.type === 'end') {
-    return node
-  }
+  if (node.type === 'task' || node.type === 'decision' || node.type === 'end') return node
 
-  // Auto-node: follow first outgoing edge
   const outgoing = getOutgoingEdges(fromNodeId, edges)
   if (outgoing.length === 0) return null
 
   return resolveNextInteractiveNode(outgoing[0].target, nodes, edges, visited)
 }
 
+async function audit(
+  instanceId: string,
+  actor: string,
+  action: string,
+  details: Record<string, unknown> = {}
+) {
+  await prisma.auditLog.create({
+    data: { instanceId, actor, action, details },
+  })
+}
+
 export class WorkflowEngine {
-  /**
-   * Start a new workflow instance. Advances past the start node to the first interactive step.
-   */
   async startInstance(workflowId: string, title: string, userId: string) {
     const workflow = await prisma.workflow.findUnique({ where: { id: workflowId } })
     if (!workflow) throw new Error('Workflow not found')
@@ -60,59 +59,46 @@ export class WorkflowEngine {
     const startNode = nodes.find((n) => n.type === 'start')
     if (!startNode) throw new Error('Workflow has no start node')
 
-    // Create the instance
     const instance = await prisma.workflowInstance.create({
-      data: {
-        workflowId,
-        title,
-        status: 'running',
-        variables: {},
-        createdBy: userId,
-      },
+      data: { workflowId, title, status: 'running', variables: {}, createdBy: userId },
     })
 
-    // Advance from start node to first interactive node
+    await audit(instance.id, userId, 'instance_started', { workflowName: workflow.name, title })
+
     const outgoing = getOutgoingEdges(startNode.id, edges)
     if (outgoing.length === 0) {
-      // No steps — mark complete immediately
       await prisma.workflowInstance.update({
         where: { id: instance.id },
         data: { status: 'completed', completedAt: new Date() },
       })
+      await audit(instance.id, SYSTEM_USER_ID, 'instance_completed', { reason: 'no_steps' })
       return instance
     }
 
     const firstInteractive = resolveNextInteractiveNode(outgoing[0].target, nodes, edges)
 
-    if (!firstInteractive) {
+    if (!firstInteractive || firstInteractive.type === 'end') {
       await prisma.workflowInstance.update({
         where: { id: instance.id },
-        data: { status: 'completed', completedAt: new Date() },
+        data: { status: 'completed', completedAt: new Date(), currentStep: firstInteractive?.id ?? null },
       })
+      await audit(instance.id, SYSTEM_USER_ID, 'instance_completed', { reason: 'reached_end' })
       return instance
     }
 
-    if (firstInteractive.type === 'end') {
-      await prisma.workflowInstance.update({
-        where: { id: instance.id },
-        data: { status: 'completed', completedAt: new Date(), currentStep: firstInteractive.id },
-      })
-      return instance
-    }
-
-    // Create first step
     await this._createStep(instance.id, firstInteractive, userId)
     await prisma.workflowInstance.update({
       where: { id: instance.id },
       data: { currentStep: firstInteractive.id },
     })
+    await audit(instance.id, SYSTEM_USER_ID, 'step_started', {
+      stepName: (firstInteractive.data as { name?: string }).name ?? firstInteractive.type,
+      stepType: firstInteractive.type,
+    })
 
     return instance
   }
 
-  /**
-   * Complete a step. For task nodes: provide formData. For decision nodes: provide decision (edge label/id).
-   */
   async completeStep(
     instanceId: string,
     stepId: string,
@@ -136,7 +122,6 @@ export class WorkflowEngine {
     const nodes = workflow.nodes as unknown as WorkflowNode[]
     const edges = workflow.edges as unknown as WorkflowEdge[]
 
-    // Mark step complete
     await prisma.workflowStep.update({
       where: { id: stepId },
       data: {
@@ -147,7 +132,13 @@ export class WorkflowEngine {
       },
     })
 
-    // Merge form data into instance variables
+    await audit(instanceId, userId, 'step_completed', {
+      stepName: step.stepName,
+      stepType: step.stepType,
+      ...(payload.decision ? { decision: payload.decision } : {}),
+      ...(payload.formData ? { fields: Object.keys(payload.formData) } : {}),
+    })
+
     if (payload.formData) {
       const currentVars = instance.variables as Record<string, unknown>
       await prisma.workflowInstance.update({
@@ -156,7 +147,6 @@ export class WorkflowEngine {
       })
     }
 
-    // Find the next node
     const currentNode = findNode(step.nodeId, nodes)
     if (!currentNode) throw new Error('Current node not found in workflow definition')
 
@@ -171,48 +161,50 @@ export class WorkflowEngine {
       const evalContext = { variables: currentVars }
 
       if (payload.decision) {
-        // Explicit user decision: match by edge id, label, or sourceHandle
         const matched = outgoing.find(
           (e) => e.id === payload.decision || e.label === payload.decision || e.sourceHandle === payload.decision
         )
         nextNodeId = matched?.target ?? outgoing[0]?.target ?? null
+        await audit(instanceId, userId, 'decision_made', {
+          stepName: step.stepName,
+          decision: payload.decision,
+          branch: matched?.label ?? payload.decision,
+        })
       } else {
-        // Auto-evaluate conditions: first branch whose condition evaluates to true wins
-        // Last branch is treated as default (no condition check)
         let matched: WorkflowEdge | null = null
         for (let i = 0; i < outgoing.length - 1; i++) {
           const edge = outgoing[i]
-          const condition = edge.condition
-          if (condition) {
+          if (edge.condition) {
             try {
-              if (exprParser.evaluateBoolean(condition, evalContext)) {
+              if (exprParser.evaluateBoolean(edge.condition, evalContext)) {
                 matched = edge
                 break
               }
             } catch {
-              // condition evaluation error — skip branch
+              // skip on error
             }
           }
         }
-        // Fall back to last edge (default) if no condition matched
         nextNodeId = matched?.target ?? outgoing[outgoing.length - 1]?.target ?? null
+        await audit(instanceId, SYSTEM_USER_ID, 'decision_auto_evaluated', {
+          stepName: step.stepName,
+          matchedBranch: matched?.label ?? 'default',
+        })
       }
     } else {
-      // Task or other — follow first outgoing edge
       const outgoing = getOutgoingEdges(currentNode.id, edges)
       nextNodeId = outgoing[0]?.target ?? null
     }
 
     if (!nextNodeId) {
-      // Dead end — complete instance
       await prisma.workflowInstance.update({
         where: { id: instanceId },
         data: { status: 'completed', completedAt: new Date() },
       })
+      await audit(instanceId, SYSTEM_USER_ID, 'instance_completed', { reason: 'no_next_node' })
       return
     }
 
-    // Resolve to next interactive node
     const nextInteractive = resolveNextInteractiveNode(nextNodeId, nodes, edges)
 
     if (!nextInteractive || nextInteractive.type === 'end') {
@@ -220,27 +212,31 @@ export class WorkflowEngine {
         where: { id: instanceId },
         data: { status: 'completed', completedAt: new Date(), currentStep: nextInteractive?.id ?? null },
       })
+      await audit(instanceId, SYSTEM_USER_ID, 'instance_completed', { reason: 'reached_end' })
       return
     }
 
-    // Create next step
     await this._createStep(instanceId, nextInteractive, userId)
     await prisma.workflowInstance.update({
       where: { id: instanceId },
       data: { currentStep: nextInteractive.id },
     })
+    await audit(instanceId, SYSTEM_USER_ID, 'step_started', {
+      stepName: (nextInteractive.data as { name?: string }).name ?? nextInteractive.type,
+      stepType: nextInteractive.type,
+    })
   }
 
-  async cancelInstance(instanceId: string) {
+  async cancelInstance(instanceId: string, userId = SYSTEM_USER_ID) {
     await prisma.workflowInstance.update({
       where: { id: instanceId },
       data: { status: 'cancelled', completedAt: new Date() },
     })
-    // Mark any in_progress steps as skipped
     await prisma.workflowStep.updateMany({
       where: { instanceId, status: 'in_progress' },
       data: { status: 'skipped', completedAt: new Date() },
     })
+    await audit(instanceId, userId, 'instance_cancelled', {})
   }
 
   private async _createStep(instanceId: string, node: WorkflowNode, _userId: string) {

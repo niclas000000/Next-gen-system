@@ -24,6 +24,11 @@ model User {
   comments          Comment[]
   uploadedFiles     Attachment[]
   auditLogs         AuditLog[]
+  documents         Document[]         @relation("DocumentAuthor")
+  processesOwned    Process[]          @relation("ProcessOwner")
+  processesCreated  Process[]          @relation("ProcessCreator")
+  savedViews        SavedView[]
+  forms             Form[]
 }
 
 model Group {
@@ -32,6 +37,30 @@ model Group {
   description String?
   members     String[] // User IDs
   createdAt   DateTime @default(now())
+}
+
+model Document {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  category    String?
+  tags        String[]
+  content     String?  // Rich text / markdown
+  fileUrl     String?  // Optional file attachment
+  fileName    String?
+  fileSize    Int?
+  mimeType    String?
+  status      String   @default("draft") // draft, published, archived
+  version     Int      @default(1)
+
+  createdBy   String
+  author      User     @relation("DocumentAuthor", fields: [createdBy], references: [id])
+  updatedBy   String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  processes   ProcessDocument[]
 }
 
 model Workflow {
@@ -61,6 +90,7 @@ model Workflow {
   instances WorkflowInstance[]
   forms     WorkflowForm[]
   rules     WorkflowRule[]
+  processes ProcessWorkflow[]
 }
 
 model WorkflowForm {
@@ -199,4 +229,88 @@ model AuditLog {
   timestamp DateTime @default(now())
   details   Json     @default("{}")
   changes   Json? // Before/after for data changes
+}
+
+model SystemSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model RegistryItem {
+  id            String   @id @default(cuid())
+  type          String   // "category" | "tag"
+  name          String
+  color         String?
+  description   String?
+  scope         String   @default("all") // "document" | "workflow" | "process" | "all"
+  isProcessRoot Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([type, name])
+}
+
+model Form {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  fields      Json     @default("[]")
+  settings    Json     @default("{}")
+  createdBy   String
+  creator     User     @relation(fields: [createdBy], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SavedView {
+  id        String   @id @default(cuid())
+  name      String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  filters   Json     @default("{}")
+  createdAt DateTime @default(now())
+}
+
+model Process {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  purpose     String?
+  scope       String?
+  parentId    String?
+  parent      Process?  @relation("ProcessTree", fields: [parentId], references: [id])
+  children    Process[] @relation("ProcessTree")
+  status      String    @default("draft") // draft | active | archived
+  ownerId     String?
+  owner       User?     @relation("ProcessOwner", fields: [ownerId], references: [id])
+  category    String?
+  tags        String[]
+  nodes       Json      @default("[]")
+  edges       Json      @default("[]")
+  kpis        Json      @default("[]")
+  documents   ProcessDocument[]
+  workflows   ProcessWorkflow[]
+  createdBy   String
+  creator     User      @relation("ProcessCreator", fields: [createdBy], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model ProcessDocument {
+  processId  String
+  documentId String
+  process    Process  @relation(fields: [processId], references: [id], onDelete: Cascade)
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@id([processId, documentId])
+}
+
+model ProcessWorkflow {
+  processId  String
+  workflowId String
+  process    Process  @relation(fields: [processId], references: [id], onDelete: Cascade)
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@id([processId, workflowId])
 }

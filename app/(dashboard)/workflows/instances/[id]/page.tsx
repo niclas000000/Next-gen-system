@@ -6,15 +6,25 @@ import { InstanceDetailClient } from './InstanceDetailClient'
 
 export default async function WorkflowInstanceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const instance = await prisma.workflowInstance.findUnique({
-    where: { id },
-    include: {
-      workflow: {
-        select: { id: true, name: true, nodes: true, edges: true, forms: true },
+  const [instance, comments, auditEntries] = await Promise.all([
+    prisma.workflowInstance.findUnique({
+      where: { id },
+      include: {
+        workflow: { select: { id: true, name: true, nodes: true, edges: true, forms: true } },
+        steps: { orderBy: { startedAt: 'asc' } },
       },
-      steps: { orderBy: { startedAt: 'asc' } },
-    },
-  })
+    }),
+    prisma.comment.findMany({
+      where: { instanceId: id },
+      orderBy: { createdAt: 'asc' },
+      include: { author: { select: { id: true, name: true, email: true } } },
+    }),
+    prisma.auditLog.findMany({
+      where: { instanceId: id },
+      orderBy: { timestamp: 'desc' },
+      include: { actorUser: { select: { id: true, name: true } } },
+    }),
+  ])
 
   if (!instance) notFound()
 
@@ -78,6 +88,20 @@ export default async function WorkflowInstanceDetailPage({ params }: { params: P
       activeStep={activeStep ? { id: activeStep.id, stepName: activeStep.stepName, stepType: activeStep.stepType } : null}
       activeForm={activeForm}
       decisionOptions={decisionOptions}
+      comments={comments.map((c) => ({
+        id: c.id,
+        content: c.content,
+        createdAt: c.createdAt.toISOString(),
+        author: c.author,
+      }))}
+      auditEntries={auditEntries.map((e) => ({
+        id: e.id,
+        action: e.action,
+        actor: e.actor,
+        actorName: e.actorUser.name,
+        timestamp: e.timestamp.toISOString(),
+        details: e.details as Record<string, unknown>,
+      }))}
     />
   )
 }

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import {
   LayoutDashboard,
   FileText,
@@ -15,14 +15,24 @@ import {
   Moon,
   Sun,
   LogOut,
-  User,
   Users,
   Server,
+  Database,
+  Palette,
+  Layers,
+  List,
+  Clock,
+  CheckCircle,
+  User,
+  PenTool,
+  FileInput,
+  FileType,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
+import { useSession, signOut } from 'next-auth/react'
 
 interface NavItem {
   label: string
@@ -36,20 +46,35 @@ const navItems: NavItem[] = [
   { label: 'Documents', href: '/documents', icon: <FileText size={18} /> },
   { label: 'Processes', href: '/processes', icon: <GitBranch size={18} /> },
   {
-    label: 'Workflows',
-    icon: <Workflow size={18} />,
+    label: 'Cases',
+    icon: <Layers size={18} />,
     children: [
-      { label: 'Design', href: '/workflows/design', icon: <Workflow size={16} /> },
-      { label: 'Cases', href: '/workflows/instances', icon: <FileText size={16} /> },
+      { label: 'All cases',    href: '/cases',                   icon: <List size={16} /> },
+      { label: 'Running',      href: '/cases?status=running',    icon: <Clock size={16} /> },
+      { label: 'Completed',    href: '/cases?status=completed',  icon: <CheckCircle size={16} /> },
+      { label: 'My cases',     href: '/cases?view=mine',         icon: <User size={16} /> },
+      { label: 'Per workflow', href: '/cases?view=by-workflow',  icon: <GitBranch size={16} /> },
+    ],
+  },
+  {
+    label: 'Design',
+    icon: <PenTool size={18} />,
+    children: [
+      { label: 'Workflows',       href: '/design/workflows',       icon: <Workflow size={16} /> },
+      { label: 'Processes',       href: '/design/processes',       icon: <GitBranch size={16} /> },
+      { label: 'Forms',           href: '/design/forms',           icon: <FileInput size={16} /> },
+      { label: 'Document Types',  href: '/design/document-types',  icon: <FileType size={16} /> },
     ],
   },
   {
     label: 'Admin',
     icon: <Settings size={18} />,
     children: [
-      { label: 'Users', href: '/admin/users', icon: <Users size={16} /> },
-      { label: 'Groups', href: '/admin/settings', icon: <Users size={16} /> },
-      { label: 'System', href: '/admin/system', icon: <Server size={16} /> },
+      { label: 'Users',      href: '/admin/users',       icon: <Users size={16} /> },
+      { label: 'Groups',     href: '/admin/settings',    icon: <Users size={16} /> },
+      { label: 'Register',   href: '/admin/register',    icon: <Database size={16} /> },
+      { label: 'Appearance', href: '/admin/appearance',  icon: <Palette size={16} /> },
+      { label: 'System',     href: '/admin/system',      icon: <Server size={16} /> },
     ],
   },
 ]
@@ -57,8 +82,13 @@ const navItems: NavItem[] = [
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
   const [darkMode, setDarkMode] = useState(false)
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({ Workflows: true, Admin: false })
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({ Cases: true, Design: false, Admin: false })
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const { data: session } = useSession()
+  const user = session?.user as { name?: string; email?: string } | undefined
+  const name = user?.name ?? 'User'
+  const initials = name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
 
   const toggleSection = (label: string) =>
     setOpenSections((prev) => ({ ...prev, [label]: !prev[label] }))
@@ -68,7 +98,21 @@ export function Sidebar() {
     document.documentElement.classList.toggle('dark')
   }
 
-  const isActive = (href: string) => href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/')
+  const isActive = (href: string) => {
+    const url = new URL(href, 'http://x')
+    if (!pathname.startsWith(url.pathname === '/' ? '/' : url.pathname)) return false
+    if (url.pathname === '/' && pathname !== '/') return false
+    // Check query params if present in href
+    for (const [key, val] of url.searchParams.entries()) {
+      if (searchParams.get(key) !== val) return false
+    }
+    // If href has no query params, only match if current URL also has none (for same-path items)
+    if (url.searchParams.size === 0 && url.pathname !== '/' && searchParams.toString() !== '') {
+      // still active if it's the base path match (e.g. /cases with no params = "All cases")
+      return searchParams.toString() === ''
+    }
+    return true
+  }
 
   return (
     <aside
@@ -183,16 +227,20 @@ export function Sidebar() {
           )}
         >
           <Avatar className="h-7 w-7 shrink-0">
-            <AvatarFallback className="bg-blue-600 text-white text-xs">NS</AvatarFallback>
+            <AvatarFallback className="bg-blue-600 text-white text-xs">{initials}</AvatarFallback>
           </Avatar>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-slate-200 truncate">Niclas Svensson</p>
-              <p className="text-xs text-slate-500 truncate">Admin</p>
+              <p className="text-xs font-medium text-slate-200 truncate">{name}</p>
+              <p className="text-xs text-slate-500 truncate">{user?.email ?? ''}</p>
             </div>
           )}
           {!collapsed && (
-            <button className="text-slate-500 hover:text-slate-200 transition-colors">
+            <button
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="text-slate-500 hover:text-slate-200 transition-colors"
+              title="Log out"
+            >
               <LogOut size={14} />
             </button>
           )}

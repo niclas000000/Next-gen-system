@@ -158,10 +158,30 @@ nexus/
 - Password hashing — Node.js `crypto` (scrypt + timingSafeEqual), no external dependency ✓
 - Sidebar — Admin section (Users/Groups/System) with collapsible toggle, general section-toggle system ✓
 
+- Dashboard — live DB stats (active cases, completed today, published workflows, total cases) + recent cases list ✓
+- Login page — real form wired to NextAuth `signIn`, error handling, redirect on success ✓
+
+- Route protection — `middleware.ts` using NextAuth, covers all routes except `/api/auth`, `/login`, static files ✓
+- NextAuth API route — `app/api/auth/[...nextauth]/route.ts` (was missing, caused login to not work) ✓
+- Comments on cases — `CommentThread` component, `GET/POST /api/instances/[id]/comments`, shown in instance detail ✓
+
+- Audit log — engine writes entries for all events (instance_started/completed/cancelled, step_started/completed, decision_made/auto_evaluated) ✓
+- AuditLog component — timeline with icons, actor, relative timestamp, hover for exact time ✓
+- Instance detail right panel — tabbed (Timeline / Comments / Audit log) with count badges ✓
+- `GET /api/instances/[id]/audit` — returns full audit trail ✓
+
+- Session user in engine — all API routes (start/complete/cancel/comment) now read session and pass real userId ✓
+- `user.id` propagated through JWT → session via NextAuth callbacks ✓
+- Document model added to Prisma schema ✓
+- Documents page — list with search/filter, create/edit/view/delete dialogs, category + tags + status ✓
+- `GET/POST /api/documents`, `GET/PATCH/DELETE /api/documents/[id]` ✓
+
+**Important:** Run `npx prisma db push` to apply the new Document model to the database.
+
 #### Next up (priority order):
-1. **Dashboard** — wire up real data (replace mock stats with DB queries)
-2. **Login page** — wire up the login form to NextAuth
-3. **Documents/Processes pages** — currently empty stubs
+1. **Document content editor** — TipTap rich text editor in view/edit dialog (TipTap already installed)
+2. **Processes page** — needs Process model in schema
+3. **Sidebar** — add Documents link (currently missing from nav)
 
 #### Architecture notes:
 - Canvas state lives in `CanvasProvider` (isolated component in `CanvasContext.tsx`) — owns `useNodesState`/`useEdgesState` with no Zustand subscriptions, shared via `CanvasContext`
@@ -237,9 +257,15 @@ All UI text must be in English. No Swedish strings in components, pages, or data
 ## Startup
 1. `docker-compose up -d` — start PostgreSQL
 2. `npx prisma db push` — sync schema (first time or after schema changes)
-3. `npm run dev` — start Next.js dev server at http://localhost:3000
+3. `npx prisma db seed` — create default admin user (idempotent, safe to re-run)
+4. `npm run dev` — start Next.js dev server at http://localhost:3000
 - Use `cmd.exe` (not PowerShell) to avoid execution policy issues on Windows
 - Dashboard is at `/` (not `/dashboard`)
+
+## Default credentials (first run)
+- Email: `admin@nexus.internal`
+- Password: `admin`
+- Change password after first login via Admin → Users
 
 ## Memory
 Persistent memory: `C:\Users\NiclasSvensson\.claude\projects\c--Nexus\memory\`

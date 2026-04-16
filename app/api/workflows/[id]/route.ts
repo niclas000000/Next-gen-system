@@ -1,13 +1,15 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/client'
 
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
-  const workflow = await prisma.workflow.findUnique({ where: { id: params.id } })
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const workflow = await prisma.workflow.findUnique({ where: { id } })
   if (!workflow) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json({ workflow })
 }
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const body = await req.json() as Record<string, unknown>
 
   const updateData: Record<string, unknown> = {}
@@ -21,20 +23,21 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     updateData.status = body.status
     // Increment version on publish
     if (body.status === 'published') {
-      const current = await prisma.workflow.findUnique({ where: { id: params.id }, select: { version: true } })
+      const current = await prisma.workflow.findUnique({ where: { id }, select: { version: true } })
       if (current) updateData.version = current.version + 1
     }
   }
 
   const workflow = await prisma.workflow.update({
-    where: { id: params.id },
+    where: { id },
     data: updateData,
   })
 
   return NextResponse.json({ workflow })
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
-  await prisma.workflow.delete({ where: { id: params.id } })
+export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  await prisma.workflow.delete({ where: { id } })
   return NextResponse.json({ success: true })
 }

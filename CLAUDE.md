@@ -17,7 +17,7 @@ Handles documents, processes, and workflows with focus on modern tech and UX.
 | Layer | Technology |
 |---|---|
 | Frontend | React 18+ with TypeScript |
-| Framework | Next.js 14+ (App Router) |
+| Framework | Next.js 16+ (App Router) |
 | Styling | Tailwind CSS |
 | UI Components | Shadcn/ui (Radix UI primitives) |
 | State Management | Zustand |
@@ -133,12 +133,21 @@ nexus/
 - Form save API — PUT `/api/workflows/[id]/forms/[nodeId]` → Prisma WorkflowForm ✓
 - Zustand stores: `workflow-designer-store.ts`, `form-builder-store.ts` ✓
 - Canvas state: `useNodesState`/`useEdgesState` + `CanvasContext` for sharing RF state ✓
+- Workflow Engine — `engine.ts`: startInstance, completeStep, cancelInstance, auto-advance through auto-nodes ✓
+- Instance/Case list page (`/workflows/instances`) — running/completed cases with status badges ✓
+- Instance detail page (`/workflows/instances/[id]`) — active step panel, form filling, decision branching, cancel ✓
+- FormRenderer — all field types (text, textarea, number, date, select, multiselect, radio, checkbox, etc.) ✓
+- StepTimeline — visual step history with form data summary ✓
+- StartWorkflowButton — on published workflow cards, creates instance + redirects ✓
+- Logic Builder — visual condition builder per decision node branch ✓
+- Settings tab — WorkflowSettings form (permissions, notifications, title template, archive) ✓
+- `components/ui/textarea.tsx` added to UI library ✓
 
 #### Next up (priority order):
-1. **Instance/Case view** — list page, case detail with timeline, form filling, comments
-3. **Workflow Engine** — state machine, step execution, decision branching
-4. **Logic Builder** — conditions, calculations, automations, SLA rules
-5. **Expression Parser** — tokenizer, parser, evaluator
+1. **Condition evaluation in engine** — evaluate `variables.field operator value` expressions when choosing decision branches
+2. **Expression Parser** — tokenizer, parser, evaluator for full expression support
+3. **Admin pages** — user management, roles, groups
+4. **Real authentication** — wire NextAuth authorize callback, replace system-placeholder-user
 
 #### Architecture notes:
 - Canvas state lives in `CanvasProvider` (isolated component in `CanvasContext.tsx`) — owns `useNodesState`/`useEdgesState` with no Zustand subscriptions, shared via `CanvasContext`
@@ -147,6 +156,12 @@ nexus/
 - Form Builder state in `form-builder-store`, forms saved to `WorkflowForm` table keyed by `workflowId + nodeId`
 - Placeholder user (`system-placeholder-user`) auto-upserted on first workflow create (auth not yet wired)
 - Designer uses `-m-6` on its layout to escape dashboard's `p-6` padding
+- Logic Builder reads/writes `rfEdges` via `useCanvas()` — conditions stored on `edge.data.condition` as expression strings (e.g. `variables.amount > 1000`)
+- Engine currently matches decision branches by edge label/id/sourceHandle — condition evaluation not yet implemented
+
+#### Next.js 16 breaking change (important):
+- `params` in both page files and API routes is a `Promise` — must be awaited: `const { id } = await params`
+- Type signature: `{ params: Promise<{ id: string }> }` not `{ params: { id: string } }`
 
 ### Phase 3: Admin — NOT STARTED
 - User management, roles, groups

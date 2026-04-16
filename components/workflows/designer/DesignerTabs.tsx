@@ -6,6 +6,8 @@ import { NodeProperties } from './PropertiesPanel/NodeProperties'
 import { WorkflowProperties } from './PropertiesPanel/WorkflowProperties'
 import { ConnectionProperties } from './PropertiesPanel/ConnectionProperties'
 import { FormBuilder } from './FormBuilder/FormBuilder'
+import { LogicBuilder } from './LogicBuilder/LogicBuilder'
+import { WorkflowSettingsTab } from './WorkflowSettingsTab'
 import { useWorkflowDesignerStore } from '@/lib/stores/workflow-designer-store'
 import { cn } from '@/lib/utils'
 
@@ -59,17 +61,9 @@ export function DesignerTabs() {
 
         {activeTab === 'forms' && <FormBuilder />}
 
-        {activeTab === 'logic' && (
-          <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">
-            Logic Builder — coming soon
-          </div>
-        )}
+        {activeTab === 'logic' && <LogicBuilder />}
 
-        {activeTab === 'settings' && (
-          <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">
-            Workflow Settings — coming soon
-          </div>
-        )}
+        {activeTab === 'settings' && <WorkflowSettingsTab />}
       </div>
     </div>
   )

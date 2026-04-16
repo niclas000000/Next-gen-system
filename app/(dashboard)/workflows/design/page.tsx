@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db/client'
 import { NewWorkflowButton } from './NewWorkflowButton'
+import { StartWorkflowButton } from './StartWorkflowButton'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -45,7 +46,8 @@ export default async function WorkflowDesignListPage() {
           {workflows.map((wf) => {
             const nodeCount = Array.isArray(wf.nodes) ? (wf.nodes as unknown as WorkflowNode[]).length : 0
             return (
-              <Link key={wf.id} href={`/workflows/design/${wf.id}`}>
+              <div key={wf.id} className="relative group">
+                <Link href={`/workflows/design/${wf.id}`}>
                 <Card className="shadow-sm hover:shadow-md hover:border-blue-200 transition-all duration-200 cursor-pointer h-full">
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between gap-2 mb-3">
@@ -72,7 +74,13 @@ export default async function WorkflowDesignListPage() {
                     </div>
                   </CardContent>
                 </Card>
-              </Link>
+                </Link>
+                {wf.status === 'published' && (
+                  <div className="absolute bottom-3 right-3">
+                    <StartWorkflowButton workflowId={wf.id} workflowName={wf.name} />
+                  </div>
+                )}
+              </div>
             )
           })}
         </div>

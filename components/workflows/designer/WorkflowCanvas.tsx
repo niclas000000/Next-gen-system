@@ -255,7 +255,8 @@ export function WorkflowCanvas() {
         <button
           key={item.type}
           onClick={() => onPick(item.type)}
-          className={`flex flex-col items-center gap-0.5 p-1.5 rounded border bg-white text-[10px] text-slate-600 cursor-pointer transition-colors ${item.color}`}
+          className={`flex flex-col items-center gap-0.5 p-1.5 rounded-[2px] border bg-white text-[10px] cursor-pointer transition-colors ${item.color}`}
+          style={{ color: 'var(--ink-3)' }}
         >
           {item.icon}
           <span className="leading-none">{item.label}</span>
@@ -272,10 +273,10 @@ export function WorkflowCanvas() {
       {/* Right-click context menu */}
       {contextMenu.visible && (
         <div
-          className="absolute z-50 bg-white border border-slate-200 rounded-lg shadow-lg p-2 w-52"
-          style={{ left: contextMenu.x, top: contextMenu.y }}
+          className="absolute z-50 rounded-[2px] p-2 w-52"
+          style={{ left: contextMenu.x, top: contextMenu.y, background: 'var(--surface)', border: '1px solid var(--rule)', boxShadow: '0 8px 24px rgba(17,17,17,0.12)' }}
         >
-          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5 px-1">
+          <p className="text-[10px] font-semibold uppercase tracking-wide mb-1.5 px-1" style={{ color: 'var(--ink-4)' }}>
             Add node
           </p>
           <NodePickerGrid onPick={addNodeFromContextMenu} />
@@ -285,7 +286,8 @@ export function WorkflowCanvas() {
       {/* Node right-click menu */}
       {nodeMenu.visible && (
         <div
-          className="absolute z-50 bg-white border border-slate-200 rounded-lg shadow-lg py-1 w-36"
+          className="absolute z-50 rounded-[2px] py-1 w-36"
+          style={{ background: 'var(--surface)', border: '1px solid var(--rule)', boxShadow: '0 8px 24px rgba(17,17,17,0.12)' }}
           style={{ left: nodeMenu.x, top: nodeMenu.y }}
         >
           <button
@@ -301,10 +303,10 @@ export function WorkflowCanvas() {
       {/* Edge quick-add popover */}
       {quickAdd.visible && (
         <div
-          className="absolute z-50 bg-white border border-blue-200 rounded-lg shadow-lg p-2 w-48"
-          style={{ left: quickAdd.x, top: quickAdd.y }}
+          className="absolute z-50 rounded-[2px] p-2 w-48"
+          style={{ left: quickAdd.x, top: quickAdd.y, background: 'var(--surface)', border: '1px solid var(--nw-accent)', boxShadow: '0 8px 24px rgba(17,17,17,0.12)' }}
         >
-          <p className="text-[10px] font-semibold text-blue-400 uppercase tracking-wide mb-1.5 px-1">
+          <p className="text-[10px] font-semibold uppercase tracking-wide mb-1.5 px-1" style={{ color: 'var(--nw-accent)' }}>
             Connect to...
           </p>
           <NodePickerGrid onPick={addNodeFromQuickAdd} />
@@ -330,12 +332,13 @@ export function WorkflowCanvas() {
         minZoom={0.2}
         maxZoom={2}
         elevateNodesOnSelect
-        className="bg-slate-50 w-full h-full"
+        className="w-full h-full"
+        style={{ background: 'var(--paper)' }}
       >
-        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#cbd5e1" />
-        <Controls className="!shadow-sm !border !border-slate-200 !rounded-lg overflow-hidden" />
+        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="var(--paper-3)" />
+        <Controls className="!border !border-[var(--rule)] !rounded-[2px] overflow-hidden !shadow-none" />
         <MiniMap
-          className="!shadow-sm !border !border-slate-200 !rounded-lg"
+          className="!border !border-[var(--rule)] !rounded-[2px] !shadow-none"
           nodeColor={(node) => {
             const colors: Record<string, string> = {
               start: '#22c55e', task: '#3b82f6', decision: '#f97316',
@@ -344,7 +347,7 @@ export function WorkflowCanvas() {
             }
             return colors[node.type ?? ''] ?? '#94a3b8'
           }}
-          maskColor="rgba(248,250,252,0.7)"
+          maskColor="rgba(250,250,247,0.7)"
         />
       </ReactFlow>
     </div>

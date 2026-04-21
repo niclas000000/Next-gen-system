@@ -5,27 +5,14 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Inbox, Clock, CheckCircle2, XCircle, AlertCircle } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
-const statusConfig: Record<string, { label: string; class: string; icon: React.ReactNode }> = {
-  running: {
-    label: 'Running',
-    class: 'bg-blue-100 text-blue-700 border-blue-200',
-    icon: <Clock size={11} />,
-  },
-  completed: {
-    label: 'Completed',
-    class: 'bg-green-100 text-green-700 border-green-200',
-    icon: <CheckCircle2 size={11} />,
-  },
-  cancelled: {
-    label: 'Cancelled',
-    class: 'bg-slate-100 text-slate-600 border-slate-200',
-    icon: <XCircle size={11} />,
-  },
-  error: {
-    label: 'Error',
-    class: 'bg-red-100 text-red-700 border-red-200',
-    icon: <AlertCircle size={11} />,
-  },
+const statusVariant: Record<string, 'warn' | 'ok' | 'default' | 'risk'> = {
+  running: 'warn', completed: 'ok', cancelled: 'default', error: 'risk',
+}
+const statusLabel: Record<string, string> = {
+  running: 'Running', completed: 'Completed', cancelled: 'Cancelled', error: 'Error',
+}
+const statusIcon: Record<string, React.ReactNode> = {
+  running: <Clock size={11} />, completed: <CheckCircle2 size={11} />, cancelled: <XCircle size={11} />, error: <AlertCircle size={11} />,
 }
 
 export default async function WorkflowInstancesPage() {
@@ -40,18 +27,18 @@ export default async function WorkflowInstancesPage() {
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       <div>
-        <h1 className="text-2xl font-semibold text-slate-900">Cases</h1>
-        <p className="text-sm text-slate-500 mt-1">All running and completed workflow cases.</p>
+        <h1 className="text-2xl font-semibold" style={{ color: 'var(--ink)' }}>Cases</h1>
+        <p className="text-sm mt-1" style={{ color: 'var(--ink-4)' }}>All running and completed workflow cases.</p>
       </div>
 
       {instances.length === 0 ? (
-        <Card className="shadow-sm">
+        <Card>
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="p-4 rounded-full bg-slate-100 mb-4">
-              <Inbox size={24} className="text-slate-400" />
+            <div className="p-4 rounded-full mb-4" style={{ background: 'var(--paper-3)' }}>
+              <Inbox size={24} style={{ color: 'var(--ink-4)' }} />
             </div>
-            <p className="font-medium text-slate-700">No cases yet</p>
-            <p className="text-sm text-slate-400 mt-1">
+            <p className="font-medium" style={{ color: 'var(--ink)' }}>No cases yet</p>
+            <p className="text-sm mt-1" style={{ color: 'var(--ink-4)' }}>
               Start a case from a published workflow to see it here.
             </p>
           </CardContent>
@@ -59,26 +46,25 @@ export default async function WorkflowInstancesPage() {
       ) : (
         <div className="space-y-2">
           {instances.map((instance) => {
-            const cfg = statusConfig[instance.status] ?? statusConfig.running
             const currentStepName = instance.steps[0]?.stepName
             return (
               <Link key={instance.id} href={`/workflows/instances/${instance.id}`}>
-                <Card className="shadow-sm hover:shadow-md hover:border-blue-200 transition-all duration-200 cursor-pointer">
+                <Card className="transition-all duration-200 cursor-pointer hover:border-[var(--nw-accent)]">
                   <CardContent className="p-4 flex items-center gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <p className="font-medium text-slate-800 text-sm truncate">{instance.title}</p>
-                        <Badge variant="outline" className={`text-xs shrink-0 flex items-center gap-1 ${cfg.class}`}>
-                          {cfg.icon}
-                          {cfg.label}
+                        <p className="font-medium text-sm truncate" style={{ color: 'var(--ink)' }}>{instance.title}</p>
+                        <Badge variant={statusVariant[instance.status] ?? 'default'} className="text-xs shrink-0 flex items-center gap-1">
+                          {statusIcon[instance.status]}
+                          {statusLabel[instance.status] ?? instance.status}
                         </Badge>
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-slate-400">
+                      <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--ink-4)' }}>
                         <span>{instance.workflow.name}</span>
                         {currentStepName && (
                           <>
                             <span>·</span>
-                            <span className="text-blue-600">Current: {currentStepName}</span>
+                            <span style={{ color: 'var(--nw-accent)' }}>Current: {currentStepName}</span>
                           </>
                         )}
                         <span>·</span>

@@ -23,17 +23,17 @@ import { formatDistanceToNow } from 'date-fns'
 
 // ── Canvas node types ──────────────────────────────────────────────────────
 function StartNode({ data }: { data: { label: string } }) {
-  return <div className="w-12 h-12 rounded-full bg-green-500 border-2 border-green-600 flex items-center justify-center text-white text-xs font-semibold shadow-sm">{data.label}</div>
+  return <div className="w-12 h-12 rounded-full bg-green-500 border-2 border-green-600 flex items-center justify-center text-white text-xs font-semibold">{data.label}</div>
 }
 function EndNode({ data }: { data: { label: string } }) {
-  return <div className="w-12 h-12 rounded-full bg-red-500 border-2 border-red-600 flex items-center justify-center text-white text-xs font-semibold shadow-sm">{data.label}</div>
+  return <div className="w-12 h-12 rounded-full bg-red-500 border-2 border-red-600 flex items-center justify-center text-white text-xs font-semibold">{data.label}</div>
 }
 function ActivityNode({ data }: { data: { label: string } }) {
-  return <div className="px-4 py-2.5 rounded-lg bg-blue-500 border-2 border-blue-600 text-white text-xs font-medium shadow-sm min-w-[100px] text-center">{data.label}</div>
+  return <div className="px-4 py-2.5 rounded-[2px] bg-blue-500 border-2 border-blue-600 text-white text-xs font-medium min-w-[100px] text-center">{data.label}</div>
 }
 function DecisionNode({ data }: { data: { label: string } }) {
   return (
-    <div className="w-16 h-16 bg-orange-500 border-2 border-orange-600 text-white text-[10px] font-medium shadow-sm flex items-center justify-center text-center px-1" style={{ transform: 'rotate(45deg)' }}>
+    <div className="w-16 h-16 bg-orange-500 border-2 border-orange-600 text-white text-[10px] font-medium flex items-center justify-center text-center px-1" style={{ transform: 'rotate(45deg)' }}>
       <span style={{ transform: 'rotate(-45deg)' }}>{data.label}</span>
     </div>
   )
@@ -68,13 +68,14 @@ interface Props {
 }
 
 // ── Status configs ─────────────────────────────────────────────────────────
-const statusCfg: Record<string, { label: string; class: string }> = {
-  draft:    { label: 'Draft',    class: 'bg-slate-100 text-slate-600 border-slate-200' },
-  active:   { label: 'Active',   class: 'bg-green-100 text-green-700 border-green-200' },
-  archived: { label: 'Archived', class: 'bg-orange-100 text-orange-700 border-orange-200' },
+const statusVariant: Record<string, 'default' | 'ok' | 'warn'> = {
+  draft: 'default', active: 'ok', archived: 'warn',
 }
-const docStatusClass: Record<string, string> = {
-  draft: 'bg-slate-100 text-slate-600', published: 'bg-green-100 text-green-700', archived: 'bg-orange-100 text-orange-700',
+const statusLabel: Record<string, string> = {
+  draft: 'Draft', active: 'Active', archived: 'Archived',
+}
+const docStatusVariant: Record<string, 'default' | 'ok' | 'warn'> = {
+  draft: 'default', published: 'ok', archived: 'warn',
 }
 
 // ── Tree helpers ───────────────────────────────────────────────────────────
@@ -107,14 +108,20 @@ function TreeNode({ node, depth, selectedId, onSelect, expanded, onToggle, onCon
       <button
         onClick={() => { onSelect(node.id); if (hasChildren) onToggle(node.id) }}
         onContextMenu={(e) => onContextMenu(e, node)}
-        className={`w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-sm transition-colors text-left ${isSelected ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
+        className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-[2px] text-sm transition-colors text-left"
+        style={{
+          background: isSelected ? 'var(--accent-tint)' : '',
+          color: isSelected ? 'var(--nw-accent)' : 'var(--ink-3)',
+          fontWeight: isSelected ? '500' : '400',
+          borderLeft: isSelected ? '2px solid var(--nw-accent)' : '2px solid transparent',
+        }}
         style={{ paddingLeft: `${8 + depth * 16}px` }}
       >
         {hasChildren
           ? (isExpanded ? <ChevronDown size={13} className="shrink-0" /> : <ChevronRight size={13} className="shrink-0" />)
           : <Circle size={6} className="shrink-0 ml-1" />}
         <span className="truncate flex-1">{node.name}</span>
-        {node._count.children > 0 && <span className={`text-[10px] shrink-0 ${isSelected ? 'text-blue-200' : 'text-slate-400'}`}>{node._count.children}</span>}
+        {node._count.children > 0 && <span className="text-[10px] shrink-0" style={{ color: isSelected ? 'var(--nw-accent)' : 'var(--ink-4)' }}>{node._count.children}</span>}
       </button>
       {hasChildren && isExpanded && (
         <div>
@@ -164,10 +171,10 @@ function CanvasPanel({ processId, initialNodes, initialEdges }: { processId: str
         <div className="flex items-center gap-2">
           <span className="text-xs text-slate-500">Add:</span>
           {[
-            { type: 'start', label: 'Start', color: 'bg-green-100 text-green-700 border-green-200' },
-            { type: 'activity', label: 'Activity', color: 'bg-blue-100 text-blue-700 border-blue-200' },
-            { type: 'decision', label: 'Decision', color: 'bg-orange-100 text-orange-700 border-orange-200' },
-            { type: 'end', label: 'End', color: 'bg-red-100 text-red-700 border-red-200' },
+            { type: 'start', label: 'Start', color: 'border-green-300 text-green-700 hover:bg-green-50' },
+            { type: 'activity', label: 'Activity', color: 'border-blue-300 text-blue-700 hover:bg-blue-50' },
+            { type: 'decision', label: 'Decision', color: 'border-orange-300 text-orange-700 hover:bg-orange-50' },
+            { type: 'end', label: 'End', color: 'border-red-300 text-red-700 hover:bg-red-50' },
           ].map((n) => (
             <button key={n.type} onClick={() => addNode(n.type, n.label)}
               className={`px-3 py-1 rounded border text-xs font-medium hover:opacity-80 transition-opacity ${n.color}`}>
@@ -176,12 +183,12 @@ function CanvasPanel({ processId, initialNodes, initialEdges }: { processId: str
           ))}
         </div>
         {dirty && (
-          <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={save} disabled={saving}>
+          <Button size="sm" onClick={save} disabled={saving}>
             {saving ? 'Saving…' : 'Save canvas'}
           </Button>
         )}
       </div>
-      <div className="border border-slate-200 rounded-lg overflow-hidden" style={{ height: '480px' }}>
+      <div className="rounded-[2px] overflow-hidden" style={{ height: '480px', border: '1px solid var(--rule)' }}>
         <ReactFlow nodes={rfNodes} edges={rfEdges}
           onNodesChange={(c) => { onNodesChange(c); setDirty(true) }}
           onEdgesChange={(c) => { onEdgesChange(c); setDirty(true) }}
@@ -362,16 +369,16 @@ export function ProcessesClient({ initialProcesses, allDocuments, allWorkflows, 
   return (
     <div className="flex gap-0 h-full -m-6">
       {/* ── Tree sidebar ── */}
-      <aside className="w-64 shrink-0 border-r border-slate-200 bg-white flex flex-col h-full">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
-          <span className="text-sm font-semibold text-slate-700">Processes</span>
+      <aside className="w-64 shrink-0 flex flex-col h-full" style={{ borderRight: '1px solid var(--rule)', background: 'var(--paper-2)' }}>
+        <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--rule)' }}>
+          <span className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>Processes</span>
           <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openCreate(null)} title="New top-level process">
             <Plus size={14} />
           </Button>
         </div>
         <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
           {tree.length === 0
-            ? <p className="text-xs text-slate-400 px-2 py-4 text-center">No processes yet.</p>
+            ? <p className="text-xs px-2 py-4 text-center" style={{ color: 'var(--ink-4)' }}>No processes yet.</p>
             : tree.map((node) => (
               <TreeNode key={node.id} node={node} depth={0} selectedId={selectedId}
                 onSelect={setSelectedId} expanded={expanded} onToggle={toggleExpanded}
@@ -385,12 +392,12 @@ export function ProcessesClient({ initialProcesses, allDocuments, allWorkflows, 
         {!selectedId ? (
           /* Welcome state */
           <div className="flex flex-col items-center justify-center h-full text-center p-12">
-            <div className="p-5 rounded-full bg-slate-100 mb-4">
-              <GitBranch size={28} className="text-slate-400" />
+            <div className="p-5 rounded-full mb-4" style={{ background: 'var(--paper-3)' }}>
+              <GitBranch size={28} style={{ color: 'var(--ink-4)' }} />
             </div>
-            <h2 className="text-lg font-semibold text-slate-700 mb-1">Select a process</h2>
-            <p className="text-sm text-slate-400 mb-6">Click a process in the tree to view its details, canvas, documents and KPIs.</p>
-            <Button size="sm" className="bg-blue-600 hover:bg-blue-700 gap-1.5" onClick={() => openCreate(null)}>
+            <h2 className="text-lg font-semibold mb-1" style={{ color: 'var(--ink)' }}>Select a process</h2>
+            <p className="text-sm mb-6" style={{ color: 'var(--ink-4)' }}>Click a process in the tree to view its details, canvas, documents and KPIs.</p>
+            <Button size="sm" className="gap-1.5" onClick={() => openCreate(null)}>
               <Plus size={14} /> New process
             </Button>
           </div>
@@ -405,15 +412,18 @@ export function ProcessesClient({ initialProcesses, allDocuments, allWorkflows, 
               <div>
                 {detail.parent && (
                   <button onClick={() => setSelectedId(detail.parent!.id)}
-                    className="flex items-center gap-1 text-xs text-slate-400 hover:text-blue-600 mb-1 transition-colors">
+                    className="flex items-center gap-1 text-xs mb-1 transition-colors"
+                    style={{ color: 'var(--ink-4)' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--nw-accent)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-4)')}>
                     <ChevronRight size={12} className="rotate-180" />{detail.parent.name}
                   </button>
                 )}
                 <div className="flex items-center gap-2">
-                  <h1 className="text-2xl font-semibold text-slate-900">{detail.name}</h1>
-                  <Badge variant="outline" className={`text-xs ${statusCfg[detail.status]?.class}`}>{statusCfg[detail.status]?.label}</Badge>
+                  <h1 className="text-2xl font-semibold" style={{ color: 'var(--ink)' }}>{detail.name}</h1>
+                  <Badge variant={statusVariant[detail.status] ?? 'default'} className="text-xs">{statusLabel[detail.status] ?? detail.status}</Badge>
                 </div>
-                {detail.owner && <p className="text-sm text-slate-500 flex items-center gap-1 mt-0.5"><Users size={12} />{detail.owner.name}</p>}
+                {detail.owner && <p className="text-sm flex items-center gap-1 mt-0.5" style={{ color: 'var(--ink-3)' }}><Users size={12} />{detail.owner.name}</p>}
               </div>
               <div className="flex gap-2 shrink-0">
                 <Button size="sm" variant="outline" onClick={() => openCreate(selectedId)}><Plus size={13} className="mr-1" />Sub-process</Button>
@@ -424,11 +434,16 @@ export function ProcessesClient({ initialProcesses, allDocuments, allWorkflows, 
             </div>
 
             {/* Tabs */}
-            <div className="border-b border-slate-200">
+            <div style={{ borderBottom: '1px solid var(--rule)' }}>
               <div className="flex gap-0">
                 {tabs.map((t) => (
                   <button key={t.key} onClick={() => setTab(t.key)}
-                    className={`px-4 py-2.5 text-sm border-b-2 transition-colors ${tab === t.key ? 'border-blue-600 text-blue-600 font-medium' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
+                    className="px-4 py-2.5 text-sm border-b-2 transition-colors"
+                    style={{
+                      borderBottomColor: tab === t.key ? 'var(--nw-accent)' : 'transparent',
+                      color: tab === t.key ? 'var(--nw-accent)' : 'var(--ink-4)',
+                      fontWeight: tab === t.key ? '500' : '400',
+                    }}>
                     {t.label}
                   </button>
                 ))}
@@ -438,7 +453,7 @@ export function ProcessesClient({ initialProcesses, allDocuments, allWorkflows, 
             {/* ── Overview ── */}
             {tab === 'overview' && (
               editing ? (
-                <Card className="shadow-sm"><CardContent className="p-5 space-y-4">
+                <Card><CardContent className="p-5 space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2 space-y-1"><Label className="text-xs">Name</Label>
                       <Input value={editForm.name} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))} />
@@ -446,21 +461,23 @@ export function ProcessesClient({ initialProcesses, allDocuments, allWorkflows, 
                     <div className="col-span-2 space-y-1"><Label className="text-xs">Description</Label>
                       <Textarea value={editForm.description} onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))} rows={2} />
                     </div>
-                    <div className="col-span-2 space-y-1"><Label className="text-xs">Purpose <span className="text-slate-400 font-normal">(Syfte)</span></Label>
+                    <div className="col-span-2 space-y-1"><Label className="text-xs">Purpose <span className="font-normal" style={{ color: 'var(--ink-4)' }}>(Syfte)</span></Label>
                       <Textarea value={editForm.purpose} onChange={(e) => setEditForm((f) => ({ ...f, purpose: e.target.value }))} rows={3} placeholder="Why does this process exist?" />
                     </div>
-                    <div className="col-span-2 space-y-1"><Label className="text-xs">Scope <span className="text-slate-400 font-normal">(Omfång)</span></Label>
+                    <div className="col-span-2 space-y-1"><Label className="text-xs">Scope <span className="font-normal" style={{ color: 'var(--ink-4)' }}>(Omfång)</span></Label>
                       <Textarea value={editForm.scope} onChange={(e) => setEditForm((f) => ({ ...f, scope: e.target.value }))} rows={2} placeholder="What is included and excluded?" />
                     </div>
                     <div className="space-y-1"><Label className="text-xs">Status</Label>
                       <select value={editForm.status} onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))}
-                        className="w-full rounded-md border border-slate-200 text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        className="w-full rounded-[2px] text-sm px-3 py-2 focus:outline-none"
+                        style={{ border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)' }}>
                         <option value="draft">Draft</option><option value="active">Active</option><option value="archived">Archived</option>
                       </select>
                     </div>
                     <div className="space-y-1"><Label className="text-xs">Owner</Label>
                       <select value={editForm.ownerId} onChange={(e) => setEditForm((f) => ({ ...f, ownerId: e.target.value }))}
-                        className="w-full rounded-md border border-slate-200 text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        className="w-full rounded-[2px] text-sm px-3 py-2 focus:outline-none"
+                        style={{ border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)' }}>
                         <option value="">No owner</option>
                         {allUsers.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
                       </select>
@@ -468,43 +485,46 @@ export function ProcessesClient({ initialProcesses, allDocuments, allWorkflows, 
                   </div>
                   <div className="flex gap-2 justify-end pt-1">
                     <Button variant="outline" size="sm" onClick={() => setEditing(false)}><X size={13} className="mr-1" />Cancel</Button>
-                    <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={saveOverview} disabled={saving || !editForm.name}>
+                    <Button size="sm" onClick={saveOverview} disabled={saving || !editForm.name}>
                       <Check size={13} className="mr-1" />{saving ? 'Saving…' : 'Save'}
                     </Button>
                   </div>
                 </CardContent></Card>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card className="md:col-span-2 shadow-sm"><CardContent className="p-5 space-y-4">
-                    {detail.description && <div><p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Description</p><p className="text-sm text-slate-700">{detail.description}</p></div>}
-                    {detail.purpose && <div><p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Purpose</p><p className="text-sm text-slate-700">{detail.purpose}</p></div>}
-                    {detail.scope && <div><p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Scope</p><p className="text-sm text-slate-700">{detail.scope}</p></div>}
-                    {!detail.description && !detail.purpose && !detail.scope && <p className="text-sm text-slate-400 italic">No description yet. Click Edit to add details.</p>}
+                  <Card className="md:col-span-2"><CardContent className="p-5 space-y-4">
+                    {detail.description && <div><p className="mono-meta text-[10px] mb-1">Description</p><p className="text-sm" style={{ color: 'var(--ink)' }}>{detail.description}</p></div>}
+                    {detail.purpose && <div><p className="mono-meta text-[10px] mb-1">Purpose</p><p className="text-sm" style={{ color: 'var(--ink)' }}>{detail.purpose}</p></div>}
+                    {detail.scope && <div><p className="mono-meta text-[10px] mb-1">Scope</p><p className="text-sm" style={{ color: 'var(--ink)' }}>{detail.scope}</p></div>}
+                    {!detail.description && !detail.purpose && !detail.scope && <p className="text-sm italic" style={{ color: 'var(--ink-4)' }}>No description yet. Click Edit to add details.</p>}
                   </CardContent></Card>
                   <div className="space-y-4">
-                    <Card className="shadow-sm"><CardContent className="p-4 space-y-2.5">
+                    <Card className=""><CardContent className="p-4 space-y-2.5">
                       {[
-                        ['Status', <Badge key="s" variant="outline" className={`text-xs ${statusCfg[detail.status]?.class}`}>{statusCfg[detail.status]?.label}</Badge>],
-                        detail.owner && ['Owner', <span key="o" className="font-medium text-slate-800">{detail.owner.name}</span>],
+                        ['Status', <Badge key="s" variant={statusVariant[detail.status] ?? 'default'} className="text-xs">{statusLabel[detail.status] ?? detail.status}</Badge>],
+                        detail.owner && ['Owner', <span key="o" className="font-medium" style={{ color: 'var(--ink)' }}>{detail.owner.name}</span>],
                         ['Documents', <span key="d" className="font-medium">{linkedDocs.length}</span>],
                         ['Workflows', <span key="w" className="font-medium">{linkedWorkflows.length}</span>],
                         ['KPIs', <span key="k" className="font-medium">{kpis.length}</span>],
                         detail.children.length > 0 && ['Sub-processes', <span key="c" className="font-medium">{detail.children.length}</span>],
-                        ['Updated', <span key="u" className="text-slate-400 text-xs">{formatDistanceToNow(new Date(detail.updatedAt), { addSuffix: true })}</span>],
+                        ['Updated', <span key="u" className="text-xs" style={{ color: 'var(--ink-4)' }}>{formatDistanceToNow(new Date(detail.updatedAt), { addSuffix: true })}</span>],
                       ].filter(Boolean).map((row, i) => (
                         <div key={i} className="flex justify-between items-center text-sm">
-                          <span className="text-slate-500">{(row as [string, React.ReactNode])[0]}</span>
+                          <span style={{ color: 'var(--ink-3)' }}>{(row as [string, React.ReactNode])[0]}</span>
                           {(row as [string, React.ReactNode])[1]}
                         </div>
                       ))}
                     </CardContent></Card>
                     {detail.children.length > 0 && (
-                      <Card className="shadow-sm"><CardHeader className="pb-2 pt-4 px-4"><CardTitle className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Sub-processes</CardTitle></CardHeader>
+                      <Card><CardHeader className="pb-2 pt-4 px-4"><CardTitle className="mono-meta text-[10px]">Sub-processes</CardTitle></CardHeader>
                         <CardContent className="px-4 pb-4 space-y-1">
                           {detail.children.map((c) => (
                             <button key={c.id} onClick={() => setSelectedId(c.id)}
-                              className="w-full flex items-center gap-2 text-sm text-slate-700 hover:text-blue-600 transition-colors py-0.5 text-left">
-                              <GitBranch size={12} className="text-slate-400 shrink-0" />{c.name}
+                              className="w-full flex items-center gap-2 text-sm transition-colors py-0.5 text-left"
+                              style={{ color: 'var(--ink-3)' }}
+                              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--nw-accent)')}
+                              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-3)')}>
+                              <GitBranch size={12} className="shrink-0" style={{ color: 'var(--ink-4)' }} />{c.name}
                             </button>
                           ))}
                         </CardContent>
@@ -524,20 +544,20 @@ export function ProcessesClient({ initialProcesses, allDocuments, allWorkflows, 
             {tab === 'documents' && (
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <p className="text-sm text-slate-500">{linkedDocs.length} linked document{linkedDocs.length !== 1 ? 's' : ''}</p>
+                  <p className="text-sm" style={{ color: 'var(--ink-3)' }}>{linkedDocs.length} linked document{linkedDocs.length !== 1 ? 's' : ''}</p>
                   <Button size="sm" variant="outline" onClick={() => { setPickerSearch(''); setShowDocPicker(true) }}><Link2 size={13} className="mr-1.5" />Link document</Button>
                 </div>
                 {linkedDocs.length === 0
-                  ? <Card className="shadow-sm"><CardContent className="py-12 text-center text-sm text-slate-400">No documents linked yet.</CardContent></Card>
+                  ? <Card><CardContent className="py-12 text-center text-sm" style={{ color: 'var(--ink-4)' }}>No documents linked yet.</CardContent></Card>
                   : <div className="space-y-2">{linkedDocs.map((doc) => (
-                    <Card key={doc.id} className="shadow-sm"><CardContent className="p-4 flex items-center gap-3">
-                      <FileText size={16} className="text-slate-400 shrink-0" />
+                    <Card key={doc.id}><CardContent className="p-4 flex items-center gap-3">
+                      <FileText size={16} className="shrink-0" style={{ color: 'var(--ink-4)' }} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-slate-800 truncate">{doc.title}</p>
-                        <p className="text-xs text-slate-400">Updated {formatDistanceToNow(new Date(doc.updatedAt), { addSuffix: true })}</p>
+                        <p className="text-sm font-medium truncate" style={{ color: 'var(--ink)' }}>{doc.title}</p>
+                        <p className="text-xs" style={{ color: 'var(--ink-4)' }}>Updated {formatDistanceToNow(new Date(doc.updatedAt), { addSuffix: true })}</p>
                       </div>
-                      <span className={`text-xs px-2 py-0.5 rounded font-medium ${docStatusClass[doc.status] ?? docStatusClass.draft}`}>{doc.status}</span>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-red-500" onClick={() => unlinkDocument(doc.id)} title="Unlink"><Unlink size={13} /></Button>
+                      <Badge variant={docStatusVariant[doc.status] ?? 'default'} className="text-xs">{doc.status}</Badge>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" style={{ color: 'var(--ink-4)' }} onClick={() => unlinkDocument(doc.id)} title="Unlink"><Unlink size={13} /></Button>
                     </CardContent></Card>
                   ))}</div>
                 }
@@ -548,20 +568,20 @@ export function ProcessesClient({ initialProcesses, allDocuments, allWorkflows, 
             {tab === 'workflows' && (
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <p className="text-sm text-slate-500">{linkedWorkflows.length} linked workflow{linkedWorkflows.length !== 1 ? 's' : ''}</p>
+                  <p className="text-sm" style={{ color: 'var(--ink-3)' }}>{linkedWorkflows.length} linked workflow{linkedWorkflows.length !== 1 ? 's' : ''}</p>
                   <Button size="sm" variant="outline" onClick={() => { setPickerSearch(''); setShowWfPicker(true) }}><Link2 size={13} className="mr-1.5" />Link workflow</Button>
                 </div>
                 {linkedWorkflows.length === 0
-                  ? <Card className="shadow-sm"><CardContent className="py-12 text-center text-sm text-slate-400">No workflows linked yet.</CardContent></Card>
+                  ? <Card><CardContent className="py-12 text-center text-sm" style={{ color: 'var(--ink-4)' }}>No workflows linked yet.</CardContent></Card>
                   : <div className="space-y-2">{linkedWorkflows.map((wf) => (
-                    <Card key={wf.id} className="shadow-sm"><CardContent className="p-4 flex items-center gap-3">
-                      <WorkflowIcon size={16} className="text-slate-400 shrink-0" />
+                    <Card key={wf.id}><CardContent className="p-4 flex items-center gap-3">
+                      <WorkflowIcon size={16} className="shrink-0" style={{ color: 'var(--ink-4)' }} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-slate-800 truncate">{wf.name}</p>
-                        <p className="text-xs text-slate-400">Updated {formatDistanceToNow(new Date(wf.updatedAt), { addSuffix: true })}</p>
+                        <p className="text-sm font-medium truncate" style={{ color: 'var(--ink)' }}>{wf.name}</p>
+                        <p className="text-xs" style={{ color: 'var(--ink-4)' }}>Updated {formatDistanceToNow(new Date(wf.updatedAt), { addSuffix: true })}</p>
                       </div>
-                      <span className={`text-xs px-2 py-0.5 rounded font-medium ${docStatusClass[wf.status] ?? docStatusClass.draft}`}>{wf.status}</span>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-red-500" onClick={() => unlinkWorkflow(wf.id)} title="Unlink"><Unlink size={13} /></Button>
+                      <Badge variant={statusVariant[wf.status] ?? 'default'} className="text-xs">{wf.status}</Badge>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" style={{ color: 'var(--ink-4)' }} onClick={() => unlinkWorkflow(wf.id)} title="Unlink"><Unlink size={13} /></Button>
                     </CardContent></Card>
                   ))}</div>
                 }
@@ -572,24 +592,24 @@ export function ProcessesClient({ initialProcesses, allDocuments, allWorkflows, 
             {tab === 'kpis' && (
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <p className="text-sm text-slate-500">{kpis.length} KPI{kpis.length !== 1 ? 's' : ''} defined</p>
+                  <p className="text-sm" style={{ color: 'var(--ink-3)' }}>{kpis.length} KPI{kpis.length !== 1 ? 's' : ''} defined</p>
                   <Button size="sm" variant="outline" onClick={() => { setEditKpi(null); setKpiForm({ name: '', description: '', value: '', unit: '', target: '' }); setShowKpiForm(true) }}><Plus size={13} className="mr-1.5" />Add KPI</Button>
                 </div>
                 {kpis.length === 0
-                  ? <Card className="shadow-sm"><CardContent className="py-12 text-center text-sm text-slate-400">No KPIs defined yet.</CardContent></Card>
+                  ? <Card><CardContent className="py-12 text-center text-sm" style={{ color: 'var(--ink-4)' }}>No KPIs defined yet.</CardContent></Card>
                   : <div className="space-y-2">{kpis.map((k) => (
-                    <Card key={k.id} className="shadow-sm"><CardContent className="p-4 flex items-center gap-4">
+                    <Card key={k.id}><CardContent className="p-4 flex items-center gap-4">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-slate-800">{k.name}</p>
-                        {k.description && <p className="text-xs text-slate-500 mt-0.5">{k.description}</p>}
+                        <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>{k.name}</p>
+                        {k.description && <p className="text-xs mt-0.5" style={{ color: 'var(--ink-3)' }}>{k.description}</p>}
                       </div>
                       <div className="flex items-center gap-4 text-sm shrink-0">
-                        {k.value && <div className="text-center"><p className="text-xs text-slate-400">Value</p><p className="font-semibold">{k.value}{k.unit && ` ${k.unit}`}</p></div>}
-                        {k.target && <div className="text-center"><p className="text-xs text-slate-400">Target</p><p className="font-semibold text-green-600">{k.target}{k.unit && ` ${k.unit}`}</p></div>}
+                        {k.value && <div className="text-center"><p className="text-xs" style={{ color: 'var(--ink-4)' }}>Value</p><p className="font-semibold" style={{ color: 'var(--ink)' }}>{k.value}{k.unit && ` ${k.unit}`}</p></div>}
+                        {k.target && <div className="text-center"><p className="text-xs" style={{ color: 'var(--ink-4)' }}>Target</p><p className="font-semibold" style={{ color: 'var(--ok)' }}>{k.target}{k.unit && ` ${k.unit}`}</p></div>}
                       </div>
                       <div className="flex gap-1 shrink-0">
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-blue-600" onClick={() => { setEditKpi(k); setKpiForm({ name: k.name, description: k.description, value: k.value, unit: k.unit, target: k.target }); setShowKpiForm(true) }}><Pencil size={13} /></Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-red-500" onClick={() => saveKpis(kpis.filter((x) => x.id !== k.id))}><Trash2 size={13} /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" style={{ color: 'var(--ink-4)' }} onClick={() => { setEditKpi(k); setKpiForm({ name: k.name, description: k.description, value: k.value, unit: k.unit, target: k.target }); setShowKpiForm(true) }}><Pencil size={13} /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" style={{ color: 'var(--ink-4)' }} onClick={() => saveKpis(kpis.filter((x) => x.id !== k.id))}><Trash2 size={13} /></Button>
                       </div>
                     </CardContent></Card>
                   ))}</div>
@@ -604,15 +624,18 @@ export function ProcessesClient({ initialProcesses, allDocuments, allWorkflows, 
       {contextMenu && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setContextMenu(null)} />
-          <div className="fixed z-50 bg-white border border-slate-200 rounded-lg shadow-lg py-1 min-w-[180px] text-sm" style={{ top: contextMenu.y, left: contextMenu.x }}>
-            <div className="px-3 py-1.5 text-xs font-semibold text-slate-500 border-b border-slate-100 mb-1 truncate">{contextMenu.process.name}</div>
-            <button onClick={() => { setSelectedId(contextMenu.process.id); setContextMenu(null) }} className="w-full flex items-center gap-2 px-3 py-1.5 text-slate-700 hover:bg-slate-50 transition-colors">
-              <ExternalLink size={13} className="text-slate-400" /> Open
+          <div className="fixed z-50 py-1 min-w-[180px] text-sm rounded-[2px]"
+            style={{ top: contextMenu.y, left: contextMenu.x, background: 'var(--surface)', border: '1px solid var(--rule)', boxShadow: '0 8px 24px rgba(17,17,17,0.12)' }}>
+            <div className="px-3 py-1.5 text-xs font-semibold mb-1 truncate" style={{ color: 'var(--ink-4)', borderBottom: '1px solid var(--rule)' }}>{contextMenu.process.name}</div>
+            <button onClick={() => { setSelectedId(contextMenu.process.id); setContextMenu(null) }} className="w-full flex items-center gap-2 px-3 py-1.5 transition-colors" style={{ color: 'var(--ink)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--paper-2)')} onMouseLeave={(e) => (e.currentTarget.style.background = '')}>
+              <ExternalLink size={13} style={{ color: 'var(--ink-4)' }} /> Open
             </button>
-            <button onClick={() => { openCreate(contextMenu.process.id); setContextMenu(null) }} className="w-full flex items-center gap-2 px-3 py-1.5 text-slate-700 hover:bg-slate-50 transition-colors">
-              <FolderPlus size={13} className="text-slate-400" /> Add sub-process
+            <button onClick={() => { openCreate(contextMenu.process.id); setContextMenu(null) }} className="w-full flex items-center gap-2 px-3 py-1.5 transition-colors" style={{ color: 'var(--ink)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--paper-2)')} onMouseLeave={(e) => (e.currentTarget.style.background = '')}>
+              <FolderPlus size={13} style={{ color: 'var(--ink-4)' }} /> Add sub-process
             </button>
-            <div className="border-t border-slate-100 mt-1 pt-1">
+            <div className="mt-1 pt-1" style={{ borderTop: '1px solid var(--rule)' }}>
               <button onClick={() => handleDelete(contextMenu.process)} className="w-full flex items-center gap-2 px-3 py-1.5 text-red-600 hover:bg-red-50 transition-colors">
                 <Trash2 size={13} /> Delete
               </button>

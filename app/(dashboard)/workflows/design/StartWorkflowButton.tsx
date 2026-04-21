@@ -40,7 +40,8 @@ export function StartWorkflowButton({ workflowId, workflowName }: Props) {
     <Button
       size="sm"
       variant="outline"
-      className="border-green-200 text-green-700 hover:bg-green-50 gap-1"
+      className="gap-1"
+      style={{ color: 'var(--ok)', borderColor: 'var(--ok)' }}
       onClick={handleStart}
       disabled={loading}
       title={`Start a new case for ${workflowName}`}

@@ -71,7 +71,8 @@ function FieldInput({
           id={field.id}
           value={strVal}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-[2px] px-3 py-2 text-sm focus:outline-none"
+          style={{ border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)' }}
         >
           <option value="">Select...</option>
           {options.map((opt) => (
@@ -137,11 +138,11 @@ function FieldInput({
       )
     case 'section':
     case 'heading':
-      return <h3 className="font-semibold text-slate-700 text-base border-b border-slate-200 pb-2">{field.label}</h3>
+      return <h3 className="font-semibold text-base pb-2" style={{ color: 'var(--ink)', borderBottom: '1px solid var(--rule)' }}>{field.label}</h3>
     case 'paragraph':
-      return <p className="text-sm text-slate-500">{field.description ?? field.label}</p>
+      return <p className="text-sm" style={{ color: 'var(--ink-3)' }}>{field.description ?? field.label}</p>
     case 'divider':
-      return <hr className="border-slate-200" />
+      return <hr style={{ borderColor: 'var(--rule)' }} />
     default:
       return (
         <Input
@@ -193,7 +194,7 @@ export function FormRenderer({ form, onSubmit, submitting }: FormRendererProps) 
       {form.fields.map((field) => (
         <div key={field.id} className={isLayoutField(field.type) ? '' : 'space-y-1'}>
           {!isLayoutField(field.type) && field.type !== 'checkbox' && (
-            <Label htmlFor={field.id} className="font-medium text-sm text-slate-700">
+            <Label htmlFor={field.id} className="font-medium text-sm" style={{ color: 'var(--ink)' }}>
               {field.label}
               {field.validation?.some((v) => v.type === 'required') && (
                 <span className="text-red-500 ml-1">*</span>
@@ -201,7 +202,7 @@ export function FormRenderer({ form, onSubmit, submitting }: FormRendererProps) 
             </Label>
           )}
           {field.description && !isLayoutField(field.type) && (
-            <p className="text-xs text-slate-400">{field.description}</p>
+            <p className="text-xs" style={{ color: 'var(--ink-4)' }}>{field.description}</p>
           )}
           <FieldInput
             field={field}
@@ -218,7 +219,7 @@ export function FormRenderer({ form, onSubmit, submitting }: FormRendererProps) 
       ))}
 
       <div className="pt-2">
-        <Button type="submit" disabled={submitting} className="bg-blue-600 hover:bg-blue-700 text-white">
+        <Button type="submit" disabled={submitting}>
           {submitting ? 'Submitting...' : (form.settings?.submitButtonText ?? 'Submit')}
         </Button>
       </div>

@@ -67,11 +67,14 @@ interface Props {
   auditEntries: AuditEntry[]
 }
 
-const statusConfig: Record<string, { label: string; class: string; icon: React.ReactNode }> = {
-  running: { label: 'Running', class: 'bg-blue-100 text-blue-700 border-blue-200', icon: <Clock size={12} /> },
-  completed: { label: 'Completed', class: 'bg-green-100 text-green-700 border-green-200', icon: <CheckCircle2 size={12} /> },
-  cancelled: { label: 'Cancelled', class: 'bg-slate-100 text-slate-600 border-slate-200', icon: <XCircle size={12} /> },
-  error: { label: 'Error', class: 'bg-red-100 text-red-700 border-red-200', icon: <AlertCircle size={12} /> },
+const statusVariant: Record<string, 'warn' | 'ok' | 'default' | 'risk'> = {
+  running: 'warn', completed: 'ok', cancelled: 'default', error: 'risk',
+}
+const statusLabel: Record<string, string> = {
+  running: 'Running', completed: 'Completed', cancelled: 'Cancelled', error: 'Error',
+}
+const statusIcon: Record<string, React.ReactNode> = {
+  running: <Clock size={12} />, completed: <CheckCircle2 size={12} />, cancelled: <XCircle size={12} />, error: <AlertCircle size={12} />,
 }
 
 export function InstanceDetailClient({ instance, steps, activeStep, activeForm, decisionOptions, comments, auditEntries }: Props) {
@@ -79,8 +82,6 @@ export function InstanceDetailClient({ instance, steps, activeStep, activeForm, 
   const [isPending, startTransition] = useTransition()
   const [submitting, setSubmitting] = useState(false)
   const [rightTab, setRightTab] = useState<'timeline' | 'comments' | 'audit'>('timeline')
-
-  const cfg = statusConfig[instance.status] ?? statusConfig.running
 
   const handleFormSubmit = async (formData: Record<string, unknown>) => {
     setSubmitting(true)
@@ -137,25 +138,26 @@ export function InstanceDetailClient({ instance, steps, activeStep, activeForm, 
         <div>
           <button
             onClick={() => router.push('/workflows/instances')}
-            className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 mb-2 transition-colors"
+            className="flex items-center gap-1 text-xs mb-2 transition-colors"
+            style={{ color: 'var(--ink-4)' }}
           >
             <ChevronLeft size={14} />
             All Cases
           </button>
-          <h1 className="text-2xl font-semibold text-slate-900">{instance.title}</h1>
+          <h1 className="text-2xl font-semibold" style={{ color: 'var(--ink)' }}>{instance.title}</h1>
           <div className="flex items-center gap-2 mt-1">
-            <span className="flex items-center gap-1 text-xs text-slate-400">
+            <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--ink-4)' }}>
               <GitBranch size={12} />
               {instance.workflowName}
             </span>
-            <Badge variant="outline" className={`text-xs flex items-center gap-1 ${cfg.class}`}>
-              {cfg.icon}
-              {cfg.label}
+            <Badge variant={statusVariant[instance.status] ?? 'default'} className="text-xs flex items-center gap-1">
+              {statusIcon[instance.status]}
+              {statusLabel[instance.status] ?? instance.status}
             </Badge>
           </div>
         </div>
         {instance.status === 'running' && (
-          <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50" onClick={handleCancel}>
+          <Button variant="outline" size="sm" className="gap-1" style={{ color: 'var(--risk)', borderColor: 'var(--risk)' }} onClick={handleCancel}>
             Cancel case
           </Button>
         )}
@@ -165,13 +167,13 @@ export function InstanceDetailClient({ instance, steps, activeStep, activeForm, 
         {/* Active step panel */}
         <div className="lg:col-span-3 space-y-4">
           {instance.status === 'completed' && (
-            <Card className="shadow-sm border-green-200 bg-green-50">
+            <Card style={{ borderColor: 'var(--ok)', background: 'oklch(0.97 0.04 145)' }}>
               <CardContent className="p-5 flex items-center gap-3">
-                <CheckCircle2 size={20} className="text-green-600 shrink-0" />
+                <CheckCircle2 size={20} className="shrink-0" style={{ color: 'var(--ok)' }} />
                 <div>
-                  <p className="font-medium text-green-800">Case completed</p>
+                  <p className="font-medium" style={{ color: 'var(--ok)' }}>Case completed</p>
                   {instance.completedAt && (
-                    <p className="text-xs text-green-600">
+                    <p className="text-xs" style={{ color: 'var(--ok)' }}>
                       {new Date(instance.completedAt).toLocaleString('en-GB')}
                     </p>
                   )}
@@ -181,20 +183,20 @@ export function InstanceDetailClient({ instance, steps, activeStep, activeForm, 
           )}
 
           {instance.status === 'cancelled' && (
-            <Card className="shadow-sm border-slate-200 bg-slate-50">
+            <Card style={{ borderColor: 'var(--rule)', background: 'var(--paper-2)' }}>
               <CardContent className="p-5 flex items-center gap-3">
-                <XCircle size={20} className="text-slate-500 shrink-0" />
-                <p className="font-medium text-slate-600">Case cancelled</p>
+                <XCircle size={20} className="shrink-0" style={{ color: 'var(--ink-4)' }} />
+                <p className="font-medium" style={{ color: 'var(--ink-3)' }}>Case cancelled</p>
               </CardContent>
             </Card>
           )}
 
           {activeStep && instance.status === 'running' && (
-            <Card className="shadow-sm border-blue-200">
-              <CardHeader className="pb-3 border-b border-slate-100">
+            <Card style={{ borderColor: 'var(--nw-accent)' }}>
+              <CardHeader className="pb-3" style={{ borderBottom: '1px solid var(--rule)' }}>
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                  <CardTitle className="text-base font-semibold text-slate-800">
+                  <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: 'var(--nw-accent)' }} />
+                  <CardTitle className="text-base font-semibold" style={{ color: 'var(--ink)' }}>
                     {activeStep.stepName}
                   </CardTitle>
                 </div>
@@ -203,7 +205,7 @@ export function InstanceDetailClient({ instance, steps, activeStep, activeForm, 
                 {/* Decision node */}
                 {activeStep.stepType === 'decision' && (
                   <div className="space-y-3">
-                    <p className="text-sm text-slate-600">Choose a path to continue:</p>
+                    <p className="text-sm" style={{ color: 'var(--ink-3)' }}>Choose a path to continue:</p>
                     <div className="flex flex-wrap gap-2">
                       {decisionOptions.map((opt) => (
                         <Button
@@ -211,7 +213,7 @@ export function InstanceDetailClient({ instance, steps, activeStep, activeForm, 
                           variant="outline"
                           disabled={submitting || isPending}
                           onClick={() => handleDecision(opt.id)}
-                          className="border-orange-200 text-orange-700 hover:bg-orange-50"
+                          style={{ color: 'var(--warn)', borderColor: 'var(--warn)' }}
                         >
                           {opt.label}
                         </Button>
@@ -220,7 +222,6 @@ export function InstanceDetailClient({ instance, steps, activeStep, activeForm, 
                         <Button
                           disabled={submitting || isPending}
                           onClick={() => handleDecision('')}
-                          className="bg-blue-600 hover:bg-blue-700 text-white"
                         >
                           Continue
                         </Button>
@@ -241,11 +242,10 @@ export function InstanceDetailClient({ instance, steps, activeStep, activeForm, 
                 {/* Task node without form */}
                 {activeStep.stepType === 'task' && !activeForm && (
                   <div className="space-y-3">
-                    <p className="text-sm text-slate-500">No form configured for this step.</p>
+                    <p className="text-sm" style={{ color: 'var(--ink-4)' }}>No form configured for this step.</p>
                     <Button
                       disabled={submitting || isPending}
                       onClick={handleTaskNoForm}
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
                     >
                       {submitting || isPending ? 'Processing...' : 'Complete step'}
                     </Button>
@@ -257,16 +257,16 @@ export function InstanceDetailClient({ instance, steps, activeStep, activeForm, 
 
           {/* Variables */}
           {Object.keys(instance.variables).length > 0 && (
-            <Card className="shadow-sm">
+            <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold text-slate-600">Case Data</CardTitle>
+                <CardTitle className="text-sm font-semibold" style={{ color: 'var(--ink-3)' }}>Case Data</CardTitle>
               </CardHeader>
               <CardContent className="p-4 pt-0">
                 <div className="space-y-1">
                   {Object.entries(instance.variables).map(([key, val]) => (
                     <div key={key} className="flex gap-3 text-sm">
-                      <span className="font-medium text-slate-500 min-w-[120px]">{key}</span>
-                      <span className="text-slate-700">{String(val)}</span>
+                      <span className="font-medium min-w-[120px]" style={{ color: 'var(--ink-4)' }}>{key}</span>
+                      <span style={{ color: 'var(--ink-3)' }}>{String(val)}</span>
                     </div>
                   ))}
                 </div>
@@ -277,9 +277,9 @@ export function InstanceDetailClient({ instance, steps, activeStep, activeForm, 
 
         {/* Right panel: Timeline / Comments / Audit */}
         <div className="lg:col-span-2">
-          <Card className="shadow-sm">
+          <Card>
             {/* Tab strip */}
-            <div className="flex border-b border-slate-100">
+            <div className="flex" style={{ borderBottom: '1px solid var(--rule)' }}>
               {([
                 { id: 'timeline', label: 'Timeline', count: steps.length },
                 { id: 'comments', label: 'Comments', count: comments.length },
@@ -288,17 +288,18 @@ export function InstanceDetailClient({ instance, steps, activeStep, activeForm, 
                 <button
                   key={tab.id}
                   onClick={() => setRightTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-4 py-3 text-xs font-medium border-b-2 transition-colors ${
-                    rightTab === tab.id
-                      ? 'border-blue-600 text-blue-600'
-                      : 'border-transparent text-slate-500 hover:text-slate-700'
-                  }`}
+                  className="flex items-center gap-1.5 px-4 py-3 text-xs font-medium border-b-2 transition-colors"
+                  style={{
+                    borderColor: rightTab === tab.id ? 'var(--nw-accent)' : 'transparent',
+                    color: rightTab === tab.id ? 'var(--nw-accent)' : 'var(--ink-4)',
+                  }}
                 >
                   {tab.label}
                   {tab.count > 0 && (
-                    <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-                      rightTab === tab.id ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500'
-                    }`}>
+                    <span className="rounded-full px-1.5 py-0.5 text-[10px] font-medium" style={{
+                      background: rightTab === tab.id ? 'var(--accent-tint)' : 'var(--paper-3)',
+                      color: rightTab === tab.id ? 'var(--nw-accent)' : 'var(--ink-4)',
+                    }}>
                       {tab.count}
                     </span>
                   )}

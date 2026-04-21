@@ -5,6 +5,7 @@ const DEFAULTS: Record<string, string> = {
   backgroundImage: '',
   backgroundOpacity: '15',
   theme: 'default',
+  navMode: 'v1',
 }
 
 export async function GET() {

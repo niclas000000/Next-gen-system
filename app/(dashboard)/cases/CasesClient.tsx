@@ -14,6 +14,13 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
   List, Clock, CheckCircle, User, GitBranch, Bookmark, Plus, Trash2,
   ChevronDown, ChevronRight, Search, Loader2,
 } from 'lucide-react'
@@ -35,11 +42,16 @@ interface SavedView {
   filters: Record<string, string>
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  running:   'bg-blue-100 text-blue-700 border-blue-200',
-  completed: 'bg-green-100 text-green-700 border-green-200',
-  cancelled: 'bg-slate-100 text-slate-600 border-slate-200',
-  error:     'bg-red-100 text-red-700 border-red-200',
+interface Workflow {
+  id: string
+  name: string
+}
+
+const STATUS_VARIANT: Record<string, 'warn' | 'ok' | 'default' | 'risk'> = {
+  running:   'warn',
+  completed: 'ok',
+  cancelled: 'default',
+  error:     'risk',
 }
 
 const PREDEFINED_VIEWS = [
@@ -55,10 +67,12 @@ function ViewNav({
   savedViews,
   onDelete,
   onSave,
+  onStartCase,
 }: {
   savedViews: SavedView[]
   onDelete: (id: string) => void
   onSave: () => void
+  onStartCase: () => void
 }) {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -78,58 +92,80 @@ function ViewNav({
   const isSavedActive = (v: SavedView) => searchParams.get('saved') === v.id
 
   return (
-    <aside className="w-56 shrink-0 border-r border-slate-200 bg-white flex flex-col">
-      <div className="p-3 border-b border-slate-100">
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Views</p>
+    <aside className="w-52 shrink-0 flex flex-col" style={{ background: 'var(--paper-2)', borderRight: '1px solid var(--rule)' }}>
+      <div className="p-2" style={{ borderBottom: '1px solid var(--rule)' }}>
+        <Button className="w-full gap-1.5 text-sm" onClick={onStartCase}>
+          <Plus size={14} /> Start case
+        </Button>
       </div>
-      <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
-        {PREDEFINED_VIEWS.map((v) => (
-          <button
-            key={v.href}
-            onClick={() => router.push(v.href)}
-            className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors text-left ${
-              isCurrent(v.href)
-                ? 'bg-blue-600 text-white'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            {v.icon}
-            {v.label}
-          </button>
-        ))}
+      <div className="px-3 pt-3 pb-1">
+        <p className="mono-meta text-[10px]">Views</p>
+      </div>
+      <nav className="flex-1 overflow-y-auto sidebar-scroll p-1.5 space-y-0.5">
+        {PREDEFINED_VIEWS.map((v) => {
+          const active = isCurrent(v.href)
+          return (
+            <button
+              key={v.href}
+              onClick={() => router.push(v.href)}
+              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-[2px] text-sm transition-colors text-left"
+              style={{
+                color: active ? 'var(--nw-accent)' : 'var(--ink-3)',
+                background: active ? 'var(--accent-tint)' : '',
+                fontWeight: active ? '500' : '400',
+                borderLeft: active ? '2px solid var(--nw-accent)' : '2px solid transparent',
+              }}
+              onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = 'var(--paper-3)' }}
+              onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = '' }}
+            >
+              {v.icon}
+              {v.label}
+            </button>
+          )
+        })}
 
         {savedViews.length > 0 && (
           <>
             <div className="pt-3 pb-1 px-2">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Saved views</p>
+              <p className="mono-meta text-[10px]">Saved views</p>
             </div>
-            {savedViews.map((v) => (
-              <div key={v.id} className="flex items-center group">
-                <button
-                  onClick={() => router.push(`/cases?saved=${v.id}`)}
-                  className={`flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors text-left ${
-                    isSavedActive(v)
-                      ? 'bg-blue-600 text-white'
-                      : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  <Bookmark size={14} />
-                  <span className="truncate">{v.name}</span>
-                </button>
-                <button
-                  onClick={() => onDelete(v.id)}
-                  className="p-1 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
-                >
-                  <Trash2 size={12} />
-                </button>
-              </div>
-            ))}
+            {savedViews.map((v) => {
+              const active = isSavedActive(v)
+              return (
+                <div key={v.id} className="flex items-center group">
+                  <button
+                    onClick={() => router.push(`/cases?saved=${v.id}`)}
+                    className="flex-1 flex items-center gap-2 px-2 py-1.5 rounded-[2px] text-sm transition-colors text-left"
+                    style={{
+                      color: active ? 'var(--nw-accent)' : 'var(--ink-3)',
+                      background: active ? 'var(--accent-tint)' : '',
+                      fontWeight: active ? '500' : '400',
+                      borderLeft: active ? '2px solid var(--nw-accent)' : '2px solid transparent',
+                    }}
+                    onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = 'var(--paper-3)' }}
+                    onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = '' }}
+                  >
+                    <Bookmark size={14} />
+                    <span className="truncate">{v.name}</span>
+                  </button>
+                  <button
+                    onClick={() => onDelete(v.id)}
+                    className="p-1 opacity-0 group-hover:opacity-100 transition-all"
+                    style={{ color: 'var(--ink-4)' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--risk)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-4)')}
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              )
+            })}
           </>
         )}
       </nav>
-      <div className="p-3 border-t border-slate-100">
-        <Button variant="outline" size="sm" className="w-full text-xs" onClick={onSave}>
-          <Plus size={12} className="mr-1" /> Save current view
+      <div className="p-2" style={{ borderTop: '1px solid var(--rule)' }}>
+        <Button variant="secondary" size="sm" className="w-full text-xs gap-1" onClick={onSave}>
+          <Plus size={12} /> Save current view
         </Button>
       </div>
     </aside>
@@ -150,14 +186,17 @@ function GroupedByWorkflow({ instances }: { instances: Instance[] }) {
   return (
     <div className="space-y-3">
       {Object.entries(groups).map(([wfName, items]) => (
-        <div key={wfName} className="border border-slate-200/80 rounded-lg overflow-hidden backdrop-blur-sm">
+        <div key={wfName} className="rounded-[2px] overflow-hidden" style={{ border: '1px solid var(--rule)' }}>
           <button
             onClick={() => setOpen((p) => ({ ...p, [wfName]: !p[wfName] }))}
-            className="w-full flex items-center gap-2 px-4 py-2.5 bg-white/85 hover:bg-white/95 transition-colors text-left"
+            className="w-full flex items-center gap-2 px-4 py-2.5 transition-colors text-left"
+            style={{ background: 'var(--paper-2)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--paper-3)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--paper-2)')}
           >
-            {open[wfName] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-            <span className="font-medium text-sm text-slate-700">{wfName}</span>
-            <Badge variant="outline" className="ml-auto text-xs">{items.length}</Badge>
+            {open[wfName] ? <ChevronDown size={14} style={{ color: 'var(--ink-3)' }} /> : <ChevronRight size={14} style={{ color: 'var(--ink-3)' }} />}
+            <span className="font-medium text-sm" style={{ color: 'var(--ink)' }}>{wfName}</span>
+            <Badge variant="default" className="ml-auto text-xs">{items.length}</Badge>
           </button>
           {open[wfName] && (
             <div className="divide-y divide-slate-100/80">
@@ -174,16 +213,19 @@ function CaseRow({ inst }: { inst: Instance }) {
   return (
     <Link
       href={`/workflows/instances/${inst.id}`}
-      className="flex items-center gap-4 px-4 py-3 bg-white/85 hover:bg-white/95 transition-colors"
+      className="flex items-center gap-4 px-4 py-3 transition-colors"
+      style={{ background: 'var(--surface)' }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--paper-2)')}
+      onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--surface)')}
     >
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-slate-800 truncate">{inst.title}</p>
-        <p className="text-xs text-slate-400 mt-0.5">{inst.workflow.name}</p>
+        <p className="text-sm font-medium truncate" style={{ color: 'var(--ink)' }}>{inst.title}</p>
+        <p className="text-xs mt-0.5" style={{ color: 'var(--ink-4)' }}>{inst.workflow.name}</p>
       </div>
-      <Badge variant="outline" className={`text-xs shrink-0 ${STATUS_COLORS[inst.status] ?? ''}`}>
+      <Badge variant={STATUS_VARIANT[inst.status] ?? 'default'} className="text-xs shrink-0">
         {inst.status}
       </Badge>
-      <span className="text-xs text-slate-400 shrink-0">
+      <span className="text-xs shrink-0" style={{ color: 'var(--ink-4)' }}>
         {formatDistanceToNow(new Date(inst.updatedAt), { addSuffix: true })}
       </span>
     </Link>
@@ -199,6 +241,11 @@ export function CasesClient({ userId }: { userId: string }) {
   const [saveDialogOpen, setSaveDialogOpen] = useState(false)
   const [saveName, setSaveName] = useState('')
   const [saving, setSaving] = useState(false)
+  const [startDialogOpen, setStartDialogOpen] = useState(false)
+  const [workflows, setWorkflows] = useState<Workflow[]>([])
+  const [selectedWorkflow, setSelectedWorkflow] = useState('')
+  const [caseTitle, setCaseTitle] = useState('')
+  const [starting, setStarting] = useState(false)
 
   const status = searchParams.get('status')
   const view = searchParams.get('view')
@@ -211,6 +258,35 @@ export function CasesClient({ userId }: { userId: string }) {
   }, [])
 
   useEffect(() => { fetchViews() }, [fetchViews])
+
+  const openStartDialog = useCallback(async () => {
+    const res = await fetch('/api/workflows')
+    const data = await res.json()
+    setWorkflows((data.workflows ?? []).filter((w: Workflow & { status: string }) => w.status === 'published'))
+    setSelectedWorkflow('')
+    setCaseTitle('')
+    setStartDialogOpen(true)
+  }, [])
+
+  const router = useRouter()
+
+  const handleStartCase = async () => {
+    if (!selectedWorkflow) return
+    setStarting(true)
+    const wf = workflows.find((w) => w.id === selectedWorkflow)
+    const res = await fetch('/api/instances', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        workflowId: selectedWorkflow,
+        title: caseTitle.trim() || wf?.name,
+      }),
+    })
+    const data = await res.json()
+    setStarting(false)
+    setStartDialogOpen(false)
+    if (data.instance?.id) router.push(`/workflows/instances/${data.instance.id}`)
+  }
 
   useEffect(() => {
     setLoading(true)
@@ -266,13 +342,14 @@ export function CasesClient({ userId }: { userId: string }) {
         savedViews={savedViews}
         onDelete={deleteView}
         onSave={() => setSaveDialogOpen(true)}
+        onStartCase={openStartDialog}
       />
 
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
         <div className="flex items-center justify-between gap-4">
-          <h1 className="text-2xl font-semibold text-slate-900">Cases</h1>
+          <h1 className="text-2xl font-semibold" style={{ color: 'var(--ink)' }}>Cases</h1>
           <div className="relative w-64">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--ink-4)' }} />
             <Input
               placeholder="Search cases…"
               value={search}
@@ -284,14 +361,14 @@ export function CasesClient({ userId }: { userId: string }) {
 
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 size={24} className="animate-spin text-slate-400" />
+            <Loader2 size={24} className="animate-spin" style={{ color: 'var(--ink-4)' }} />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-20 text-slate-400 text-sm">No cases found.</div>
+          <div className="text-center py-20 text-sm" style={{ color: 'var(--ink-4)' }}>No cases found.</div>
         ) : byWorkflow ? (
           <GroupedByWorkflow instances={filtered} />
         ) : (
-          <div className="border border-slate-200/80 rounded-lg divide-y divide-slate-100/80 backdrop-blur-sm overflow-hidden">
+          <div className="rounded-[2px] overflow-hidden" style={{ border: '1px solid var(--rule)' }}>
             {filtered.map((inst) => <CaseRow key={inst.id} inst={inst} />)}
           </div>
         )}
@@ -313,6 +390,48 @@ export function CasesClient({ userId }: { userId: string }) {
             <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleSave} disabled={saving || !saveName.trim()}>
               {saving ? 'Saving…' : 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={startDialogOpen} onOpenChange={setStartDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Start case</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-1">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium" style={{ color: 'var(--ink-3)' }}>Workflow</label>
+              {workflows.length === 0 ? (
+                <p className="text-sm" style={{ color: 'var(--ink-4)' }}>No published workflows available.</p>
+              ) : (
+                <Select value={selectedWorkflow} onValueChange={setSelectedWorkflow}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a workflow…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {workflows.map((w) => (
+                      <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium" style={{ color: 'var(--ink-3)' }}>Title <span style={{ color: 'var(--ink-4)' }}>(optional)</span></label>
+              <Input
+                placeholder="Leave blank to use workflow name"
+                value={caseTitle}
+                onChange={(e) => setCaseTitle(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleStartCase()}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setStartDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleStartCase} disabled={starting || !selectedWorkflow}>
+              {starting ? <><Loader2 size={14} className="animate-spin mr-1.5" />Starting…</> : 'Start case'}
             </Button>
           </DialogFooter>
         </DialogContent>

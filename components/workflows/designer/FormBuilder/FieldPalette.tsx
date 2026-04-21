@@ -47,18 +47,21 @@ export function FieldPalette() {
 
   return (
     <div className="flex-1 p-3 space-y-4">
-      <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wide">Add field</p>
+      <p className="mono-meta text-[10px]">Add field</p>
       {groups.map((group) => (
         <div key={group.label}>
-          <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-1">{group.label}</p>
+          <p className="mono-meta text-[10px] mb-1" style={{ color: 'var(--ink-4)' }}>{group.label}</p>
           <div className="space-y-0.5">
             {group.fields.map((f) => (
               <button
                 key={f.type}
                 onClick={() => addField(f.type)}
-                className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded text-xs text-slate-600 hover:bg-white hover:shadow-sm transition-all text-left"
+                className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[2px] text-xs transition-colors text-left"
+                style={{ color: 'var(--ink-3)' }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--paper-3)' }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '' }}
               >
-                <span className="text-slate-400">{f.icon}</span>
+                <span style={{ color: 'var(--ink-4)' }}>{f.icon}</span>
                 {f.label}
               </button>
             ))}

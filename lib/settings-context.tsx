@@ -6,9 +6,10 @@ interface AppSettings {
   backgroundImage: string
   backgroundOpacity: string
   theme: string
+  navMode: 'v1' | 'v2'
 }
 
-const defaults: AppSettings = { backgroundImage: '', backgroundOpacity: '15', theme: 'default' }
+const defaults: AppSettings = { backgroundImage: '', backgroundOpacity: '15', theme: 'default', navMode: 'v1' }
 
 const SettingsContext = createContext<{
   settings: AppSettings

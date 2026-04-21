@@ -118,15 +118,15 @@ export function GroupsClient({ initialGroups, users }: Props) {
             <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Group name" />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Description <span className="text-slate-400 font-normal">(optional)</span></Label>
+            <Label className="text-xs">Description <span className="font-normal" style={{ color: 'var(--ink-4)' }}>(optional)</span></Label>
             <Input value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="Brief description" />
           </div>
           {editGroup && (
             <div className="space-y-2">
               <Label className="text-xs">Members</Label>
-              <div className="border border-slate-200 rounded-lg divide-y divide-slate-100 max-h-48 overflow-y-auto">
+              <div className="rounded-[2px] max-h-48 overflow-y-auto" style={{ border: '1px solid var(--rule)' }}>
                 {users.map((u) => (
-                  <label key={u.id} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 cursor-pointer">
+                  <label key={u.id} className="flex items-center gap-3 px-3 py-2 hover:bg-[var(--paper-2)] cursor-pointer" style={{ borderBottom: '1px solid var(--rule)' }}>
                     <input
                       type="checkbox"
                       checked={selectedMembers.includes(u.id)}
@@ -134,23 +134,23 @@ export function GroupsClient({ initialGroups, users }: Props) {
                       className="rounded"
                     />
                     <Avatar className="h-6 w-6 shrink-0">
-                      <AvatarFallback className="bg-blue-100 text-blue-700 text-[10px]">{initials(u.name)}</AvatarFallback>
+                      <AvatarFallback className="text-[10px]" style={{ background: 'var(--paper-3)', color: 'var(--ink-3)' }}>{initials(u.name)}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="text-sm font-medium text-slate-700">{u.name}</p>
-                      <p className="text-xs text-slate-400">{u.email}</p>
+                      <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{u.name}</p>
+                      <p className="text-xs" style={{ color: 'var(--ink-4)' }}>{u.email}</p>
                     </div>
                   </label>
                 ))}
               </div>
-              <p className="text-xs text-slate-400">{selectedMembers.length} member{selectedMembers.length !== 1 ? 's' : ''} selected</p>
+              <p className="text-xs" style={{ color: 'var(--ink-4)' }}>{selectedMembers.length} member{selectedMembers.length !== 1 ? 's' : ''} selected</p>
             </div>
           )}
-          {error && <p className="text-xs text-red-500">{error}</p>}
+          {error && <p className="text-xs" style={{ color: 'var(--risk)' }}>{error}</p>}
         </div>
         <DialogFooter>
           <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
-          <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={onSave} disabled={saving || !form.name}>
+          <Button size="sm" onClick={onSave} disabled={saving || !form.name}>
             {saving ? 'Saving...' : 'Save'}
           </Button>
         </DialogFooter>
@@ -162,24 +162,24 @@ export function GroupsClient({ initialGroups, users }: Props) {
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Groups</h1>
-          <p className="text-sm text-slate-500 mt-1">Organize users into groups for assignment and permissions.</p>
+          <h1 className="text-2xl font-semibold" style={{ color: 'var(--ink)' }}>Groups</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--ink-4)' }}>Organize users into groups for assignment and permissions.</p>
         </div>
-        <Button size="sm" className="bg-blue-600 hover:bg-blue-700 gap-1.5" onClick={openCreate}>
+        <Button size="sm" className="gap-1.5" onClick={openCreate}>
           <Plus size={14} />
           New group
         </Button>
       </div>
 
       {groups.length === 0 ? (
-        <Card className="shadow-sm">
+        <Card>
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="p-4 rounded-full bg-slate-100 mb-4">
-              <Users size={24} className="text-slate-400" />
+            <div className="p-4 rounded-full mb-4" style={{ background: 'var(--paper-3)' }}>
+              <Users size={24} style={{ color: 'var(--ink-4)' }} />
             </div>
-            <p className="font-medium text-slate-700">No groups yet</p>
-            <p className="text-sm text-slate-400 mt-1 mb-4">Create groups to organize users by department or role.</p>
-            <Button size="sm" className="bg-blue-600 hover:bg-blue-700 gap-1.5" onClick={openCreate}>
+            <p className="font-medium" style={{ color: 'var(--ink)' }}>No groups yet</p>
+            <p className="text-sm mt-1 mb-4" style={{ color: 'var(--ink-4)' }}>Create groups to organize users by department or role.</p>
+            <Button size="sm" className="gap-1.5" onClick={openCreate}>
               <Plus size={14} />
               New group
             </Button>
@@ -190,34 +190,34 @@ export function GroupsClient({ initialGroups, users }: Props) {
           {groups.map((g) => {
             const memberUsers = users.filter((u) => g.members.includes(u.id))
             return (
-              <Card key={g.id} className="shadow-sm hover:shadow-md transition-all duration-200">
+              <Card key={g.id} className="transition-all duration-200 hover:border-[var(--nw-accent)]">
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="p-2 rounded-lg bg-blue-50 shrink-0">
-                      <Users size={16} className="text-blue-600" />
+                    <div className="p-2 rounded-[2px] shrink-0" style={{ background: 'var(--paper-3)' }}>
+                      <Users size={16} style={{ color: 'var(--nw-accent)' }} />
                     </div>
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-blue-600" onClick={() => openEdit(g)}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" style={{ color: 'var(--ink-4)' }} onClick={() => openEdit(g)}>
                         <Pencil size={13} />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-red-500" onClick={() => handleDelete(g)}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" style={{ color: 'var(--ink-4)' }} onClick={() => handleDelete(g)}>
                         <Trash2 size={13} />
                       </Button>
                     </div>
                   </div>
-                  <CardTitle className="text-sm font-semibold text-slate-800 mt-2">{g.name}</CardTitle>
-                  {g.description && <p className="text-xs text-slate-500">{g.description}</p>}
+                  <CardTitle className="text-sm font-semibold mt-2" style={{ color: 'var(--ink)' }}>{g.name}</CardTitle>
+                  {g.description && <p className="text-xs" style={{ color: 'var(--ink-4)' }}>{g.description}</p>}
                 </CardHeader>
                 <CardContent className="pt-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <div className="flex -space-x-1">
                       {memberUsers.slice(0, 4).map((u) => (
                         <Avatar key={u.id} className="h-6 w-6 border-2 border-white">
-                          <AvatarFallback className="bg-blue-100 text-blue-700 text-[9px]">{initials(u.name)}</AvatarFallback>
+                          <AvatarFallback className="text-[9px]" style={{ background: 'var(--paper-3)', color: 'var(--ink-3)' }}>{initials(u.name)}</AvatarFallback>
                         </Avatar>
                       ))}
                     </div>
-                    <Badge variant="outline" className="text-[10px] text-slate-500 border-slate-200">
+                    <Badge variant="default" className="text-[10px]">
                       {g.members.length} member{g.members.length !== 1 ? 's' : ''}
                     </Badge>
                   </div>

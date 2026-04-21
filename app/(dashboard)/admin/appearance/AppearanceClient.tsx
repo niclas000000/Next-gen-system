@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useSettings } from '@/lib/settings-context'
-import { Check, ImageIcon, Trash2 } from 'lucide-react'
+import { Check, ImageIcon, Trash2, Sidebar, Grip } from 'lucide-react'
 
 interface Props {
   initialSettings: Record<string, string>
@@ -33,10 +33,11 @@ export function AppearanceClient({ initialSettings }: Props) {
   const { reload } = useSettings()
   const [imageUrl, setImageUrl] = useState(initialSettings.backgroundImage ?? '')
   const [opacity, setOpacity] = useState(initialSettings.backgroundOpacity ?? '15')
+  const [navMode, setNavMode] = useState<'v1' | 'v2'>((initialSettings.navMode as 'v1' | 'v2') ?? 'v1')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
-  const save = async (overrides?: Partial<{ backgroundImage: string; backgroundOpacity: string }>) => {
+  const save = async (overrides?: Partial<{ backgroundImage: string; backgroundOpacity: string; navMode: string }>) => {
     setSaving(true)
     await fetch('/api/settings', {
       method: 'PATCH',
@@ -44,12 +45,18 @@ export function AppearanceClient({ initialSettings }: Props) {
       body: JSON.stringify({
         backgroundImage: overrides?.backgroundImage ?? imageUrl,
         backgroundOpacity: overrides?.backgroundOpacity ?? opacity,
+        navMode: overrides?.navMode ?? navMode,
       }),
     })
     setSaving(false)
     setSaved(true)
     reload()
     setTimeout(() => setSaved(false), 2000)
+  }
+
+  const handleNavMode = async (mode: 'v1' | 'v2') => {
+    setNavMode(mode)
+    await save({ navMode: mode })
   }
 
   const handleOpacityChange = async (val: string) => {
@@ -74,11 +81,59 @@ export function AppearanceClient({ initialSettings }: Props) {
         <p className="text-sm text-slate-500 mt-1">Customize the look and feel of the application.</p>
       </div>
 
-      {/* Background image */}
-      <Card className="shadow-sm">
+      {/* Navigation style */}
+      <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <ImageIcon size={16} className="text-slate-500" /> Background Image
+            <Sidebar size={16} className="text-[var(--ink-3)]" /> Navigation style
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm mb-4" style={{ color: 'var(--ink-3)' }}>
+            Choose between the classic labeled sidebar or the compact icon rail with Ctrl+K command palette for power users.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {/* V1 */}
+            <button
+              onClick={() => handleNavMode('v1')}
+              className="rounded-[2px] border-2 p-4 text-left transition-all"
+              style={{
+                borderColor: navMode === 'v1' ? 'var(--nw-accent)' : 'var(--rule)',
+                background: navMode === 'v1' ? 'var(--accent-tint)' : 'var(--surface)',
+              }}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Sidebar size={16} style={{ color: navMode === 'v1' ? 'var(--nw-accent)' : 'var(--ink-3)' }} />
+                <span className="font-medium text-sm" style={{ color: 'var(--ink)' }}>Sidebar</span>
+                {navMode === 'v1' && <Check size={13} className="ml-auto" style={{ color: 'var(--nw-accent)' }} />}
+              </div>
+              <p className="text-xs" style={{ color: 'var(--ink-4)' }}>Labeled rail, discoverable. Default for most users.</p>
+            </button>
+            {/* V2 */}
+            <button
+              onClick={() => handleNavMode('v2')}
+              className="rounded-[2px] border-2 p-4 text-left transition-all"
+              style={{
+                borderColor: navMode === 'v2' ? 'var(--nw-accent)' : 'var(--rule)',
+                background: navMode === 'v2' ? 'var(--accent-tint)' : 'var(--surface)',
+              }}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Grip size={16} style={{ color: navMode === 'v2' ? 'var(--nw-accent)' : 'var(--ink-3)' }} />
+                <span className="font-medium text-sm" style={{ color: 'var(--ink)' }}>Icon rail + Ctrl+K</span>
+                {navMode === 'v2' && <Check size={13} className="ml-auto" style={{ color: 'var(--nw-accent)' }} />}
+              </div>
+              <p className="text-xs" style={{ color: 'var(--ink-4)' }}>Compact icon rail, keyboard-first. For power users.</p>
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Background image */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <ImageIcon size={16} style={{ color: 'var(--ink-3)' }} /> Background Image
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-5">
@@ -181,12 +236,8 @@ export function AppearanceClient({ initialSettings }: Props) {
 
       {/* Save button */}
       <div className="flex justify-end gap-3">
-        <Button
-          className={`min-w-[120px] ${saved ? 'bg-green-600 hover:bg-green-600' : 'bg-blue-600 hover:bg-blue-700'}`}
-          onClick={() => save()}
-          disabled={saving}
-        >
-          {saved ? <><Check size={14} className="mr-1.5" />Saved!</> : saving ? 'Saving…' : 'Save changes'}
+        <Button onClick={() => save()} disabled={saving} className="min-w-[120px]">
+          {saved ? <><Check size={14} className="mr-1" />Saved!</> : saving ? 'Saving…' : 'Save changes'}
         </Button>
       </div>
     </div>

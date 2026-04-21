@@ -35,10 +35,14 @@ interface Props {
   groups: Group[]
 }
 
-const roleConfig: Record<string, { label: string; class: string; icon: React.ReactNode }> = {
-  admin:   { label: 'Admin',   class: 'bg-purple-100 text-purple-700 border-purple-200', icon: <ShieldCheck size={11} /> },
-  manager: { label: 'Manager', class: 'bg-blue-100 text-blue-700 border-blue-200',       icon: <Shield size={11} /> },
-  user:    { label: 'User',    class: 'bg-slate-100 text-slate-600 border-slate-200',     icon: <User size={11} /> },
+const roleVariant: Record<string, 'warn' | 'ok' | 'default'> = {
+  admin: 'warn', manager: 'ok', user: 'default',
+}
+const roleLabel: Record<string, string> = {
+  admin: 'Admin', manager: 'Manager', user: 'User',
+}
+const roleIcon: Record<string, React.ReactNode> = {
+  admin: <ShieldCheck size={11} />, manager: <Shield size={11} />, user: <User size={11} />,
 }
 
 const SYSTEM_ID = 'system-placeholder-user'
@@ -138,10 +142,10 @@ export function UsersClient({ initialUsers, groups }: Props) {
     <div className="space-y-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Users</h1>
-          <p className="text-sm text-slate-500 mt-1">Manage user accounts and roles.</p>
+          <h1 className="text-2xl font-semibold" style={{ color: 'var(--ink)' }}>Users</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--ink-4)' }}>Manage user accounts and roles.</p>
         </div>
-        <Button size="sm" className="bg-blue-600 hover:bg-blue-700 gap-1.5" onClick={openInvite}>
+        <Button size="sm" className="gap-1.5" onClick={openInvite}>
           <UserPlus size={14} />
           Add user
         </Button>
@@ -149,7 +153,7 @@ export function UsersClient({ initialUsers, groups }: Props) {
 
       {/* Search */}
       <div className="relative max-w-sm">
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--ink-4)' }} />
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -161,17 +165,16 @@ export function UsersClient({ initialUsers, groups }: Props) {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         {(['admin', 'manager', 'user'] as const).map((role) => {
-          const cfg = roleConfig[role]
           const count = users.filter((u) => u.id !== SYSTEM_ID && u.role === role).length
           return (
-            <Card key={role} className="shadow-sm">
+            <Card key={role}>
               <CardContent className="p-4 flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${cfg.class.replace('text-', 'bg-').replace('-700', '-100').replace('-600', '-100')}`}>
-                  {cfg.icon}
+                <div className="p-2 rounded-[2px]" style={{ background: 'var(--paper-3)', color: 'var(--ink-3)' }}>
+                  {roleIcon[role]}
                 </div>
                 <div>
-                  <p className="text-2xl font-semibold text-slate-800">{count}</p>
-                  <p className="text-xs text-slate-500">{cfg.label}{count !== 1 ? 's' : ''}</p>
+                  <p className="text-2xl font-semibold" style={{ color: 'var(--ink)' }}>{count}</p>
+                  <p className="text-xs" style={{ color: 'var(--ink-4)' }}>{roleLabel[role]}{count !== 1 ? 's' : ''}</p>
                 </div>
               </CardContent>
             </Card>
@@ -180,62 +183,61 @@ export function UsersClient({ initialUsers, groups }: Props) {
       </div>
 
       {/* User list */}
-      <Card className="shadow-sm">
+      <Card>
         <CardContent className="p-0">
           {filtered.length === 0 ? (
-            <div className="flex items-center justify-center py-12 text-slate-400 text-sm">
+            <div className="flex items-center justify-center py-12 text-sm" style={{ color: 'var(--ink-4)' }}>
               {search ? 'No users match your search.' : 'No users found.'}
             </div>
           ) : (
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-100">
-                  <th className="text-left text-xs font-medium text-slate-500 px-5 py-3">User</th>
-                  <th className="text-left text-xs font-medium text-slate-500 px-4 py-3">Role</th>
-                  <th className="text-left text-xs font-medium text-slate-500 px-4 py-3 hidden md:table-cell">Groups</th>
-                  <th className="text-left text-xs font-medium text-slate-500 px-4 py-3 hidden lg:table-cell">Added</th>
-                  <th className="text-left text-xs font-medium text-slate-500 px-4 py-3">Active</th>
+                <tr style={{ borderBottom: '1px solid var(--rule)' }}>
+                  <th className="text-left text-xs font-medium px-5 py-3" style={{ color: 'var(--ink-4)' }}>User</th>
+                  <th className="text-left text-xs font-medium px-4 py-3" style={{ color: 'var(--ink-4)' }}>Role</th>
+                  <th className="text-left text-xs font-medium px-4 py-3 hidden md:table-cell" style={{ color: 'var(--ink-4)' }}>Groups</th>
+                  <th className="text-left text-xs font-medium px-4 py-3 hidden lg:table-cell" style={{ color: 'var(--ink-4)' }}>Added</th>
+                  <th className="text-left text-xs font-medium px-4 py-3" style={{ color: 'var(--ink-4)' }}>Active</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody>
                 {filtered.map((u) => {
-                  const cfg = roleConfig[u.role] ?? roleConfig.user
                   const userGroups = groups.filter((g) => u.groups.includes(g.id))
                   return (
-                    <tr key={u.id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={u.id} className="hover:bg-[var(--paper-2)] transition-colors" style={{ borderBottom: '1px solid var(--rule)' }}>
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8 shrink-0">
-                            <AvatarFallback className="bg-blue-100 text-blue-700 text-xs font-medium">
+                            <AvatarFallback className="text-xs font-medium" style={{ background: 'var(--paper-3)', color: 'var(--ink-3)' }}>
                               {initials(u.name)}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-medium text-slate-800 text-sm">{u.name}</p>
-                            <p className="text-xs text-slate-400">{u.email}</p>
+                            <p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>{u.name}</p>
+                            <p className="text-xs" style={{ color: 'var(--ink-4)' }}>{u.email}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <Badge variant="outline" className={`text-xs flex items-center gap-1 w-fit ${cfg.class}`}>
-                          {cfg.icon}
-                          {cfg.label}
+                        <Badge variant={roleVariant[u.role] ?? 'default'} className="text-xs flex items-center gap-1 w-fit">
+                          {roleIcon[u.role]}
+                          {roleLabel[u.role] ?? u.role}
                         </Badge>
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell">
                         <div className="flex flex-wrap gap-1">
                           {userGroups.slice(0, 2).map((g) => (
-                            <span key={g.id} className="text-[10px] bg-slate-100 text-slate-600 rounded px-1.5 py-0.5">{g.name}</span>
+                            <span key={g.id} className="text-[10px] rounded-full px-1.5 py-0.5" style={{ background: 'var(--paper-3)', color: 'var(--ink-3)' }}>{g.name}</span>
                           ))}
                           {userGroups.length > 2 && (
-                            <span className="text-[10px] text-slate-400">+{userGroups.length - 2}</span>
+                            <span className="text-[10px]" style={{ color: 'var(--ink-4)' }}>+{userGroups.length - 2}</span>
                           )}
-                          {userGroups.length === 0 && <span className="text-xs text-slate-300">—</span>}
+                          {userGroups.length === 0 && <span className="text-xs" style={{ color: 'var(--ink-4)' }}>—</span>}
                         </div>
                       </td>
                       <td className="px-4 py-3 hidden lg:table-cell">
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs" style={{ color: 'var(--ink-4)' }}>
                           {formatDistanceToNow(new Date(u.createdAt), { addSuffix: true })}
                         </span>
                       </td>
@@ -250,7 +252,8 @@ export function UsersClient({ initialUsers, groups }: Props) {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-slate-400 hover:text-blue-600"
+                            className="h-7 w-7"
+                            style={{ color: 'var(--ink-4)' }}
                             onClick={() => openEdit(u)}
                           >
                             <Pencil size={13} />
@@ -258,7 +261,8 @@ export function UsersClient({ initialUsers, groups }: Props) {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-slate-400 hover:text-red-500"
+                            className="h-7 w-7"
+                            style={{ color: 'var(--ink-4)' }}
                             onClick={() => handleDelete(u)}
                           >
                             <Trash2 size={13} />
@@ -294,7 +298,8 @@ export function UsersClient({ initialUsers, groups }: Props) {
               <select
                 value={form.role}
                 onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
-                className="w-full rounded-md border border-slate-200 text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-[2px] text-sm px-3 py-2 focus:outline-none focus:ring-2"
+                style={{ border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)' }}
               >
                 <option value="user">User</option>
                 <option value="manager">Manager</option>
@@ -302,14 +307,14 @@ export function UsersClient({ initialUsers, groups }: Props) {
               </select>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">New password <span className="text-slate-400 font-normal">(leave blank to keep current)</span></Label>
+              <Label className="text-xs">New password <span className="font-normal" style={{ color: 'var(--ink-4)' }}>(leave blank to keep current)</span></Label>
               <Input type="password" value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} placeholder="••••••••" />
             </div>
-            {error && <p className="text-xs text-red-500">{error}</p>}
+            {error && <p className="text-xs" style={{ color: 'var(--risk)' }}>{error}</p>}
           </div>
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setEditUser(null)}>Cancel</Button>
-            <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={handleSaveEdit} disabled={saving}>
+            <Button size="sm" onClick={handleSaveEdit} disabled={saving}>
               {saving ? 'Saving...' : 'Save changes'}
             </Button>
           </DialogFooter>
@@ -340,18 +345,19 @@ export function UsersClient({ initialUsers, groups }: Props) {
               <select
                 value={form.role}
                 onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
-                className="w-full rounded-md border border-slate-200 text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-[2px] text-sm px-3 py-2 focus:outline-none focus:ring-2"
+                style={{ border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)' }}
               >
                 <option value="user">User</option>
                 <option value="manager">Manager</option>
                 <option value="admin">Admin</option>
               </select>
             </div>
-            {error && <p className="text-xs text-red-500">{error}</p>}
+            {error && <p className="text-xs" style={{ color: 'var(--risk)' }}>{error}</p>}
           </div>
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setShowInvite(false)}>Cancel</Button>
-            <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={handleInvite} disabled={saving || !form.name || !form.email || !form.password}>
+            <Button size="sm" onClick={handleInvite} disabled={saving || !form.name || !form.email || !form.password}>
               {saving ? 'Creating...' : 'Create user'}
             </Button>
           </DialogFooter>

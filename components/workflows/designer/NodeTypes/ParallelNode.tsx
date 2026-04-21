@@ -10,23 +10,18 @@ export function ParallelNode({ id, data, selected }: NodeProps<ParallelNodeData>
   const isSplit = data?.type === 'split'
   return (
     <div className={cn(
-      'relative rounded-lg border-2 bg-white shadow-md px-4 py-3 min-w-[160px] max-w-[220px]',
-      selected ? 'border-teal-500 shadow-teal-100 shadow-lg' : 'border-teal-300'
-    )}>
+      'relative rounded-[2px] border-2 bg-white px-4 py-3 min-w-[160px] max-w-[220px]',
+      selected ? 'border-teal-500' : 'border-teal-300'
+    )} style={{ boxShadow: selected ? '0 0 0 3px rgba(20,184,166,0.15)' : 'none' }}>
       {selected && <NodeDeleteButton id={id} />}
-      {!isSplit && <Handle type="target" position={Position.Top} className="!bg-teal-500 !w-3 !h-3" />}
-      {isSplit && (
-        <>
-          <Handle type="target" position={Position.Top} className="!bg-teal-500 !w-3 !h-3" />
-        </>
-      )}
+      <Handle type="target" position={Position.Top} className="!bg-teal-500 !w-3 !h-3" />
       <div className="flex items-center gap-2">
-        <div className="p-1.5 rounded bg-teal-50 shrink-0">
+        <div className="p-1.5 rounded-[2px] bg-teal-50 shrink-0">
           <GitMerge size={14} className="text-teal-500" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-slate-700 truncate">{data?.name || (isSplit ? 'Parallel Split' : 'Parallel Join')}</p>
-          <p className="text-[10px] text-slate-400 uppercase tracking-wide">{isSplit ? 'Split' : 'Join'}</p>
+          <p className="text-xs font-semibold truncate" style={{ color: 'var(--ink)' }}>{data?.name || (isSplit ? 'Parallel Split' : 'Parallel Join')}</p>
+          <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--ink-4)' }}>{isSplit ? 'Split' : 'Join'}</p>
         </div>
       </div>
       <Handle type="source" position={Position.Bottom} className="!bg-teal-500 !w-3 !h-3" />

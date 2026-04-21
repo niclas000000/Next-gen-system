@@ -8,10 +8,8 @@ import { GitBranch, Clock } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import type { WorkflowNode } from '@/types/workflow'
 
-const statusColors: Record<string, string> = {
-  draft: 'bg-slate-100 text-slate-600 border-slate-200',
-  published: 'bg-green-100 text-green-700 border-green-200',
-  archived: 'bg-orange-100 text-orange-700 border-orange-200',
+const statusVariant: Record<string, 'default' | 'ok' | 'warn'> = {
+  draft: 'default', published: 'ok', archived: 'warn',
 }
 
 export default async function DesignWorkflowsPage() {
@@ -24,20 +22,20 @@ export default async function DesignWorkflowsPage() {
     <div className="space-y-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Workflows</h1>
-          <p className="text-sm text-slate-500 mt-1">Design and manage your workflow definitions.</p>
+          <h1 className="text-2xl font-semibold" style={{ color: 'var(--ink)' }}>Workflows</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--ink-4)' }}>Design and manage your workflow definitions.</p>
         </div>
         <NewWorkflowButton />
       </div>
 
       {workflows.length === 0 ? (
-        <Card className="shadow-sm">
+        <Card>
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="p-4 rounded-full bg-slate-100 mb-4">
-              <GitBranch size={24} className="text-slate-400" />
+            <div className="p-4 rounded-full mb-4" style={{ background: 'var(--paper-3)' }}>
+              <GitBranch size={24} style={{ color: 'var(--ink-4)' }} />
             </div>
-            <p className="font-medium text-slate-700">No workflows yet</p>
-            <p className="text-sm text-slate-400 mt-1 mb-4">Create your first workflow to get started.</p>
+            <p className="font-medium" style={{ color: 'var(--ink)' }}>No workflows yet</p>
+            <p className="text-sm mt-1 mb-4" style={{ color: 'var(--ink-4)' }}>Create your first workflow to get started.</p>
             <NewWorkflowButton />
           </CardContent>
         </Card>
@@ -48,21 +46,21 @@ export default async function DesignWorkflowsPage() {
             return (
               <div key={wf.id} className="relative group">
                 <Link href={`/workflows/design/${wf.id}`}>
-                  <Card className="shadow-sm hover:shadow-md hover:border-blue-200 transition-all duration-200 cursor-pointer h-full">
+                  <Card className="transition-all duration-200 cursor-pointer h-full hover:border-[var(--nw-accent)]">
                     <CardContent className="p-5">
                       <div className="flex items-start justify-between gap-2 mb-3">
-                        <div className="p-2 rounded-lg bg-blue-50 shrink-0">
-                          <GitBranch size={16} className="text-blue-600" />
+                        <div className="p-2 rounded-[2px] shrink-0" style={{ background: 'var(--paper-2)' }}>
+                          <GitBranch size={16} style={{ color: 'var(--nw-accent)' }} />
                         </div>
-                        <Badge variant="outline" className={`text-xs ${statusColors[wf.status] ?? ''}`}>
+                        <Badge variant={statusVariant[wf.status] ?? 'default'} className="text-xs">
                           {wf.status}
                         </Badge>
                       </div>
-                      <p className="font-semibold text-slate-800 text-sm leading-tight">{wf.name}</p>
+                      <p className="font-semibold text-sm leading-tight" style={{ color: 'var(--ink)' }}>{wf.name}</p>
                       {wf.description && (
-                        <p className="text-xs text-slate-500 mt-1 line-clamp-2">{wf.description}</p>
+                        <p className="text-xs mt-1 line-clamp-2" style={{ color: 'var(--ink-3)' }}>{wf.description}</p>
                       )}
-                      <div className="flex items-center gap-3 mt-4 text-xs text-slate-400">
+                      <div className="flex items-center gap-3 mt-4 text-xs" style={{ color: 'var(--ink-4)' }}>
                         <span className="flex items-center gap-1">
                           <GitBranch size={11} />
                           {nodeCount} nodes

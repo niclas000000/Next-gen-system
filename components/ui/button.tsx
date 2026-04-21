@@ -1,29 +1,35 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
-
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        // Northwind: ink fill — the primary commit action
+        default:
+          "bg-[#111111] text-white hover:bg-[#2d2d2d] rounded-[2px]",
+        // Danger: risk tint
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+          "bg-[oklch(0.96_0.04_25)] border border-[oklch(0.56_0.17_25)] text-[oklch(0.42_0.17_25)] hover:bg-[oklch(0.93_0.06_25)] rounded-[2px]",
+        // Default/secondary: surface with rule border
         outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+          "bg-white border border-[#E8E6DF] text-[#111111] hover:bg-[#F2F1EC] rounded-[2px]",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+          "bg-[#F2F1EC] border border-[#E8E6DF] text-[#54524D] hover:bg-[#E8E6DF] rounded-[2px]",
+        // Ghost: no border
+        ghost:
+          "text-[#54524D] hover:bg-[#F2F1EC] hover:text-[#111111] rounded-[2px]",
+        link:
+          "text-[oklch(0.52_0.08_200)] underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
+        default: "h-[34px] px-3.5 py-1.5",
+        sm:      "h-7 px-2.5 py-1 text-xs",
+        lg:      "h-10 px-5",
+        icon:    "h-[34px] w-[34px]",
       },
     },
     defaultVariants: {

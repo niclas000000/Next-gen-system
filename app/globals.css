@@ -4,56 +4,123 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
-  }
+    /* ── Northwind design tokens ─────────────────────────────── */
+    --paper:   #FAFAF7;
+    --paper-2: #F2F1EC;
+    --paper-3: #E8E6DF;
+    --surface: #FFFFFF;
+    --surface-ink: #121212;
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --ink:   #111111;
+    --ink-2: #2D2D2D;
+    --ink-3: #54524D;
+    --ink-4: #8A877F;
+
+    --nw-accent:  oklch(0.52 0.08 200);
+    --accent-tint: oklch(0.96 0.02 200);
+
+    --ok:   oklch(0.55 0.12 145);
+    --warn: oklch(0.68 0.14 70);
+    --risk: oklch(0.56 0.17 25);
+
+    --ok-tint:   oklch(0.96 0.04 145);
+    --warn-tint: oklch(0.97 0.04 70);
+    --risk-tint: oklch(0.96 0.04 25);
+
+    --rule:      #E8E6DF;
+    --rule-soft: #F0EEE8;
+
+    /* ── shadcn/ui compatibility vars ───────────────────────── */
+    --background: 60 20% 98%;
+    --foreground:  0 0% 7%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 7%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 7%;
+    --primary: 195 40% 32%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 40 15% 94%;
+    --secondary-foreground: 0 0% 7%;
+    --muted: 40 15% 94%;
+    --muted-foreground: 30 5% 45%;
+    --accent: 40 15% 94%;
+    --accent-foreground: 0 0% 7%;
+    --destructive: 15 60% 42%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 40 12% 88%;
+    --input:  40 12% 88%;
+    --ring:   195 40% 32%;
+    --radius: 2px;
   }
 }
 
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
   }
+
+  html {
+    font-size: 15px;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-inter, 'Inter', system-ui, sans-serif);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display, 'Inter Tight', 'Inter', system-ui, sans-serif);
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer utilities {
+  .mono-meta {
+    font-family: var(--font-mono, 'JetBrains Mono', ui-monospace, monospace);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-4);
+  }
+
+  /* Thin, hover-only scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+  *:hover {
+    scrollbar-color: rgba(90, 86, 79, 0.25) transparent;
+  }
+
+  .sidebar-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+  .sidebar-scroll:hover {
+    scrollbar-color: rgba(90, 86, 79, 0.3) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 99px;
+  }
+  *:hover::-webkit-scrollbar-thumb {
+    background: rgba(90, 86, 79, 0.25);
+  }
+  *:hover::-webkit-scrollbar-thumb:hover {
+    background: rgba(90, 86, 79, 0.45);
   }
 }

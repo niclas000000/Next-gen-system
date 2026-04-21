@@ -1,18 +1,15 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
-import { Card, CardContent } from '@/components/ui/card'
+import { useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Textarea } from '@/components/ui/textarea'
-import { RichTextEditor } from '@/components/ui/rich-text-editor'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
-  FileText, Plus, Search, Pencil, Trash2, Eye,
-  FileCheck, FileClock, FileX,
+  FileText, Plus, Search, Clock, User, FileInput, FileCheck,
+  FileClock, FileX, FileQuestion, Loader2, Library, Archive,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -22,371 +19,287 @@ interface Doc {
   description: string | null
   category: string | null
   tags: string[]
-  content?: string | null
   status: string
-  version: number
+  version: string
   createdAt: string
   updatedAt: string
   author: { id: string; name: string }
+  documentType: { id: string; name: string; prefix: string } | null
+}
+
+interface DocType {
+  id: string
+  name: string
+  prefix: string
+  format: string
 }
 
 interface Props {
   initialDocuments: Doc[]
+  documentTypes: DocType[]
+  currentStatus: string | null
+  currentView: string | null
+  userId: string
 }
 
-const statusConfig: Record<string, { label: string; class: string; icon: React.ReactNode }> = {
-  draft:     { label: 'Draft',     class: 'bg-slate-100 text-slate-600 border-slate-200',    icon: <FileClock size={11} /> },
-  published: { label: 'Published', class: 'bg-green-100 text-green-700 border-green-200',    icon: <FileCheck size={11} /> },
-  archived:  { label: 'Archived',  class: 'bg-orange-100 text-orange-700 border-orange-200', icon: <FileX size={11} /> },
+const statusConfig: Record<string, { label: string; variant: 'default' | 'ok' | 'warn' | 'risk'; icon: React.ReactNode }> = {
+  draft:     { label: 'Draft',     variant: 'default', icon: <FileClock size={10} /> },
+  pending:   { label: 'Pending',   variant: 'warn',    icon: <Clock size={10} /> },
+  published: { label: 'Published', variant: 'ok',      icon: <FileCheck size={10} /> },
+  archived:  { label: 'Archived',  variant: 'default', icon: <FileX size={10} /> },
 }
 
-type FormState = { title: string; description: string; category: string; tags: string; status: string; content: string }
-const emptyForm: FormState = { title: '', description: '', category: '', tags: '', status: 'draft', content: '' }
+const PREDEFINED_VIEWS = [
+  { label: 'Library',          href: '/documents',                  icon: <Library size={14} /> },
+  { label: 'Pending Approval', href: '/documents?status=pending',   icon: <Clock size={14} /> },
+  { label: 'My Documents',     href: '/documents?view=mine',        icon: <User size={14} /> },
+  { label: 'Drafts',           href: '/documents?status=draft',     icon: <FileInput size={14} /> },
+  { label: 'Archived',         href: '/documents?status=archived',  icon: <Archive size={14} /> },
+]
 
-const CATEGORIES = ['Policy', 'Procedure', 'Template', 'Guide', 'Report', 'Contract', 'Other']
-
-export function DocumentsClient({ initialDocuments }: Props) {
+function ViewNav({ onNew }: { onNew: () => void }) {
+  const searchParams = useSearchParams()
   const router = useRouter()
-  const [, startTransition] = useTransition()
-  const [docs, setDocs] = useState(initialDocuments)
-  const [search, setSearch] = useState('')
-  const [filterStatus, setFilterStatus] = useState('all')
-  const [editDoc, setEditDoc] = useState<Doc | null>(null)
-  const [showCreate, setShowCreate] = useState(false)
-  const [viewDoc, setViewDoc] = useState<Doc | null>(null)
-  const [form, setForm] = useState<FormState>(emptyForm)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
 
-  const refresh = () => startTransition(() => router.refresh())
-
-  const filtered = docs.filter((d) => {
-    const matchSearch = !search ||
-      d.title.toLowerCase().includes(search.toLowerCase()) ||
-      d.description?.toLowerCase().includes(search.toLowerCase()) ||
-      d.tags.some((t) => t.toLowerCase().includes(search.toLowerCase()))
-    const matchStatus = filterStatus === 'all' || d.status === filterStatus
-    return matchSearch && matchStatus
-  })
-
-  const openCreate = () => {
-    setForm(emptyForm)
-    setError('')
-    setShowCreate(true)
+  const isCurrent = (href: string) => {
+    const url = new URL(href, 'http://x')
+    const status = url.searchParams.get('status')
+    const view = url.searchParams.get('view')
+    return (
+      url.pathname === '/documents' &&
+      (status ?? '') === (searchParams.get('status') ?? '') &&
+      (view ?? '') === (searchParams.get('view') ?? '')
+    )
   }
-
-  const openEdit = (d: Doc) => {
-    setForm({
-      title: d.title,
-      description: d.description ?? '',
-      category: d.category ?? '',
-      tags: d.tags.join(', '),
-      status: d.status,
-      content: d.content ?? '',
-    })
-    setError('')
-    setEditDoc(d)
-  }
-
-  const tagsArray = (raw: string) => raw.split(',').map((t) => t.trim()).filter(Boolean)
-
-  const handleCreate = async () => {
-    setSaving(true)
-    setError('')
-    const res = await fetch('/api/documents', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: form.title,
-        description: form.description || null,
-        category: form.category || null,
-        tags: tagsArray(form.tags),
-        status: form.status,
-        content: form.content || null,
-      }),
-    })
-    setSaving(false)
-    if (!res.ok) { setError((await res.json() as { error: string }).error); return }
-    const { document: doc } = await res.json() as { document: Doc }
-    setDocs((prev) => [doc, ...prev])
-    setShowCreate(false)
-    refresh()
-  }
-
-  const handleSaveEdit = async () => {
-    if (!editDoc) return
-    setSaving(true)
-    setError('')
-    const res = await fetch(`/api/documents/${editDoc.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: form.title,
-        description: form.description || null,
-        category: form.category || null,
-        tags: tagsArray(form.tags),
-        status: form.status,
-        content: form.content || null,
-      }),
-    })
-    setSaving(false)
-    if (!res.ok) { setError((await res.json() as { error: string }).error); return }
-    const { document: doc } = await res.json() as { document: Doc }
-    setDocs((prev) => prev.map((d) => d.id === doc.id ? doc : d))
-    setEditDoc(null)
-    refresh()
-  }
-
-  const handleDelete = async (d: Doc) => {
-    if (!confirm(`Delete "${d.title}"?`)) return
-    setDocs((prev) => prev.filter((x) => x.id !== d.id))
-    await fetch(`/api/documents/${d.id}`, { method: 'DELETE' })
-    refresh()
-  }
-
-  const formFields = (onSave: () => void, onClose: () => void) => (
-    <div className="space-y-4 py-2">
-      <div className="space-y-1">
-        <Label className="text-xs">Title</Label>
-        <Input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="Document title" />
-      </div>
-      <div className="space-y-1">
-        <Label className="text-xs">Description <span className="text-slate-400 font-normal">(optional)</span></Label>
-        <Textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="Brief description" rows={2} />
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1">
-          <Label className="text-xs">Category</Label>
-          <select
-            value={form.category}
-            onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-            className="w-full rounded-md border border-slate-200 text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">No category</option>
-            {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Status</Label>
-          <select
-            value={form.status}
-            onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
-            className="w-full rounded-md border border-slate-200 text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="draft">Draft</option>
-            <option value="published">Published</option>
-            <option value="archived">Archived</option>
-          </select>
-        </div>
-      </div>
-      <div className="space-y-1">
-        <Label className="text-xs">Tags <span className="text-slate-400 font-normal">(comma-separated)</span></Label>
-        <Input value={form.tags} onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))} placeholder="quality, iso9001, hr" />
-      </div>
-      <div className="space-y-1">
-        <Label className="text-xs">Content <span className="text-slate-400 font-normal">(optional)</span></Label>
-        <RichTextEditor
-          content={form.content}
-          onChange={(html) => setForm((f) => ({ ...f, content: html }))}
-          minHeight="160px"
-        />
-      </div>
-      {error && <p className="text-xs text-red-500">{error}</p>}
-      <DialogFooter>
-        <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
-        <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={onSave} disabled={saving || !form.title}>
-          {saving ? 'Saving...' : 'Save'}
-        </Button>
-      </DialogFooter>
-    </div>
-  )
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Documents</h1>
-          <p className="text-sm text-slate-500 mt-1">Policies, procedures, templates and more.</p>
-        </div>
-        <Button size="sm" className="bg-blue-600 hover:bg-blue-700 gap-1.5" onClick={openCreate}>
-          <Plus size={14} />
+    <aside className="w-52 shrink-0 flex flex-col" style={{ background: 'var(--paper-2)', borderRight: '1px solid var(--rule)' }}>
+      <div className="p-3" style={{ borderBottom: '1px solid var(--rule)' }}>
+        <Button onClick={onNew} className="w-full gap-2 h-8 text-xs">
+          <Plus size={13} />
           New document
         </Button>
       </div>
-
-      {/* Filters */}
-      <div className="flex gap-3 flex-wrap">
-        <div className="relative flex-1 max-w-sm">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search documents..." className="pl-8 text-sm" />
-        </div>
-        <div className="flex gap-1">
-          {['all', 'draft', 'published', 'archived'].map((s) => (
+      <div className="px-3 pt-3 pb-1">
+        <p className="mono-meta text-[10px]">Views</p>
+      </div>
+      <nav className="flex-1 overflow-y-auto sidebar-scroll p-1.5 space-y-0.5">
+        {PREDEFINED_VIEWS.map((v) => {
+          const active = isCurrent(v.href)
+          return (
             <button
-              key={s}
-              onClick={() => setFilterStatus(s)}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                filterStatus === s
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white border border-slate-200 text-slate-600 hover:border-blue-300'
-              }`}
+              key={v.href}
+              onClick={() => router.push(v.href)}
+              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-[2px] text-sm transition-colors text-left"
+              style={{
+                color: active ? 'var(--nw-accent)' : 'var(--ink-3)',
+                background: active ? 'var(--accent-tint)' : '',
+                fontWeight: active ? '500' : '400',
+                borderLeft: active ? '2px solid var(--nw-accent)' : '2px solid transparent',
+              }}
+              onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = 'var(--paper-3)' }}
+              onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = '' }}
             >
-              {s === 'all' ? 'All' : statusConfig[s]?.label ?? s}
+              {v.icon}
+              {v.label}
             </button>
-          ))}
-        </div>
-      </div>
+          )
+        })}
+      </nav>
+    </aside>
+  )
+}
 
-      {/* Stats row */}
-      <div className="flex gap-4 text-sm text-slate-500">
-        <span>{docs.length} total</span>
-        <span>·</span>
-        <span className="text-green-600">{docs.filter((d) => d.status === 'published').length} published</span>
-        <span>·</span>
-        <span className="text-slate-400">{docs.filter((d) => d.status === 'draft').length} drafts</span>
-      </div>
+function NewDocumentDialog({
+  open,
+  onClose,
+  documentTypes,
+}: {
+  open: boolean
+  onClose: () => void
+  documentTypes: DocType[]
+}) {
+  const router = useRouter()
+  const [title, setTitle] = useState('')
+  const [typeId, setTypeId] = useState(documentTypes[0]?.id ?? '')
+  const [creating, setCreating] = useState(false)
 
-      {/* Document list */}
-      {filtered.length === 0 ? (
-        <Card className="shadow-sm">
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="p-4 rounded-full bg-slate-100 mb-4">
-              <FileText size={24} className="text-slate-400" />
+  const handleCreate = async () => {
+    if (!title.trim()) return
+    setCreating(true)
+    try {
+      const res = await fetch('/api/documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: title.trim(), documentTypeId: typeId || null, status: 'draft' }),
+      })
+      const data = await res.json() as { document: { id: string } }
+      onClose()
+      router.push(`/documents/${data.document.id}`)
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>New document</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 pt-1">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-slate-700">Title</label>
+            <Input
+              placeholder="Document title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              autoFocus
+              className="h-9 text-sm"
+              onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+            />
+          </div>
+          {documentTypes.length > 0 && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-slate-700">Document type</label>
+              <select
+                value={typeId}
+                onChange={(e) => setTypeId(e.target.value)}
+                className="w-full h-9 px-3 text-sm border border-slate-200 rounded-lg bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">No type</option>
+                {documentTypes.map((t) => (
+                  <option key={t.id} value={t.id}>{t.prefix} — {t.name}</option>
+                ))}
+              </select>
             </div>
-            <p className="font-medium text-slate-700">{search ? 'No documents match your search.' : 'No documents yet.'}</p>
-            {!search && (
-              <Button size="sm" className="mt-4 bg-blue-600 hover:bg-blue-700 gap-1.5" onClick={openCreate}>
-                <Plus size={14} /> New document
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-2">
-          {filtered.map((d) => {
-            const cfg = statusConfig[d.status] ?? statusConfig.draft
-            return (
-              <Card key={d.id} className="shadow-sm hover:shadow-md transition-all duration-200">
-                <CardContent className="p-4 flex items-center gap-4">
-                  <div className="p-2 rounded-lg bg-slate-50 shrink-0">
-                    <FileText size={18} className="text-slate-500" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-medium text-slate-800 text-sm">{d.title}</p>
-                      <Badge variant="outline" className={`text-xs flex items-center gap-1 ${cfg.class}`}>
-                        {cfg.icon}{cfg.label}
-                      </Badge>
-                      {d.category && (
-                        <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-100 rounded px-1.5 py-0.5">{d.category}</span>
-                      )}
-                    </div>
-                    {d.description && (
-                      <p className="text-xs text-slate-500 mt-0.5 truncate">{d.description}</p>
-                    )}
-                    <div className="flex items-center gap-3 mt-1 text-[10px] text-slate-400">
-                      <span>{d.author.name}</span>
-                      <span>·</span>
-                      <span>v{d.version}</span>
-                      <span>·</span>
-                      <span>{formatDistanceToNow(new Date(d.updatedAt), { addSuffix: true })}</span>
-                      {d.tags.length > 0 && (
-                        <>
-                          <span>·</span>
-                          <span>{d.tags.slice(0, 3).join(', ')}{d.tags.length > 3 ? '…' : ''}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-blue-600" onClick={() => setViewDoc(d)} title="View">
-                      <Eye size={13} />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-blue-600" onClick={() => openEdit(d)} title="Edit">
-                      <Pencil size={13} />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-red-500" onClick={() => handleDelete(d)} title="Delete">
-                      <Trash2 size={13} />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-      )}
-
-      {/* Create dialog */}
-      <Dialog open={showCreate} onOpenChange={(o) => !o && setShowCreate(false)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>New document</DialogTitle></DialogHeader>
-          {formFields(handleCreate, () => setShowCreate(false))}
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit dialog */}
-      <Dialog open={!!editDoc} onOpenChange={(o) => !o && setEditDoc(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Edit document</DialogTitle></DialogHeader>
-          {formFields(handleSaveEdit, () => setEditDoc(null))}
-        </DialogContent>
-      </Dialog>
-
-      {/* View dialog */}
-      <Dialog open={!!viewDoc} onOpenChange={(o) => !o && setViewDoc(null)}>
-        <DialogContent className="max-w-2xl">
-          {viewDoc && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  {viewDoc.title}
-                  <Badge variant="outline" className={`text-xs ${statusConfig[viewDoc.status]?.class}`}>
-                    {statusConfig[viewDoc.status]?.label}
-                  </Badge>
-                </DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-2">
-                <div className="flex gap-4 text-xs text-slate-500">
-                  <span>By {viewDoc.author.name}</span>
-                  <span>·</span>
-                  <span>Version {viewDoc.version}</span>
-                  {viewDoc.category && <><span>·</span><span>{viewDoc.category}</span></>}
-                  <span>·</span>
-                  <span>Updated {formatDistanceToNow(new Date(viewDoc.updatedAt), { addSuffix: true })}</span>
-                </div>
-                {viewDoc.description && (
-                  <p className="text-sm text-slate-600">{viewDoc.description}</p>
-                )}
-                {viewDoc.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {viewDoc.tags.map((tag) => (
-                      <span key={tag} className="text-[10px] bg-slate-100 text-slate-600 rounded px-2 py-0.5">{tag}</span>
-                    ))}
-                  </div>
-                )}
-                <div className="border-t border-slate-100 pt-4">
-                  {viewDoc.content ? (
-                    <RichTextEditor
-                      content={viewDoc.content}
-                      editable={false}
-                      minHeight="120px"
-                    />
-                  ) : (
-                    <p className="text-sm text-slate-400 italic">No content.</p>
-                  )}
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" size="sm" onClick={() => { setViewDoc(null); openEdit(viewDoc) }}>
-                  <Pencil size={13} className="mr-1.5" /> Edit
-                </Button>
-                <Button size="sm" onClick={() => setViewDoc(null)}>Close</Button>
-              </DialogFooter>
-            </>
           )}
-        </DialogContent>
-      </Dialog>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <Button
+              onClick={handleCreate}
+              disabled={!title.trim() || creating}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {creating && <Loader2 size={14} className="animate-spin mr-1" />}
+              Create
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+export function DocumentsClient({
+  initialDocuments,
+  documentTypes,
+  currentStatus,
+  currentView,
+}: Props) {
+  const [search, setSearch] = useState('')
+  const [showNew, setShowNew] = useState(false)
+
+  const filtered = initialDocuments.filter((d) => {
+    if (!search) return true
+    return (
+      d.title.toLowerCase().includes(search.toLowerCase()) ||
+      d.description?.toLowerCase().includes(search.toLowerCase()) ||
+      d.tags.some((t) => t.toLowerCase().includes(search.toLowerCase())) ||
+      d.documentType?.name.toLowerCase().includes(search.toLowerCase())
+    )
+  })
+
+  const pageTitle =
+    currentStatus === 'pending'  ? 'Pending Approval' :
+    currentStatus === 'draft'    ? 'Drafts' :
+    currentStatus === 'archived' ? 'Archived' :
+    currentView === 'mine'       ? 'My Documents' :
+    'Document Library'
+
+  return (
+    <div className="flex -m-6 h-[calc(100vh-56px)]">
+      {/* Left panel — same pattern as Cases */}
+      <ViewNav onNew={() => setShowNew(true)} />
+
+      {/* Right panel — document list */}
+      <div className="flex-1 flex flex-col overflow-hidden" style={{ background: 'var(--paper)' }}>
+        {/* Toolbar */}
+        <div className="flex items-center gap-3 px-5 py-2.5 shrink-0" style={{ background: 'var(--surface)', borderBottom: '1px solid var(--rule)' }}>
+          <h2 className="text-sm font-semibold flex-1" style={{ color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>{pageTitle}</h2>
+          <div className="relative">
+            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--ink-4)' }} />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search…"
+              className="pl-8 h-7 text-xs w-44"
+            />
+          </div>
+          <span className="text-xs shrink-0 mono-meta">{filtered.length} doc{filtered.length !== 1 ? 's' : ''}</span>
+        </div>
+
+        {/* List */}
+        <div className="flex-1 overflow-y-auto p-4">
+          {filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <FileQuestion size={32} className="text-slate-300 mb-3" />
+              <p className="text-slate-500 font-medium text-sm">
+                {search ? 'No documents match your search.' : 'No documents here yet.'}
+              </p>
+              {!search && (
+                <Button size="sm" className="mt-3 bg-blue-600 hover:bg-blue-700 gap-1.5" onClick={() => setShowNew(true)}>
+                  <Plus size={13} /> New document
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              {filtered.map((doc) => {
+                const cfg = statusConfig[doc.status] ?? statusConfig.draft
+                return (
+                  <Link
+                    key={doc.id}
+                    href={`/documents/${doc.id}`}
+                    className="flex items-center gap-3 px-4 py-3 bg-white border border-[#E8E6DF] rounded-[2px] hover:border-[oklch(0.52_0.08_200)] transition-all group"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-medium text-[#111] group-hover:text-[oklch(0.52_0.08_200)] transition-colors truncate">
+                          {doc.documentType && (
+                            <span className="font-mono text-xs text-[#8A877F] mr-1.5">{doc.documentType.prefix}</span>
+                          )}
+                          {doc.title}
+                        </p>
+                        <Badge variant={cfg.variant} className="text-[10px] flex items-center gap-1 shrink-0">
+                          {cfg.icon}{cfg.label}
+                        </Badge>
+                        {doc.documentType && (
+                          <span className="text-[10px] bg-[var(--accent-tint)] text-[oklch(0.42_0.08_200)] border border-[oklch(0.80_0.05_200)] rounded-full px-2 py-0.5 shrink-0">
+                            {doc.documentType.name}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5" style={{ color: 'var(--ink-4)', fontSize: '11px' }}>
+                        <span>{doc.author.name}</span>
+                        <span>·</span>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px' }}>v{doc.version}</span>
+                        <span>·</span>
+                        <span>{formatDistanceToNow(new Date(doc.updatedAt), { addSuffix: true })}</span>
+                        {doc.tags.length > 0 && (
+                          <><span>·</span><span>{doc.tags.slice(0, 2).join(', ')}{doc.tags.length > 2 ? '…' : ''}</span></>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <NewDocumentDialog open={showNew} onClose={() => setShowNew(false)} documentTypes={documentTypes} />
     </div>
   )
 }

@@ -73,10 +73,11 @@ export function FormDesigner({ form }: { form: FormData }) {
   return (
     <div className="flex flex-col h-full -m-6">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 h-14 border-b border-slate-200 bg-white shrink-0">
+      <div className="flex items-center gap-3 px-4 h-14 shrink-0" style={{ borderBottom: '1px solid var(--rule)', background: 'var(--surface)' }}>
         <button
           onClick={() => router.push('/design/forms')}
-          className="text-slate-400 hover:text-slate-700 transition-colors"
+          className="transition-colors"
+          style={{ color: 'var(--ink-4)' }}
           aria-label="Back to forms"
         >
           <ArrowLeft size={18} />
@@ -107,7 +108,8 @@ export function FormDesigner({ form }: { form: FormData }) {
 
         <Button
           size="sm"
-          className={`h-8 text-xs gap-1.5 min-w-[90px] ${saved ? 'bg-green-600 hover:bg-green-600' : 'bg-blue-600 hover:bg-blue-700'}`}
+          className="h-8 text-xs gap-1.5 min-w-[90px]"
+          style={saved ? { background: 'var(--ok)', color: '#fff' } : {}}
           onClick={() => saveToApi()}
           disabled={saving}
         >
@@ -124,17 +126,17 @@ export function FormDesigner({ form }: { form: FormData }) {
       {/* Designer body */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left: field palette */}
-        <div className="w-52 border-r border-slate-200 bg-slate-50 flex flex-col shrink-0 overflow-y-auto">
+        <div className="w-52 flex flex-col shrink-0 overflow-y-auto" style={{ borderRight: '1px solid var(--rule)', background: 'var(--paper-2)' }}>
           <FieldPalette />
         </div>
 
         {/* Center: field list or preview */}
-        <div className="flex-1 overflow-y-auto bg-slate-50">
+        <div className="flex-1 overflow-y-auto" style={{ background: 'var(--paper)' }}>
           {showPreview ? <FormPreview /> : <FieldList />}
         </div>
 
         {/* Right: field properties */}
-        <div className="w-64 border-l border-slate-200 bg-white overflow-y-auto shrink-0">
+        <div className="w-64 overflow-y-auto shrink-0" style={{ borderLeft: '1px solid var(--rule)', background: 'var(--surface)' }}>
           <FieldProperties />
         </div>
       </div>

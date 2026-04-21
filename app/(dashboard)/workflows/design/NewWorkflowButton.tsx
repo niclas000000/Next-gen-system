@@ -55,7 +55,7 @@ export function NewWorkflowButton() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="gap-1.5 bg-blue-600 hover:bg-blue-700">
+        <Button size="sm" className="gap-1.5">
           <Plus size={15} />
           New Workflow
         </Button>
@@ -76,20 +76,20 @@ export function NewWorkflowButton() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Description <span className="text-slate-400 font-normal">(optional)</span></Label>
+            <Label>Description <span className="font-normal" style={{ color: 'var(--ink-4)' }}>(optional)</span></Label>
             <Input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Brief description"
             />
           </div>
-          {error && <p className="text-xs text-red-500">{error}</p>}
+          {error && <p className="text-xs" style={{ color: 'var(--risk)' }}>{error}</p>}
         </div>
         <DialogFooter>
           <Button variant="outline" size="sm" onClick={() => setOpen(false)} disabled={loading}>
             Cancel
           </Button>
-          <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={handleCreate} disabled={loading}>
+          <Button size="sm" onClick={handleCreate} disabled={loading}>
             {loading ? 'Creating…' : 'Create'}
           </Button>
         </DialogFooter>

@@ -25,17 +25,18 @@ export function DesignerTabs() {
   return (
     <div className="flex flex-col flex-1 overflow-hidden min-h-0">
       {/* Tab strip */}
-      <div className="flex border-b border-slate-200 bg-white shrink-0 px-3">
+      <div className="flex shrink-0 px-3" style={{ borderBottom: '1px solid var(--rule)', background: 'var(--surface)' }}>
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={cn(
-              'px-4 py-2.5 text-sm font-medium border-b-2 transition-colors',
-              activeTab === tab.id
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            )}
+            className="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors"
+            style={{
+              borderBottomColor: activeTab === tab.id ? 'var(--nw-accent)' : 'transparent',
+              color: activeTab === tab.id ? 'var(--nw-accent)' : 'var(--ink-4)',
+            }}
+            onMouseEnter={(e) => { if (activeTab !== tab.id) e.currentTarget.style.color = 'var(--ink)' }}
+            onMouseLeave={(e) => { if (activeTab !== tab.id) e.currentTarget.style.color = 'var(--ink-4)' }}
           >
             {tab.label}
           </button>
@@ -47,7 +48,7 @@ export function DesignerTabs() {
         {activeTab === 'canvas' && (
           <>
             <WorkflowCanvas />
-            <div className="w-72 border-l border-slate-200 bg-white overflow-y-auto shrink-0">
+            <div className="w-72 overflow-y-auto shrink-0" style={{ borderLeft: '1px solid var(--rule)', background: 'var(--surface)' }}>
               {selectedNodeId ? (
                 <NodeProperties nodeId={selectedNodeId} />
               ) : selectedEdgeId ? (

@@ -29,6 +29,8 @@ model User {
   processesCreated  Process[]          @relation("ProcessCreator")
   savedViews        SavedView[]
   forms             Form[]
+  documentVersions  DocumentVersion[]  @relation("VersionAuthor")
+  readReceipts      ReadReceipt[]      @relation("ReadReceiptUser")
 }
 
 model Group {
@@ -50,8 +52,18 @@ model Document {
   fileName    String?
   fileSize    Int?
   mimeType    String?
-  status      String   @default("draft") // draft, published, archived
-  version     Int      @default(1)
+  status      String   @default("draft") // draft, pending, published, archived
+  version     String   @default("0.1")
+
+  // Document type & metadata
+  documentTypeId     String?
+  documentType       DocumentType? @relation(fields: [documentTypeId], references: [id])
+  properties         Json          @default("{}")  // Type-specific metadata values
+  roles              Json          @default("{}")  // { authorId, reviewerIds, approverIds, ownerId }
+  changeDescription  String?
+  validFrom          DateTime?
+  validTo            DateTime?
+  requireReadReceipt Boolean       @default(false)
 
   createdBy   String
   author      User     @relation("DocumentAuthor", fields: [createdBy], references: [id])
@@ -60,7 +72,10 @@ model Document {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  processes   ProcessDocument[]
+  processes    ProcessDocument[]
+  approvals    DocumentApproval[]
+  versions     DocumentVersion[]
+  readReceipts ReadReceipt[]
 }
 
 model Workflow {
@@ -313,4 +328,99 @@ model ProcessWorkflow {
   workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
 
   @@id([processId, workflowId])
+}
+
+model DocumentType {
+  id                 String        @id @default(cuid())
+  name               String
+  prefix             String        @unique
+  format             String        @default("richtext") // richtext | file
+  propertyPackage    Json          @default("[]")       // FormField[] — reuses form-builder field schema
+  approvalFlowId     String?
+  approvalFlow       ApprovalFlow? @relation(fields: [approvalFlowId], references: [id])
+  requireReadReceipt Boolean       @default(false)
+  requireChangeDesc  Boolean       @default(true)
+  documents          Document[]
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+}
+
+model ApprovalFlow {
+  id            String         @id @default(cuid())
+  name          String
+  phases        Json           @default("[]") // [{ id, name, role, rule: 'any'|'all', deadlineDays, order }]
+  documentTypes DocumentType[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model DocumentApproval {
+  id          String   @id @default(cuid())
+  documentId  String
+  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  phase       String   // phase name from the flow
+  status      String   @default("pending") // pending | approved | rejected
+  assignedTo  String[] // user IDs
+  responses   Json     @default("[]")      // [{ userId, decision, comment, at }]
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+}
+
+model DocumentVersion {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  version    String   // "0.1", "1.0", "1.1", "2.0"
+  content    String?  // snapshot of rich text content
+  properties Json     @default("{}") // snapshot of type-specific metadata
+  changeDesc String
+  createdBy  String
+  author     User     @relation("VersionAuthor", fields: [createdBy], references: [id])
+  createdAt  DateTime @default(now())
+}
+
+model ReadReceipt {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation("ReadReceiptUser", fields: [userId], references: [id])
+  readAt     DateTime @default(now())
+
+  @@unique([documentId, userId])
+}
+
+model ViewFolder {
+  id        String       @id @default(cuid())
+  name      String
+  parentId  String?
+  parent    ViewFolder?  @relation("FolderTree", fields: [parentId], references: [id])
+  children  ViewFolder[] @relation("FolderTree")
+  order     Int          @default(0)
+  filter    Json         @default("{}") // { typeIds: [], status: [], tags: [] }
+  createdAt DateTime     @default(now())
+}
+
+model LookupTable {
+  id          String        @id @default(cuid())
+  name        String        @unique
+  description String?
+  scope       String        @default("all") // all | document | workflow | process
+  values      LookupValue[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model LookupValue {
+  id       String      @id @default(cuid())
+  tableId  String
+  table    LookupTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  label    String
+  value    String
+  color    String?
+  order    Int         @default(0)
+  parentId String?     // optional one-level grouping
+  active   Boolean     @default(true)
+
+  @@unique([tableId, value])
 }

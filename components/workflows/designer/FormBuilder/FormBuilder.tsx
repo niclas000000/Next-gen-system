@@ -67,19 +67,26 @@ export function FormBuilder() {
   return (
     <div className="flex flex-1 overflow-hidden h-full">
       {/* Left: node selector + field palette */}
-      <div className="w-52 border-r border-slate-200 bg-slate-50 flex flex-col shrink-0 overflow-y-auto">
-        <div className="p-3 border-b border-slate-200">
-          <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wide mb-2">Task node</p>
+      <div className="w-52 flex flex-col shrink-0 overflow-y-auto" style={{ borderRight: '1px solid var(--rule)', background: 'var(--paper-2)' }}>
+        <div className="p-3" style={{ borderBottom: '1px solid var(--rule)' }}>
+          <p className="mono-meta text-[10px] mb-2">Task node</p>
           <div className="space-y-1">
             {taskNodes.map((n) => {
               const d = n.data as Record<string, unknown>
+              const active = n.id === activeNodeId
               return (
                 <button
                   key={n.id}
                   onClick={() => useWorkflowDesignerStore.setState({ selectedNodeId: n.id })}
-                  className={`w-full text-left px-2.5 py-1.5 rounded text-xs transition-colors ${
-                    n.id === activeNodeId ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-200'
-                  }`}
+                  className="w-full text-left px-2.5 py-1.5 rounded-[2px] text-xs transition-colors"
+                  style={{
+                    background: active ? 'var(--accent-tint)' : '',
+                    color: active ? 'var(--nw-accent)' : 'var(--ink-3)',
+                    fontWeight: active ? '500' : '400',
+                    borderLeft: active ? '2px solid var(--nw-accent)' : '2px solid transparent',
+                  }}
+                  onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = 'var(--paper-3)' }}
+                  onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = '' }}
                 >
                   {(d.name as string) || 'Task'}
                 </button>
@@ -92,8 +99,8 @@ export function FormBuilder() {
 
       {/* Center: field list or preview */}
       <div className="flex flex-col flex-1 overflow-hidden">
-        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-slate-200 bg-white shrink-0">
-          <p className="text-sm font-semibold text-slate-800 flex-1">
+        <div className="flex items-center gap-2 px-4 py-2.5 shrink-0" style={{ borderBottom: '1px solid var(--rule)', background: 'var(--surface)' }}>
+          <p className="text-sm font-semibold flex-1" style={{ color: 'var(--ink)' }}>
             {(activeNode?.data as Record<string, unknown>)?.name as string || 'Task'} — Form
           </p>
           <Badge variant="outline" className="text-xs text-slate-500">
@@ -106,7 +113,7 @@ export function FormBuilder() {
             {showPreview ? <EyeOff size={13} /> : <Eye size={13} />}
             {showPreview ? 'Edit' : 'Preview'}
           </Button>
-          <Button size="sm" className="h-7 text-xs gap-1 bg-blue-600 hover:bg-blue-700" onClick={save} disabled={!isDirty || saving}>
+          <Button size="sm" className="h-7 text-xs gap-1" onClick={save} disabled={!isDirty || saving}>
             <Save size={12} />
             {saving ? 'Saving…' : 'Save'}
           </Button>
@@ -117,7 +124,7 @@ export function FormBuilder() {
       </div>
 
       {/* Right: field properties */}
-      <div className="w-64 border-l border-slate-200 bg-white overflow-y-auto shrink-0">
+      <div className="w-64 overflow-y-auto shrink-0" style={{ borderLeft: '1px solid var(--rule)', background: 'var(--surface)' }}>
         <FieldProperties />
       </div>
 

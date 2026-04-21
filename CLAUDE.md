@@ -101,22 +101,46 @@ nexus/
 
 ---
 
-## Design System
+## Design System — Northwind Suite
 
-### Color Palette (Tailwind)
-- Primary: `blue-600` — workflows, actions
-- Secondary: `slate-700` — text, borders
-- Success: `green-600` — completed, approved
-- Warning: `orange-500` — pending, decisions
-- Danger: `red-600` — cancelled, errors
-- Info: `sky-500` — information
+The UI uses the **Northwind design system** throughout. Never use raw Tailwind blue/green/slate color classes in UI code — always use CSS custom properties.
 
-### Background image pattern
-- Background image stored in `SystemSetting` table (key: `backgroundImage`, `backgroundOpacity`)
-- Applied via `DashboardBackground` component with configurable opacity
-- Content rows over background use `bg-white/85 backdrop-blur-sm` for WCAG AA compliance
+### Color Tokens (CSS custom properties)
+| Token | Value | Role |
+|---|---|---|
+| `var(--paper)` | `#FAFAF7` | App background (body) |
+| `var(--paper-2)` | `#F2F1EC` | Sidebar, secondary surfaces |
+| `var(--paper-3)` | `#E8E6DF` | Dividers, hover states, icon backgrounds |
+| `var(--surface)` | `#FFFFFF` | Cards, inputs, editors |
+| `var(--rule)` | `#E8E6DF` | Borders everywhere |
+| `var(--ink)` | `#111111` | Primary text |
+| `var(--ink-3)` | `#54524D` | Secondary text |
+| `var(--ink-4)` | `#8A877F` | Meta text, placeholders, icons |
+| `var(--nw-accent)` | oklch teal | Active item, links, focus rings |
+| `var(--accent-tint)` | teal tint | Active backgrounds, info highlight |
+| `var(--ok)` | oklch green | Success, published, completed |
+| `var(--warn)` | oklch amber | Pending, running, in-review |
+| `var(--risk)` | oklch red | Error, cancelled, destructive |
 
-### Node Colors (Workflow Canvas)
+### Typography
+- **Display font**: `var(--font-display)` (Inter Tight) — page headings, card titles, large stat numbers
+- **UI font**: Inter — body copy, labels, nav
+- **Mono font**: JetBrains Mono — IDs, versions, dates, section eyebrows
+
+### Components
+- **Border radius**: `rounded-[2px]` everywhere (chips/pills keep `rounded-full`)
+- **Shadows**: None on cards — border only: `1px solid var(--rule)`
+- **Buttons**: Default variant = ink-black fill. Never use `bg-blue-600`.
+- **Status badges**: Use `variant="ok"`, `variant="warn"`, `variant="risk"`, `variant="default"` — never inline color classes
+- **Hover states**: `hover:bg-[var(--paper-2)]` or `hover:border-[var(--nw-accent)]`
+- **Active tab indicator**: `borderColor: 'var(--nw-accent)'`, `color: 'var(--nw-accent)'`
+
+### Navigation modes
+- `navMode: 'v1'` (default) — collapsible sidebar (`var(--paper-2)` background)
+- `navMode: 'v2'` — 68px dark icon rail + Ctrl+K command palette
+- Toggled via Admin → Appearance, stored in `SystemSetting` DB
+
+### Node Colors (Workflow Canvas — kept as semantic colors)
 | Node | Color |
 |---|---|
 | Start | green-500 |
@@ -129,29 +153,22 @@ nexus/
 | Parallel Gateway | teal-500 |
 | End | red-500 |
 
-### Typography
-- Headings: `font-semibold`
-- Body: `font-normal`
-- Labels: `font-medium text-sm`
-- Code/expressions: `font-mono text-xs`
-
-### Components
-- Rounded: `rounded-lg`
-- Shadows: `shadow-sm` on cards
-- Borders: `border-slate-200`
-- Transitions: `transition-all duration-200`
-- Focus: `ring-2 ring-blue-500`
+### Background image pattern
+- Background image stored in `SystemSetting` table (key: `backgroundImage`, `backgroundOpacity`)
+- Applied via `DashboardBackground` component with configurable opacity
 
 ---
 
 ## Prisma Schema (current models)
 
-`User`, `Group`, `Document`, `Workflow`, `WorkflowForm`, `WorkflowRule`, `WorkflowInstance`, `WorkflowStep`, `Comment`, `Attachment`, `AuditLog`, `SystemSetting`, `RegistryItem`, `Process`, `ProcessDocument`, `ProcessWorkflow`, `Form`, `SavedView`
+`User`, `Group`, `Document`, `DocumentVersion`, `ReadReceipt`, `Workflow`, `WorkflowForm`, `WorkflowRule`, `WorkflowInstance`, `WorkflowStep`, `Comment`, `Attachment`, `AuditLog`, `SystemSetting`, `RegistryItem`, `Process`, `ProcessDocument`, `ProcessWorkflow`, `Form`, `SavedView`, `DocumentType`, `ApprovalFlow`, `LookupTable`, `LookupTableRow`, `ViewFolder`
 
-Key additions vs original:
+Key models:
 - `Form` — standalone reusable forms (fields JSON, settings JSON)
 - `SavedView` — user-saved case view filters (userId, filters JSON)
-- `RegistryItem.isProcessRoot` — marks which registry item is the process tree root
+- `DocumentType` — document type definitions (prefix, format, propertyPackage JSON, approvalFlowId)
+- `ApprovalFlow` — multi-phase approval flows (phases JSON)
+- `LookupTable` / `LookupTableRow` — reusable dropdown data for FormBuilder `lookup` fields
 - `Process` — full process tree with canvas (nodes/edges JSON), KPIs, linked documents/workflows
 
 ---
@@ -159,27 +176,31 @@ Key additions vs original:
 ## Implementation Status
 
 ### Done ✓
-- Full layout: Sidebar (collapsible, query-param-aware isActive), TopBar, dark theme
+- Full layout: Sidebar (collapsible, query-param-aware isActive), TopBar — **Northwind design system applied**
 - Dashboard: live DB stats, time-based greeting (morning/afternoon/evening), capitalized first name
 - Auth: NextAuth with scrypt password hashing, JWT with user.id, route protection via `proxy.ts`
-- Documents: list, create/edit/view/delete, TipTap rich text editor, categories/tags/status
+- Documents: list, create/edit/view/delete, TipTap rich text editor, categories/tags/status, version history, read receipts
+- Document Types (`/design/document-types`): per-type editor with property fields (FormBuilder), approval flow assignment, read receipt + change desc toggles
+- Approval Flows (`/design/approval-flows`): create/edit multi-phase flows, assign to document types
 - Processes: tree navigation (right-click context menu), inline detail panel with tabs (Overview, Canvas, Documents, Workflows, KPIs), ReactFlow canvas per process
 - Workflow designer: canvas, 9 node types, properties panel, form builder, logic builder, expression editor, auto-save, publish
 - Workflow engine: startInstance, completeStep, cancelInstance, auto-advance, condition evaluation
 - Case management: list, detail page, form filling, decision branching, comments, audit log, step timeline
-- Admin: Users, Groups, Register (categories/tags/RegistryItems), Appearance (background image + opacity), System
-- **Cases hub** (`/cases`): two-panel layout, predefined views (All/Running/Completed/Cancelled/My cases/Per workflow), saved views (POST/DELETE `/api/views`), per-workflow accordion grouping, `bg-white/85` for WCAG contrast over background image
-- **Design section** (`/design`): top-level nav with Workflows, Processes (redirect), Forms, Document Types
-- **Standalone Form Designer** (`/design/forms`, `/design/forms/[id]`): full three-panel designer (FieldPalette / FieldList / FieldProperties), FormPreview toggle, auto-save 2s, inline name editing
-- **Import form into workflow**: "Use existing form" button in workflow Form tab → `ImportFormDialog` → replace or append fields from form library
-- **Document Types** (`/design/document-types`): cards for Policy, Work Instruction, Procedure, Template, Guide, Contract + per-type stub pages
-- Settings: `GET/PATCH /api/settings`, `SettingsProvider` context, `DashboardBackground` component
+- **Cases hub** (`/cases`): two-panel layout, predefined views, saved views, "+ Start case" button opens published workflow picker
+- **Design section** (`/design`): Workflows, Processes (redirect), Forms, Document Types, Approval Flows
+- **Standalone Form Designer** (`/design/forms`, `/design/forms/[id]`): full three-panel designer, FormPreview toggle, auto-save 2s
+- **Import form into workflow**: "Use existing form" button in workflow Form tab → `ImportFormDialog`
+- Admin: Users, Groups, Register (categories/tags), Appearance (background image + opacity + nav mode toggle), System
+- Settings: `GET/PATCH /api/settings`, `SettingsProvider` context, `navMode` ('v1'|'v2') stored in DB
+- **V2 navigation**: Icon rail (`components/layout/IconRail.tsx`) + Ctrl+K command palette (`components/layout/CommandPalette.tsx`)
+- **Northwind design system**: fully applied across all pages — CSS tokens, ink/paper/ok/warn/risk palette, 2px radius, no shadows, teal accent, Inter Tight + JetBrains Mono typography
+- Lookup tables (`/admin/lookup-tables`): CRUD for reusable dropdown data, used in FormBuilder `lookup` field type
 
-### Navigation structure (Sidebar)
+### Navigation structure (Sidebar — V1)
 ```
 Dashboard
-Documents
 Processes
+Documents
 Cases (expanded by default)
   ├── All cases        /cases
   ├── Running          /cases?status=running
@@ -191,18 +212,24 @@ Design
   ├── Workflows        /design/workflows
   ├── Processes        /design/processes  → redirect /processes
   ├── Forms            /design/forms
-  └── Document Types   /design/document-types
+  ├── Document Types   /design/document-types
+  └── Approval Flows   /design/approval-flows
 Admin
-  ├── Users, Groups, Register, Appearance, System
+  ├── Users            /admin/users
+  ├── Groups           /admin/settings
+  ├── Register         /admin/register
+  ├── Lookup Tables    /admin/lookup-tables
+  ├── Appearance       /admin/appearance
+  └── System           /admin/system
 ```
 
 ### Possible next areas
-- BPMN 2.0 node types for process canvas
-- Document content approval/review workflow
-- `isProcessRoot` usage in process tree UI
-- Notifications system
+- Document approval workflow (submit → approval flow phases → publish)
+- Notifications system (in-app + email)
 - Full-text search across documents/cases
 - Dashboard widgets customization
+- BPMN 2.0 node types for process canvas
+- `isProcessRoot` usage in process tree UI
 
 ---
 

@@ -13,32 +13,20 @@ export function DecisionNode({ id, data, selected }: NodeProps<DecisionNodeData>
       <Handle type="target" position={Position.Top} className="!bg-orange-500 !w-3 !h-3" style={{ top: 0 }} />
 
       <div className={cn(
-        'w-28 h-28 rotate-45 border-2 bg-white shadow-md',
-        selected ? 'border-orange-500 shadow-orange-100 shadow-lg' : 'border-orange-400'
-      )}>
+        'w-28 h-28 rotate-45 border-2 bg-white',
+        selected ? 'border-orange-500' : 'border-orange-400'
+      )} style={{ boxShadow: selected ? '0 0 0 3px rgba(249,115,22,0.15)' : 'none' }}>
         <div className="-rotate-45 h-full flex flex-col items-center justify-center gap-1">
           <GitBranch size={14} className="text-orange-500" />
-          <p className="text-[11px] font-semibold text-slate-700 text-center leading-tight max-w-[80px] truncate">
+          <p className="text-[11px] font-semibold text-center leading-tight max-w-[80px] truncate" style={{ color: 'var(--ink)' }}>
             {data?.name || 'Decision'}
           </p>
-          <p className="text-[9px] text-slate-400 uppercase tracking-wide">Decision</p>
+          <p className="text-[9px] uppercase tracking-wide" style={{ color: 'var(--ink-4)' }}>Decision</p>
         </div>
       </div>
 
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        id="yes"
-        className="!bg-orange-500 !w-3 !h-3"
-        style={{ bottom: 0 }}
-      />
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="no"
-        className="!bg-orange-400 !w-3 !h-3"
-        style={{ right: 0 }}
-      />
+      <Handle type="source" position={Position.Bottom} id="yes" className="!bg-orange-500 !w-3 !h-3" style={{ bottom: 0 }} />
+      <Handle type="source" position={Position.Right} id="no" className="!bg-orange-400 !w-3 !h-3" style={{ right: 0 }} />
     </div>
   )
 }

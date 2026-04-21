@@ -36,10 +36,8 @@ export const nodepalette: { type: NodeType; label: string; icon: React.ReactNode
   { type: 'end',            label: 'End',            icon: <Square size={12} className="fill-red-500 text-red-500" />,    color: 'border-red-300 hover:border-red-500 hover:bg-red-50' },
 ]
 
-const statusColors: Record<string, string> = {
-  draft: 'bg-slate-100 text-slate-600 border-slate-200',
-  published: 'bg-green-100 text-green-700 border-green-200',
-  archived: 'bg-orange-100 text-orange-700 border-orange-200',
+const statusVariant: Record<string, 'default' | 'ok' | 'warn'> = {
+  draft: 'default', published: 'ok', archived: 'warn',
 }
 
 export function WorkflowToolbar() {
@@ -84,10 +82,10 @@ export function WorkflowToolbar() {
 
   return (
     <TooltipProvider delayDuration={400}>
-      <div className="flex items-center gap-2 px-3 h-12 border-b border-slate-200 bg-white shrink-0 overflow-x-auto">
+      <div className="flex items-center gap-2 px-3 h-12 shrink-0 overflow-x-auto" style={{ borderBottom: '1px solid var(--rule)', background: 'var(--surface)' }}>
 
         {/* Back button */}
-        <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8 text-slate-500" asChild>
+        <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8" asChild>
           <Link href="/workflows/design">
             <ChevronLeft size={16} />
           </Link>
@@ -97,12 +95,13 @@ export function WorkflowToolbar() {
         <input
           value={workflowName}
           onChange={(e) => updateWorkflowMeta({ name: e.target.value })}
-          className="text-sm font-semibold text-slate-800 bg-transparent border-none outline-none focus:ring-1 focus:ring-blue-300 rounded px-1 w-40 shrink-0"
+          className="text-sm font-semibold bg-transparent border-none outline-none rounded-[2px] px-1 w-40 shrink-0"
+          style={{ color: 'var(--ink)' }}
           placeholder="Workflow name"
         />
 
         {/* Status badge */}
-        <Badge variant="outline" className={`text-xs shrink-0 ${statusColors[workflowStatus] ?? ''}`}>
+        <Badge variant={statusVariant[workflowStatus] ?? 'default'} className="text-xs shrink-0">
           {workflowStatus}
         </Badge>
 
@@ -115,7 +114,8 @@ export function WorkflowToolbar() {
               <TooltipTrigger asChild>
                 <div
                   onClick={() => onClickAdd(item.type)}
-                  className={`flex items-center gap-1 px-2 py-1 rounded border bg-white text-xs text-slate-600 cursor-pointer select-none transition-colors shrink-0 ${item.color}`}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-[2px] border bg-white text-xs cursor-pointer select-none transition-colors shrink-0 ${item.color}`}
+            style={{ color: 'var(--ink-3)' }}
                 >
                   {item.icon}
                   <span className="hidden lg:inline">{item.label}</span>
@@ -176,7 +176,7 @@ export function WorkflowToolbar() {
         {workflowStatus !== 'published' && (
           <Dialog>
             <DialogTrigger asChild>
-              <Button size="sm" className="h-8 shrink-0 gap-1.5 text-xs bg-blue-600 hover:bg-blue-700">
+              <Button size="sm" className="h-8 shrink-0 gap-1.5 text-xs">
                 <Rocket size={13} />
                 Publish
               </Button>
@@ -185,13 +185,13 @@ export function WorkflowToolbar() {
               <DialogHeader>
                 <DialogTitle>Publish workflow</DialogTitle>
               </DialogHeader>
-              <p className="text-sm text-slate-600">
+              <p className="text-sm" style={{ color: 'var(--ink-3)' }}>
                 Publishing will save all changes and make this workflow available for new cases.
                 The version number will be incremented.
               </p>
               <DialogFooter>
                 <Button variant="outline" size="sm">Cancel</Button>
-                <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => publish(rfNodes, rfEdges)}>
+                <Button size="sm" onClick={() => publish(rfNodes, rfEdges)}>
                   Publish
                 </Button>
               </DialogFooter>

@@ -58,8 +58,10 @@ export interface ConditionalRule {
 }
 
 export interface DataSource {
-  type: 'static' | 'database' | 'api' | 'variable' | 'expression'
+  type: 'static' | 'lookup' | 'database' | 'api' | 'variable' | 'expression'
   options?: Array<{ label: string; value: string }>
+  tableId?: string   // used when type === 'lookup'
+  tableName?: string // display hint, not authoritative
   query?: string
   url?: string
   variable?: string

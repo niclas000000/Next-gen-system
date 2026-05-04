@@ -33,7 +33,7 @@ export function NewFormButton() {
 
   return (
     <>
-      <Button className="bg-blue-600 hover:bg-blue-700 gap-1.5" onClick={() => setOpen(true)}>
+      <Button className="gap-1.5" onClick={() => setOpen(true)}>
         <Plus size={15} /> New form
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
@@ -53,7 +53,7 @@ export function NewFormButton() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Description <span className="text-slate-400">(optional)</span></Label>
+              <Label className="text-xs">Description <span style={{ color: 'var(--ink-4)' }}>(optional)</span></Label>
               <Input
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}

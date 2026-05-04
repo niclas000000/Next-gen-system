@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -13,13 +13,50 @@ interface FormRendererProps {
   submitting?: boolean
 }
 
+interface LookupRow {
+  id: string
+  label: string
+  value: string
+  parentId: string | null
+  active: boolean
+}
+
+const LAYOUT_TYPES = ['section', 'heading', 'paragraph', 'divider']
+
+// ---------------------------------------------------------------------------
+// Evaluate condition expression against current form values
+// ---------------------------------------------------------------------------
+function evalCondition(expression: string, values: Record<string, unknown>): boolean {
+  try {
+    // Support: field == "value", field != "value", field == "", field != ""
+    const eqMatch = expression.match(/^(\w+)\s*==\s*"(.*)"$/)
+    const neMatch = expression.match(/^(\w+)\s*!=\s*"(.*)"$/)
+    if (eqMatch) {
+      const [, name, val] = eqMatch
+      return String(values[name] ?? '') === val
+    }
+    if (neMatch) {
+      const [, name, val] = neMatch
+      return String(values[name] ?? '') !== val
+    }
+    return true
+  } catch {
+    return true
+  }
+}
+
+// ---------------------------------------------------------------------------
+// FieldInput — renders the appropriate input for a field type
+// ---------------------------------------------------------------------------
 function FieldInput({
   field,
   value,
+  options,
   onChange,
 }: {
   field: FormField
   value: unknown
+  options: { label: string; value: string }[]
   onChange: (val: unknown) => void
 }) {
   const strVal = (value as string) ?? ''
@@ -65,7 +102,6 @@ function FieldInput({
         />
       )
     case 'select': {
-      const options = field.dataSource?.options ?? []
       return (
         <select
           id={field.id}
@@ -76,15 +112,12 @@ function FieldInput({
         >
           <option value="">Select...</option>
           {options.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
         </select>
       )
     }
     case 'multiselect': {
-      const options = field.dataSource?.options ?? []
       const selected = Array.isArray(value) ? (value as string[]) : []
       return (
         <div className="space-y-1">
@@ -106,7 +139,6 @@ function FieldInput({
       )
     }
     case 'radio': {
-      const options = field.dataSource?.options ?? []
       return (
         <div className="space-y-1">
           {options.map((opt) => (
@@ -155,6 +187,9 @@ function FieldInput({
   }
 }
 
+// ---------------------------------------------------------------------------
+// FormRenderer
+// ---------------------------------------------------------------------------
 export function FormRenderer({ form, onSubmit, submitting }: FormRendererProps) {
   const [values, setValues] = useState<Record<string, unknown>>(() => {
     const initial: Record<string, unknown> = {}
@@ -165,13 +200,71 @@ export function FormRenderer({ form, onSubmit, submitting }: FormRendererProps) 
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
+  // Fetch lookup rows for all lookup-typed fields (needed for cascade)
+  const [lookupRows, setLookupRows] = useState<Record<string, LookupRow[]>>({})
+
+  useEffect(() => {
+    const lookupFields = form.fields.filter((f) => f.dataSource?.type === 'lookup' && f.dataSource.tableId)
+    const uniqueTableIds = [...new Set(lookupFields.map((f) => f.dataSource!.tableId!))]
+    uniqueTableIds.forEach((tableId) => {
+      fetch(`/api/lookup-tables/${tableId}/values`)
+        .then((r) => r.json())
+        .then((d: { values: LookupRow[] }) => setLookupRows((prev) => ({ ...prev, [tableId]: d.values })))
+        .catch(() => {})
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Compute visible options for a field (respects rootsOnly + filterByField)
+  const getOptions = useCallback((field: FormField): { label: string; value: string }[] => {
+    const ds = field.dataSource
+    if (!ds) return []
+    if (ds.type !== 'lookup') return ds.options ?? []
+
+    const rows = lookupRows[ds.tableId!] ?? []
+
+    if (ds.rootsOnly) {
+      return rows.filter((r) => !r.parentId && r.active).map((r) => ({ label: r.label, value: r.value }))
+    }
+    if (ds.filterByField) {
+      const parentValue = values[ds.filterByField] as string
+      if (!parentValue) return []
+      const parentRow = rows.find((r) => r.value === parentValue)
+      if (!parentRow) return []
+      return rows.filter((r) => r.parentId === parentRow.id && r.active).map((r) => ({ label: r.label, value: r.value }))
+    }
+    return rows.filter((r) => r.active).map((r) => ({ label: r.label, value: r.value }))
+  }, [lookupRows, values])
+
+  // Check if a field should be visible given the current values
+  const isVisible = (field: FormField): boolean => {
+    if (!field.conditional) return true
+    return evalCondition(field.conditional.expression, values) === field.conditional.show
+  }
+
+  const handleChange = (field: FormField, val: unknown) => {
+    setValues((prev) => {
+      const next = { ...prev, [field.name]: val }
+      // Reset any child cascade fields when their parent changes
+      for (const f of form.fields) {
+        if (f.dataSource?.filterByField === field.name) {
+          next[f.name] = ''
+        }
+      }
+      return next
+    })
+    setErrors((prev) => { const n = { ...prev }; delete n[field.name]; return n })
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Validate required fields
+    // Only validate and submit visible fields
+    const visibleFields = form.fields.filter(isVisible)
+
     const newErrors: Record<string, string> = {}
-    for (const field of form.fields) {
-      if (field.type === 'section' || field.type === 'heading' || field.type === 'paragraph' || field.type === 'divider') continue
+    for (const field of visibleFields) {
+      if (LAYOUT_TYPES.includes(field.type)) continue
       const required = field.validation?.some((v) => v.type === 'required')
       if (required && (values[field.name] === undefined || values[field.name] === '' || values[field.name] === null)) {
         newErrors[field.name] = field.validation.find((v) => v.type === 'required')?.message ?? 'Required'
@@ -184,39 +277,51 @@ export function FormRenderer({ form, onSubmit, submitting }: FormRendererProps) 
     }
 
     setErrors({})
-    await onSubmit(values)
-  }
 
-  const isLayoutField = (type: string) => ['section', 'heading', 'paragraph', 'divider'].includes(type)
+    // Submit only visible field values
+    const submitPayload: Record<string, unknown> = {}
+    for (const field of visibleFields) {
+      if (!LAYOUT_TYPES.includes(field.type)) {
+        submitPayload[field.name] = values[field.name]
+      }
+    }
+
+    await onSubmit(submitPayload)
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      {form.fields.map((field) => (
-        <div key={field.id} className={isLayoutField(field.type) ? '' : 'space-y-1'}>
-          {!isLayoutField(field.type) && field.type !== 'checkbox' && (
-            <Label htmlFor={field.id} className="font-medium text-sm" style={{ color: 'var(--ink)' }}>
-              {field.label}
-              {field.validation?.some((v) => v.type === 'required') && (
-                <span className="text-red-500 ml-1">*</span>
-              )}
-            </Label>
-          )}
-          {field.description && !isLayoutField(field.type) && (
-            <p className="text-xs" style={{ color: 'var(--ink-4)' }}>{field.description}</p>
-          )}
-          <FieldInput
-            field={field}
-            value={values[field.name]}
-            onChange={(val) => {
-              setValues((prev) => ({ ...prev, [field.name]: val }))
-              setErrors((prev) => { const n = { ...prev }; delete n[field.name]; return n })
-            }}
-          />
-          {errors[field.name] && (
-            <p className="text-xs text-red-500">{errors[field.name]}</p>
-          )}
-        </div>
-      ))}
+      {form.fields.map((field) => {
+        if (!isVisible(field)) return null
+
+        const isLayout = LAYOUT_TYPES.includes(field.type)
+        const options = getOptions(field)
+
+        return (
+          <div key={field.id} className={isLayout ? '' : 'space-y-1'}>
+            {!isLayout && field.type !== 'checkbox' && (
+              <Label htmlFor={field.id} className="font-medium text-sm" style={{ color: 'var(--ink)' }}>
+                {field.label}
+                {field.validation?.some((v) => v.type === 'required') && (
+                  <span className="text-red-500 ml-1">*</span>
+                )}
+              </Label>
+            )}
+            {field.description && !isLayout && (
+              <p className="text-xs" style={{ color: 'var(--ink-4)' }}>{field.description}</p>
+            )}
+            <FieldInput
+              field={field}
+              value={values[field.name]}
+              options={options}
+              onChange={(val) => handleChange(field, val)}
+            />
+            {errors[field.name] && (
+              <p className="text-xs" style={{ color: 'var(--risk)' }}>{errors[field.name]}</p>
+            )}
+          </div>
+        )
+      })}
 
       <div className="pt-2">
         <Button type="submit" disabled={submitting}>

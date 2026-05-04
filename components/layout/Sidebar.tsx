@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import {
   LayoutDashboard, FileText, GitBranch, Workflow, Settings,
   ChevronLeft, ChevronRight, ChevronDown, LogOut,
   Users, Server, Database, Palette, Layers, List, Clock,
-  CheckCircle, User, PenTool, FileInput, FileType, Table2,
+  CheckCircle, User, PenTool, FileInput, FileType, Table2, CheckSquare,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -22,6 +22,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/', icon: <LayoutDashboard size={16} /> },
+  { label: 'My Tasks', href: '/tasks', icon: <CheckSquare size={16} /> },
   { label: 'Processes', href: '/processes', icon: <GitBranch size={16} /> },
   {
     label: 'Documents',
@@ -82,6 +83,11 @@ export function Sidebar() {
   const user = session?.user as { name?: string; email?: string } | undefined
   const name = user?.name ?? 'User'
   const initials = name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
+
+  const [taskCount, setTaskCount] = useState(0)
+  useEffect(() => {
+    fetch('/api/tasks').then((r) => r.json()).then((d: { steps?: unknown[] }) => setTaskCount(d.steps?.length ?? 0)).catch(() => {})
+  }, [pathname])
 
   const toggleSection = (label: string) =>
     setOpenSections((prev) => ({ ...prev, [label]: !prev[label] }))
@@ -237,7 +243,17 @@ export function Sidebar() {
               }}
             >
               <span className="shrink-0">{item.icon}</span>
-              {!collapsed && <span>{item.label}</span>}
+              {!collapsed && (
+                <>
+                  <span className="flex-1">{item.label}</span>
+                  {item.label === 'My Tasks' && taskCount > 0 && (
+                    <span className="text-[10px] font-semibold leading-none px-1.5 py-0.5 rounded-full"
+                      style={{ background: 'var(--nw-accent)', color: '#fff' }}>
+                      {taskCount}
+                    </span>
+                  )}
+                </>
+              )}
             </Link>
           )
         })}

@@ -17,6 +17,7 @@ import {
   AlertCircle,
   GitBranch,
   ChevronLeft,
+  User,
 } from 'lucide-react'
 
 interface InstanceInfo {
@@ -39,6 +40,9 @@ interface StepInfo {
   completedAt: string | null
   formData: Record<string, unknown> | null
   decision: string | null
+  assigneeName: string | null
+  assignedRole: string | null
+  dueAt: string | null
 }
 
 interface Comment {
@@ -60,7 +64,7 @@ interface AuditEntry {
 interface Props {
   instance: InstanceInfo
   steps: StepInfo[]
-  activeStep: { id: string; stepName: string; stepType: string } | null
+  activeStep: { id: string; stepName: string; stepType: string; assigneeName: string | null; assignedRole: string | null } | null
   activeForm: FormDefinition | null
   decisionOptions: Array<{ id: string; label: string }>
   comments: Comment[]
@@ -194,11 +198,20 @@ export function InstanceDetailClient({ instance, steps, activeStep, activeForm, 
           {activeStep && instance.status === 'running' && (
             <Card style={{ borderColor: 'var(--nw-accent)' }}>
               <CardHeader className="pb-3" style={{ borderBottom: '1px solid var(--rule)' }}>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: 'var(--nw-accent)' }} />
-                  <CardTitle className="text-base font-semibold" style={{ color: 'var(--ink)' }}>
-                    {activeStep.stepName}
-                  </CardTitle>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: 'var(--nw-accent)' }} />
+                    <CardTitle className="text-base font-semibold" style={{ color: 'var(--ink)' }}>
+                      {activeStep.stepName}
+                    </CardTitle>
+                  </div>
+                  {(activeStep.assigneeName || activeStep.assignedRole) && (
+                    <div className="flex items-center gap-1.5 text-xs rounded-full px-2.5 py-1 shrink-0"
+                      style={{ background: 'var(--paper-2)', color: 'var(--ink-3)', border: '1px solid var(--rule)' }}>
+                      <User size={11} />
+                      {activeStep.assigneeName ?? activeStep.assignedRole}
+                    </div>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="p-5">

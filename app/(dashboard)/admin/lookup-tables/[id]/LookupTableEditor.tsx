@@ -62,14 +62,12 @@ export function LookupTableEditor({
 }) {
   const router = useRouter()
 
-  // Table meta
   const [name, setName] = useState(table.name)
   const [description, setDescription] = useState(table.description ?? '')
   const [scope, setScope] = useState(table.scope)
   const [savingMeta, setSavingMeta] = useState(false)
   const [metaSaved, setMetaSaved] = useState(false)
 
-  // Values
   const [values, setValues] = useState<LookupValueRow[]>(initialValues)
   const [adding, setAdding] = useState(false)
   const [newLabel, setNewLabel] = useState('')
@@ -162,36 +160,42 @@ export function LookupTableEditor({
       <div className="flex items-center gap-3">
         <button
           onClick={() => router.push('/admin/lookup-tables')}
-          className="text-slate-400 hover:text-slate-700 transition-colors"
+          className="transition-colors"
+          style={{ color: 'var(--ink-4)' }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ink)')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-4)')}
         >
           <ArrowLeft size={18} />
         </button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-semibold text-slate-800 truncate">{table.name}</h1>
-          <p className="text-xs text-slate-400 mt-0.5">Lookup table editor</p>
+          <h1 className="text-xl font-semibold truncate" style={{ color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>{table.name}</h1>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--ink-4)' }}>Lookup table editor</p>
         </div>
       </div>
 
       {/* Meta card */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-slate-700">Table settings</h2>
+      <div className="p-5 space-y-4 rounded-[2px]" style={{ background: 'var(--surface)', border: '1px solid var(--rule)' }}>
+        <h2 className="text-sm font-semibold" style={{ color: 'var(--ink-3)' }}>Table settings</h2>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5 col-span-2 sm:col-span-1">
-            <label className="text-xs font-medium text-slate-700">Name</label>
+            <label className="text-xs font-medium" style={{ color: 'var(--ink-3)' }}>Name</label>
             <Input value={name} onChange={(e) => setName(e.target.value)} className="h-9 text-sm" />
           </div>
           <div className="space-y-1.5 col-span-2 sm:col-span-1">
-            <label className="text-xs font-medium text-slate-700">Scope</label>
+            <label className="text-xs font-medium" style={{ color: 'var(--ink-3)' }}>Scope</label>
             <select
               value={scope}
               onChange={(e) => setScope(e.target.value)}
-              className="w-full h-9 px-3 text-sm border border-slate-200 rounded-lg bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full h-9 px-3 text-sm rounded-[2px] focus:outline-none focus:ring-1"
+              style={{ border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)' }}
             >
               {SCOPES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
           </div>
           <div className="space-y-1.5 col-span-2">
-            <label className="text-xs font-medium text-slate-700">Description <span className="text-slate-400">(optional)</span></label>
+            <label className="text-xs font-medium" style={{ color: 'var(--ink-3)' }}>
+              Description <span style={{ color: 'var(--ink-4)' }}>(optional)</span>
+            </label>
             <Input value={description} onChange={(e) => setDescription(e.target.value)} className="h-9 text-sm" placeholder="What is this list used for?" />
           </div>
         </div>
@@ -200,7 +204,7 @@ export function LookupTableEditor({
             onClick={saveMeta}
             disabled={savingMeta}
             size="sm"
-            className="bg-blue-600 hover:bg-blue-700 gap-1.5"
+            className="gap-1.5"
           >
             {savingMeta ? <Loader2 size={13} className="animate-spin" /> : metaSaved ? <Check size={13} /> : null}
             {metaSaved ? 'Saved' : 'Save'}
@@ -209,15 +213,15 @@ export function LookupTableEditor({
       </div>
 
       {/* Values card */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+      <div className="p-5 space-y-4 rounded-[2px]" style={{ background: 'var(--surface)', border: '1px solid var(--rule)' }}>
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-700">Values</h2>
-          <span className="text-xs text-slate-400">{values.length} item{values.length !== 1 ? 's' : ''}</span>
+          <h2 className="text-sm font-semibold" style={{ color: 'var(--ink-3)' }}>Values</h2>
+          <span className="text-xs" style={{ color: 'var(--ink-4)' }}>{values.length} item{values.length !== 1 ? 's' : ''}</span>
         </div>
 
         {/* Column headers */}
         {values.length > 0 && (
-          <div className="grid grid-cols-[20px_1fr_1fr_80px_40px_72px] gap-2 px-1 text-[10px] font-medium text-slate-400 uppercase tracking-wider">
+          <div className="grid grid-cols-[20px_1fr_1fr_80px_40px_72px] gap-2 px-1 text-[10px] font-medium uppercase tracking-wider" style={{ color: 'var(--ink-4)' }}>
             <span />
             <span>Label</span>
             <span>Value (key)</span>
@@ -245,8 +249,8 @@ export function LookupTableEditor({
         </div>
 
         {/* Add row */}
-        <div className="border-t border-slate-100 pt-4 space-y-3">
-          <p className="text-xs font-medium text-slate-500">Add value</p>
+        <div className="pt-4 space-y-3" style={{ borderTop: '1px solid var(--rule)' }}>
+          <p className="text-xs font-medium" style={{ color: 'var(--ink-4)' }}>Add value</p>
           <div className="grid grid-cols-[1fr_1fr] gap-2">
             <Input
               placeholder="Label (displayed)"
@@ -265,14 +269,15 @@ export function LookupTableEditor({
           </div>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 flex-1">
-              <span className="text-xs text-slate-500">Color:</span>
+              <span className="text-xs" style={{ color: 'var(--ink-4)' }}>Color:</span>
               <button
                 type="button"
                 onClick={() => setNewColor(null)}
-                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${!newColor ? 'border-blue-500' : 'border-slate-200'}`}
+                className="w-5 h-5 rounded-full border-2 flex items-center justify-center"
+                style={{ borderColor: !newColor ? 'var(--nw-accent)' : 'var(--rule)' }}
                 title="No color"
               >
-                <Circle size={10} className="text-slate-300" />
+                <Circle size={10} style={{ color: 'var(--ink-4)' }} />
               </button>
               {COLORS.map((c) => (
                 <ColorDot key={c} color={c} selected={newColor === c} onClick={() => setNewColor(c)} />
@@ -282,7 +287,7 @@ export function LookupTableEditor({
               onClick={addValue}
               disabled={!newLabel.trim() || !newValue.trim() || adding}
               size="sm"
-              className="bg-blue-600 hover:bg-blue-700 gap-1.5 shrink-0"
+              className="gap-1.5 shrink-0"
             >
               {adding ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
               Add
@@ -311,20 +316,26 @@ function ValueRow({
   const [showColors, setShowColors] = useState(false)
 
   return (
-    <div className="group grid grid-cols-[20px_1fr_1fr_80px_40px_72px] gap-2 items-center px-1 py-1 rounded hover:bg-slate-50 transition-colors">
+    <div
+      className="group grid grid-cols-[20px_1fr_1fr_80px_40px_72px] gap-2 items-center px-1 py-1 rounded-[2px] transition-colors"
+      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--paper-2)')}
+      onMouseLeave={(e) => (e.currentTarget.style.background = '')}
+    >
       {/* Order buttons */}
       <div className="flex flex-col gap-0.5">
         <button
           onClick={() => onMove('up')}
           disabled={isFirst}
-          className="text-slate-300 hover:text-slate-600 disabled:opacity-0 transition-colors"
+          className="transition-colors disabled:opacity-0"
+          style={{ color: 'var(--ink-4)' }}
         >
           <ChevronUp size={12} />
         </button>
         <button
           onClick={() => onMove('down')}
           disabled={isLast}
-          className="text-slate-300 hover:text-slate-600 disabled:opacity-0 transition-colors"
+          className="transition-colors disabled:opacity-0"
+          style={{ color: 'var(--ink-4)' }}
         >
           <ChevronDown size={12} />
         </button>
@@ -335,7 +346,10 @@ function ValueRow({
         value={label}
         onChange={(e) => setLabel(e.target.value)}
         onBlur={() => label !== v.label && onUpdate({ label })}
-        className="h-7 px-2 text-sm border border-transparent rounded focus:border-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-transparent hover:bg-white transition-colors"
+        className="h-7 px-2 text-sm rounded-[2px] focus:outline-none focus:ring-1 bg-transparent transition-colors"
+        style={{ border: '1px solid transparent', color: 'var(--ink)' }}
+        onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--rule)')}
+        onBlurCapture={(e) => (e.currentTarget.style.borderColor = 'transparent')}
       />
 
       {/* Value key */}
@@ -343,7 +357,10 @@ function ValueRow({
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onBlur={() => value !== v.value && onUpdate({ value })}
-        className="h-7 px-2 text-sm font-mono border border-transparent rounded focus:border-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-transparent hover:bg-white transition-colors"
+        className="h-7 px-2 text-sm font-mono rounded-[2px] focus:outline-none focus:ring-1 bg-transparent transition-colors"
+        style={{ border: '1px solid transparent', color: 'var(--ink)' }}
+        onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--rule)')}
+        onBlurCapture={(e) => (e.currentTarget.style.borderColor = 'transparent')}
       />
 
       {/* Color */}
@@ -351,22 +368,26 @@ function ValueRow({
         <button
           type="button"
           onClick={() => setShowColors(!showColors)}
-          className="flex items-center gap-1.5 h-7 px-2 rounded border border-transparent hover:border-slate-200 hover:bg-white transition-colors text-xs text-slate-500"
+          className="flex items-center gap-1.5 h-7 px-2 rounded-[2px] transition-colors text-xs"
+          style={{ border: '1px solid transparent', color: 'var(--ink-4)' }}
+          onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--rule)')}
+          onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'transparent')}
         >
           <span
-            className="w-4 h-4 rounded-full border border-slate-200 shrink-0"
-            style={{ backgroundColor: v.color ?? '#e2e8f0' }}
+            className="w-4 h-4 rounded-full shrink-0"
+            style={{ backgroundColor: v.color ?? 'var(--rule)', border: '1px solid var(--rule)' }}
           />
           {v.color ? '' : 'None'}
         </button>
         {showColors && (
-          <div className="absolute top-8 left-0 z-10 bg-white border border-slate-200 rounded-lg shadow-md p-2 flex flex-wrap gap-1.5 w-40">
+          <div className="absolute top-8 left-0 z-10 p-2 flex flex-wrap gap-1.5 w-40 rounded-[2px]" style={{ background: 'var(--surface)', border: '1px solid var(--rule)' }}>
             <button
               type="button"
               onClick={() => { onUpdate({ color: null }); setShowColors(false) }}
-              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${!v.color ? 'border-blue-500' : 'border-slate-200'}`}
+              className="w-5 h-5 rounded-full border-2 flex items-center justify-center"
+              style={{ borderColor: !v.color ? 'var(--nw-accent)' : 'var(--rule)' }}
             >
-              <Circle size={10} className="text-slate-300" />
+              <Circle size={10} style={{ color: 'var(--ink-4)' }} />
             </button>
             {COLORS.map((c) => (
               <ColorDot
@@ -384,20 +405,25 @@ function ValueRow({
       <button
         type="button"
         onClick={() => onUpdate({ active: !v.active })}
-        className={`mx-auto w-8 h-4 rounded-full transition-colors ${v.active ? 'bg-green-500' : 'bg-slate-200'}`}
+        className="mx-auto w-8 h-4 rounded-full transition-colors"
+        style={{ background: v.active ? 'var(--ok)' : 'var(--paper-3)' }}
       >
         <span
-          className={`block w-3 h-3 rounded-full bg-white shadow transition-transform mx-0.5 ${v.active ? 'translate-x-4' : 'translate-x-0'}`}
+          className="block w-3 h-3 rounded-full bg-white shadow transition-transform mx-0.5"
+          style={{ transform: v.active ? 'translateX(16px)' : 'translateX(0)' }}
         />
       </button>
 
       {/* Actions */}
       <div className="flex items-center justify-end gap-1">
-        {saving && <Loader2 size={12} className="animate-spin text-blue-500" />}
+        {saving && <Loader2 size={12} className="animate-spin" style={{ color: 'var(--nw-accent)' }} />}
         <button
           onClick={onDelete}
           disabled={deleting}
-          className="text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+          className="opacity-0 group-hover:opacity-100 transition-opacity"
+          style={{ color: 'var(--ink-4)' }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--risk)')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-4)')}
         >
           {deleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
         </button>

@@ -37,7 +37,7 @@ export function NewDocumentTypeButton() {
 
   return (
     <>
-      <Button onClick={() => setOpen(true)} className="bg-blue-600 hover:bg-blue-700 gap-2">
+      <Button onClick={() => setOpen(true)} className="gap-2">
         <Plus size={16} />
         New type
       </Button>
@@ -67,14 +67,13 @@ export function NewDocumentTypeButton() {
                 className="h-9 text-sm font-mono"
                 maxLength={10}
               />
-              <p className="text-xs text-slate-400">Documents will be numbered POL-001, POL-002…</p>
+              <p className="text-xs" style={{ color: 'var(--ink-4)' }}>Documents will be numbered POL-001, POL-002…</p>
             </div>
             <div className="flex justify-end gap-2 pt-1">
               <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
               <Button
                 onClick={handleCreate}
                 disabled={!name.trim() || !prefix.trim() || creating}
-                className="bg-blue-600 hover:bg-blue-700"
               >
                 {creating && <Loader2 size={14} className="animate-spin mr-1" />}
                 Create

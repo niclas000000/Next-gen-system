@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
+import { Eye } from 'lucide-react'
 import type { FormField } from '@/types/field'
 
 function PreviewField({ field }: { field: FormField }) {
@@ -28,10 +29,17 @@ function PreviewField({ field }: { field: FormField }) {
 
   return (
     <div className="space-y-1.5">
-      <Label className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
-        {field.label}
-        {isRequired && <span className="text-red-500 ml-0.5">*</span>}
-      </Label>
+      <div className="flex items-center gap-2">
+        <Label className="text-sm font-medium flex-1" style={{ color: 'var(--ink)' }}>
+          {field.label}
+          {isRequired && <span className="text-red-500 ml-0.5">*</span>}
+        </Label>
+        {field.conditional && (
+          <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: 'var(--accent-tint)', color: 'var(--nw-accent)', border: '1px solid var(--nw-accent)' }}>
+            <Eye size={9} /> Conditional
+          </span>
+        )}
+      </div>
       {field.description && <p className="text-xs" style={{ color: 'var(--ink-4)' }}>{field.description}</p>}
 
       {(field.type === 'text' || field.type === 'number' || field.type === 'date' || field.type === 'time') && (
@@ -98,7 +106,7 @@ export function FormPreview() {
 
   if (fields.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full text-slate-400 text-sm">
+      <div className="flex items-center justify-center h-full text-sm" style={{ color: 'var(--ink-4)' }}>
         No fields to preview yet.
       </div>
     )

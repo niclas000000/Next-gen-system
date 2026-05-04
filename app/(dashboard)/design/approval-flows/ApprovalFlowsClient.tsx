@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Plus, Trash2, GripVertical, ChevronDown, ChevronRight, Loader2, Edit2 } from 'lucide-react'
+import { Plus, Trash2, GripVertical, ChevronDown, ChevronRight, Loader2, Edit2, GitBranch } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
 interface Phase {
@@ -270,6 +270,17 @@ export function ApprovalFlowsClient({ initialFlows }: Props) {
           New flow
         </Button>
       </div>
+
+      {flows.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-16 text-center rounded-[2px]" style={{ border: '1px dashed var(--rule)', background: 'var(--paper-2)' }}>
+          <GitBranch size={28} className="mb-3" style={{ color: 'var(--ink-4)' }} />
+          <p className="font-medium text-sm" style={{ color: 'var(--ink-3)' }}>No approval flows yet</p>
+          <p className="text-sm mt-1 mb-4" style={{ color: 'var(--ink-4)' }}>Create a flow with Review and Approve phases to use in document types.</p>
+          <Button onClick={openNew} className="gap-2">
+            <Plus size={14} /> New flow
+          </Button>
+        </div>
+      )}
 
       <div className="space-y-3">
         {flows.map((flow) => (

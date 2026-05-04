@@ -146,10 +146,12 @@ export default async function DashboardPage() {
                         </p>
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
-                        <Badge variant={caseStatusVariant[inst.status] ?? 'default'} className="text-xs">
-                          {caseStatusLabel[inst.status] ?? inst.status}
-                        </Badge>
-                        <span className="text-xs hidden sm:block" style={{ color: 'var(--ink-4)' }}>
+                        <div className="w-[90px] flex justify-end">
+                          <Badge variant={caseStatusVariant[inst.status] ?? 'default'} className="text-xs">
+                            {caseStatusLabel[inst.status] ?? inst.status}
+                          </Badge>
+                        </div>
+                        <span className="text-xs hidden sm:block w-28 text-right" style={{ color: 'var(--ink-4)' }}>
                           {formatDistanceToNow(new Date(inst.createdAt), { addSuffix: true })}
                         </span>
                       </div>

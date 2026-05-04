@@ -62,6 +62,8 @@ export interface DataSource {
   options?: Array<{ label: string; value: string }>
   tableId?: string   // used when type === 'lookup'
   tableName?: string // display hint, not authoritative
+  rootsOnly?: boolean  // lookup: show only rows where parentId is null
+  filterByField?: string  // lookup: show children of the row selected in this field (by field name)
   query?: string
   url?: string
   variable?: string

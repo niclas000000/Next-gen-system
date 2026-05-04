@@ -11,7 +11,10 @@ export default async function WorkflowInstanceDetailPage({ params }: { params: P
       where: { id },
       include: {
         workflow: { select: { id: true, name: true, nodes: true, edges: true, forms: true } },
-        steps: { orderBy: { startedAt: 'asc' } },
+        steps: {
+        orderBy: { startedAt: 'asc' },
+        include: { assignee: { select: { id: true, name: true } } },
+      },
       },
     }),
     prisma.comment.findMany({
@@ -84,8 +87,17 @@ export default async function WorkflowInstanceDetailPage({ params }: { params: P
         completedAt: s.completedAt?.toISOString() ?? null,
         formData: s.formData as Record<string, unknown> | null,
         decision: s.decision,
+        assigneeName: (s as { assignee?: { name: string } | null }).assignee?.name ?? null,
+        assignedRole: s.assignedRole ?? null,
+        dueAt: s.dueAt?.toISOString() ?? null,
       }))}
-      activeStep={activeStep ? { id: activeStep.id, stepName: activeStep.stepName, stepType: activeStep.stepType } : null}
+      activeStep={activeStep ? {
+        id: activeStep.id,
+        stepName: activeStep.stepName,
+        stepType: activeStep.stepType,
+        assigneeName: (activeStep as { assignee?: { name: string } | null }).assignee?.name ?? null,
+        assignedRole: (activeStep as { assignedRole?: string | null }).assignedRole ?? null,
+      } : null}
       activeForm={activeForm}
       decisionOptions={decisionOptions}
       comments={comments.map((c) => ({

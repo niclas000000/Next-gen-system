@@ -67,15 +67,55 @@ export function NodeProperties({ nodeId }: Props) {
                 className="w-full rounded-md border border-slate-200 text-sm px-3 py-2 h-20 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Optional description" />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Assignment</Label>
-              <select value={((data.assignment as Record<string, unknown>)?.type as string) ?? 'initiator'}
-                onChange={(e) => update('assignment', { ...(data.assignment as object), type: e.target.value })}
-                className="w-full rounded-md border border-slate-200 text-sm px-3 py-2 h-8 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="initiator">Initiator</option>
+              <Label className="text-xs" style={{ color: 'var(--ink-3)' }}>Assign to</Label>
+              <select
+                value={((data.assignment as Record<string, unknown>)?.type as string) ?? 'initiator'}
+                onChange={(e) => update('assignment', { ...(data.assignment as object ?? {}), type: e.target.value, value: '' })}
+                className="w-full rounded-[2px] text-sm px-3 py-2 focus:outline-none"
+                style={{ border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)', height: '32px' }}
+              >
+                <option value="initiator">Initiator (person who started)</option>
                 <option value="user">Specific user</option>
                 <option value="role">Role</option>
-                <option value="expression">Expression</option>
+                <option value="previous_step_user">Same as previous step</option>
               </select>
+              {(((data.assignment as Record<string, unknown>)?.type as string) === 'user' ||
+                ((data.assignment as Record<string, unknown>)?.type as string) === 'role') && (
+                <Input
+                  value={((data.assignment as Record<string, unknown>)?.value as string) ?? ''}
+                  onChange={(e) => update('assignment', { ...(data.assignment as object ?? {}), value: e.target.value })}
+                  className="h-8 text-sm mt-1"
+                  placeholder={((data.assignment as Record<string, unknown>)?.type as string) === 'role' ? 'Role name (e.g. admin, manager)' : 'User ID'}
+                />
+              )}
+            </div>
+
+            {/* SLA / Deadline */}
+            <div className="space-y-1">
+              <Label className="text-xs" style={{ color: 'var(--ink-3)' }}>Deadline (SLA)</Label>
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  min={0}
+                  value={((data.sla as Record<string, unknown>)?.duration as number) ?? ''}
+                  onChange={(e) => {
+                    const val = e.target.value === '' ? undefined : parseInt(e.target.value, 10)
+                    update('sla', val ? { ...(data.sla as object ?? {}), duration: val } : undefined)
+                  }}
+                  className="h-8 text-sm w-20"
+                  placeholder="None"
+                />
+                <select
+                  value={((data.sla as Record<string, unknown>)?.unit as string) ?? 'hours'}
+                  onChange={(e) => update('sla', { ...(data.sla as object ?? {}), unit: e.target.value })}
+                  className="flex-1 rounded-[2px] text-sm px-2 focus:outline-none"
+                  style={{ border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)', height: '32px' }}
+                  disabled={!((data.sla as Record<string, unknown>)?.duration)}
+                >
+                  <option value="hours">Hours</option>
+                  <option value="days">Days</option>
+                </select>
+              </div>
             </div>
           </>
         )}

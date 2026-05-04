@@ -45,6 +45,7 @@ export interface WorkflowEdge {
   targetHandle?: string
   label?: string
   condition?: string
+  data?: Record<string, unknown>
   style?: 'normal' | 'conditional' | 'default'
 }
 

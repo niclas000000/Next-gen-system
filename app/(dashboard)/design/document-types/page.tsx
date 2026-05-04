@@ -19,8 +19,8 @@ export default async function DocumentTypesPage() {
     <div className="space-y-6 max-w-5xl mx-auto">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Document Types</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <h1 className="text-2xl font-semibold" style={{ color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>Document Types</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--ink-4)' }}>
             Configure metadata fields, approval flows, and read receipt requirements per document type.
           </p>
         </div>
@@ -28,11 +28,11 @@ export default async function DocumentTypesPage() {
       </div>
 
       {types.length === 0 ? (
-        <Card className="shadow-sm">
+        <Card>
           <CardContent className="py-16 text-center">
-            <FileText size={32} className="mx-auto text-slate-300 mb-3" />
-            <p className="text-slate-500 font-medium">No document types yet</p>
-            <p className="text-sm text-slate-400 mt-1">
+            <FileText size={32} className="mx-auto mb-3" style={{ color: 'var(--ink-4)' }} />
+            <p className="font-medium" style={{ color: 'var(--ink-3)' }}>No document types yet</p>
+            <p className="text-sm mt-1" style={{ color: 'var(--ink-4)' }}>
               Create your first document type to start configuring metadata and approval flows.
             </p>
           </CardContent>
@@ -48,31 +48,31 @@ export default async function DocumentTypesPage() {
               : 0
             return (
               <Link key={dt.id} href={`/design/document-types/${dt.id}`}>
-                <Card className="shadow-sm hover:shadow-md hover:border-blue-200 transition-all duration-200 cursor-pointer h-full">
+                <Card className="transition-all duration-200 cursor-pointer h-full hover:border-[var(--nw-accent)]">
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between gap-2 mb-3">
-                      <div className="p-2 rounded-lg bg-blue-50 shrink-0">
-                        <FileText size={16} className="text-blue-600" />
+                      <div className="p-2 rounded-[2px] shrink-0" style={{ background: 'var(--paper-3)' }}>
+                        <FileText size={16} style={{ color: 'var(--nw-accent)' }} />
                       </div>
                       <Badge variant="outline" className="text-xs font-mono shrink-0">
                         {dt.prefix}
                       </Badge>
                     </div>
-                    <p className="font-semibold text-slate-800 text-sm">{dt.name}</p>
+                    <p className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>{dt.name}</p>
                     <div className="mt-2 space-y-1">
-                      <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                      <div className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--ink-4)' }}>
                         <FileText size={11} className="shrink-0" />
                         {dt.format === 'richtext' ? 'Rich text' : 'File upload'}
-                        <span className="text-slate-300">·</span>
+                        <span style={{ color: 'var(--rule)' }}>·</span>
                         {fieldCount} propert{fieldCount !== 1 ? 'ies' : 'y'}
                       </div>
                       {dt.approvalFlow && (
-                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                        <div className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--ink-4)' }}>
                           <GitBranch size={11} className="shrink-0" />
                           {dt.approvalFlow.name}
                         </div>
                       )}
-                      <div className="flex items-center gap-3 text-xs text-slate-400 pt-1">
+                      <div className="flex items-center gap-3 text-xs pt-1" style={{ color: 'var(--ink-4)' }}>
                         {dt.requireReadReceipt && (
                           <span className="flex items-center gap-1"><CheckCircle size={10} />Read receipt</span>
                         )}
@@ -82,7 +82,7 @@ export default async function DocumentTypesPage() {
                         <span className="ml-auto">{dt._count.documents} doc{dt._count.documents !== 1 ? 's' : ''}</span>
                       </div>
                     </div>
-                    <p className="text-xs text-slate-300 mt-2">
+                    <p className="text-xs mt-2" style={{ color: 'var(--ink-4)' }}>
                       Updated {formatDistanceToNow(new Date(dt.updatedAt), { addSuffix: true })}
                     </p>
                   </CardContent>

@@ -1,7 +1,7 @@
 'use client'
 
-import { CheckCircle2, Clock, Circle, XCircle, AlertCircle } from 'lucide-react'
-import { formatDistanceToNow, format } from 'date-fns'
+import { CheckCircle2, Clock, Circle, XCircle, AlertCircle, User, AlarmClock } from 'lucide-react'
+import { formatDistanceToNow, format, isPast, differenceInHours } from 'date-fns'
 
 interface Step {
   id: string
@@ -13,6 +13,9 @@ interface Step {
   completedAt: string | null
   formData: Record<string, unknown> | null
   decision: string | null
+  assigneeName?: string | null
+  assignedRole?: string | null
+  dueAt?: string | null
 }
 
 interface StepTimelineProps {
@@ -42,7 +45,7 @@ const nodeTypeLabel: Record<string, string> = {
 
 export function StepTimeline({ steps }: StepTimelineProps) {
   if (steps.length === 0) {
-    return <p className="text-sm text-slate-400 italic">No steps yet.</p>
+    return <p className="text-sm italic" style={{ color: 'var(--ink-4)' }}>No steps yet.</p>
   }
 
   return (
@@ -75,6 +78,34 @@ export function StepTimeline({ steps }: StepTimelineProps) {
                   </p>
                 ) : null}
               </div>
+            </div>
+
+            {/* Assignee + due */}
+            <div className="flex items-center gap-3 mt-1 flex-wrap">
+              {(step.assigneeName || step.assignedRole) && (
+                <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--ink-4)' }}>
+                  <User size={10} />
+                  {step.assigneeName ?? step.assignedRole}
+                </div>
+              )}
+              {step.dueAt && step.status === 'in_progress' && (() => {
+                const due = new Date(step.dueAt)
+                const overdue = isPast(due)
+                const soon = !overdue && differenceInHours(due, new Date()) < 24
+                const color = overdue ? 'var(--risk)' : soon ? 'var(--warn)' : 'var(--ink-4)'
+                return (
+                  <div className="flex items-center gap-1 text-xs" style={{ color }}>
+                    <AlarmClock size={10} />
+                    {overdue ? 'Overdue · ' : 'Due · '}{formatDistanceToNow(due, { addSuffix: true })}
+                  </div>
+                )
+              })()}
+              {step.dueAt && step.status === 'completed' && (
+                <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--ink-4)' }}>
+                  <AlarmClock size={10} />
+                  Due {format(new Date(step.dueAt), 'dd MMM')}
+                </div>
+              )}
             </div>
 
             {/* Decision made */}

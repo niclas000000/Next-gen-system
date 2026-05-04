@@ -169,7 +169,7 @@ function CanvasPanel({ processId, initialNodes, initialEdges }: { processId: str
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-500">Add:</span>
+          <span className="text-xs" style={{ color: 'var(--ink-4)' }}>Add:</span>
           {[
             { type: 'start', label: 'Start', color: 'border-green-300 text-green-700 hover:bg-green-50' },
             { type: 'activity', label: 'Activity', color: 'border-blue-300 text-blue-700 hover:bg-blue-50' },
@@ -403,7 +403,7 @@ export function ProcessesClient({ initialProcesses, allDocuments, allWorkflows, 
           </div>
         ) : loadingDetail ? (
           <div className="flex items-center justify-center h-full">
-            <p className="text-sm text-slate-400">Loading…</p>
+            <p className="text-sm" style={{ color: 'var(--ink-4)' }}>Loading…</p>
           </div>
         ) : detail ? (
           <div className="p-6 space-y-5">
@@ -653,7 +653,7 @@ export function ProcessesClient({ initialProcesses, allDocuments, allWorkflows, 
               <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Process name"
                 onKeyDown={(e) => e.key === 'Enter' && handleCreate()} autoFocus />
             </div>
-            {createParentId && <p className="text-xs text-slate-500">Sub-process of: <span className="font-medium">{processes.find((p) => p.id === createParentId)?.name}</span></p>}
+            {createParentId && <p className="text-xs" style={{ color: 'var(--ink-4)' }}>Sub-process of: <span className="font-medium" style={{ color: 'var(--ink-3)' }}>{processes.find((p) => p.id === createParentId)?.name}</span></p>}
           </div>
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setShowCreate(false)}>Cancel</Button>
@@ -668,12 +668,12 @@ export function ProcessesClient({ initialProcesses, allDocuments, allWorkflows, 
           <DialogHeader><DialogTitle>Link document</DialogTitle></DialogHeader>
           <Input value={pickerSearch} onChange={(e) => setPickerSearch(e.target.value)} placeholder="Search documents…" className="mb-3" />
           <div className="space-y-1 max-h-72 overflow-y-auto">
-            {unlinkedDocs.length === 0 ? <p className="text-sm text-slate-400 text-center py-6">No documents to link.</p>
+            {unlinkedDocs.length === 0 ? <p className="text-sm text-center py-6" style={{ color: 'var(--ink-4)' }}>No documents to link.</p>
               : unlinkedDocs.map((d) => (
-                <button key={d.id} onClick={() => linkDocument(d.id)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-left transition-colors">
-                  <FileText size={14} className="text-slate-400 shrink-0" />
-                  <span className="text-sm text-slate-700 flex-1 truncate">{d.title}</span>
-                  <span className={`text-xs px-1.5 py-0.5 rounded ${docStatusClass[d.status]}`}>{d.status}</span>
+                <button key={d.id} onClick={() => linkDocument(d.id)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[2px] hover:bg-[var(--paper-2)] text-left transition-colors">
+                  <FileText size={14} className="shrink-0" style={{ color: 'var(--ink-4)' }} />
+                  <span className="text-sm flex-1 truncate" style={{ color: 'var(--ink)' }}>{d.title}</span>
+                  <Badge variant={docStatusVariant[d.status] ?? 'default'} className="text-xs">{d.status}</Badge>
                 </button>
               ))}
           </div>
@@ -686,12 +686,12 @@ export function ProcessesClient({ initialProcesses, allDocuments, allWorkflows, 
           <DialogHeader><DialogTitle>Link workflow</DialogTitle></DialogHeader>
           <Input value={pickerSearch} onChange={(e) => setPickerSearch(e.target.value)} placeholder="Search workflows…" className="mb-3" />
           <div className="space-y-1 max-h-72 overflow-y-auto">
-            {unlinkedWfs.length === 0 ? <p className="text-sm text-slate-400 text-center py-6">No workflows to link.</p>
+            {unlinkedWfs.length === 0 ? <p className="text-sm text-center py-6" style={{ color: 'var(--ink-4)' }}>No workflows to link.</p>
               : unlinkedWfs.map((w) => (
-                <button key={w.id} onClick={() => linkWorkflow(w.id)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-left transition-colors">
-                  <WorkflowIcon size={14} className="text-slate-400 shrink-0" />
-                  <span className="text-sm text-slate-700 flex-1 truncate">{w.name}</span>
-                  <span className={`text-xs px-1.5 py-0.5 rounded ${docStatusClass[w.status]}`}>{w.status}</span>
+                <button key={w.id} onClick={() => linkWorkflow(w.id)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[2px] hover:bg-[var(--paper-2)] text-left transition-colors">
+                  <WorkflowIcon size={14} className="shrink-0" style={{ color: 'var(--ink-4)' }} />
+                  <span className="text-sm flex-1 truncate" style={{ color: 'var(--ink)' }}>{w.name}</span>
+                  <Badge variant={statusVariant[w.status] ?? 'default'} className="text-xs">{w.status}</Badge>
                 </button>
               ))}
           </div>

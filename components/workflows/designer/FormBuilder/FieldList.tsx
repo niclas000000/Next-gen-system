@@ -1,7 +1,7 @@
 'use client'
 
 import { useFormBuilderStore } from '@/lib/stores/form-builder-store'
-import { Trash2, GripVertical, ChevronUp, ChevronDown } from 'lucide-react'
+import { Trash2, GripVertical, ChevronUp, ChevronDown, Eye, Link2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
@@ -60,6 +60,16 @@ export function FieldList() {
           {/* Required indicator */}
           {field.validation.some((v) => v.type === 'required') && (
             <span className="text-red-400 text-xs shrink-0">*</span>
+          )}
+
+          {/* Conditional visibility indicator */}
+          {field.conditional && (
+            <Eye size={12} className="shrink-0" style={{ color: 'var(--nw-accent)' }} title="Has visibility condition" />
+          )}
+
+          {/* Cascade indicator */}
+          {field.dataSource?.filterByField && (
+            <Link2 size={12} className="shrink-0" style={{ color: 'var(--ink-4)' }} title={`Filtered by: ${field.dataSource.filterByField}`} />
           )}
 
           {/* Move up/down */}

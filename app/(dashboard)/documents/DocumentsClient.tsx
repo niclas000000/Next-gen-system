@@ -149,7 +149,7 @@ function NewDocumentDialog({
         </DialogHeader>
         <div className="space-y-4 pt-1">
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-slate-700">Title</label>
+            <label className="text-xs font-medium" style={{ color: 'var(--ink-3)' }}>Title</label>
             <Input
               placeholder="Document title"
               value={title}
@@ -161,11 +161,12 @@ function NewDocumentDialog({
           </div>
           {documentTypes.length > 0 && (
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-700">Document type</label>
+              <label className="text-xs font-medium" style={{ color: 'var(--ink-3)' }}>Document type</label>
               <select
                 value={typeId}
                 onChange={(e) => setTypeId(e.target.value)}
-                className="w-full h-9 px-3 text-sm border border-slate-200 rounded-lg bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full h-9 px-3 text-sm rounded-[2px] focus:outline-none focus:ring-1"
+                style={{ border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)' }}
               >
                 <option value="">No type</option>
                 {documentTypes.map((t) => (
@@ -179,7 +180,6 @@ function NewDocumentDialog({
             <Button
               onClick={handleCreate}
               disabled={!title.trim() || creating}
-              className="bg-blue-600 hover:bg-blue-700"
             >
               {creating && <Loader2 size={14} className="animate-spin mr-1" />}
               Create
@@ -243,12 +243,12 @@ export function DocumentsClient({
         <div className="flex-1 overflow-y-auto p-4">
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
-              <FileQuestion size={32} className="text-slate-300 mb-3" />
-              <p className="text-slate-500 font-medium text-sm">
+              <FileQuestion size={32} className="mb-3" style={{ color: 'var(--ink-4)' }} />
+              <p className="font-medium text-sm" style={{ color: 'var(--ink-3)' }}>
                 {search ? 'No documents match your search.' : 'No documents here yet.'}
               </p>
               {!search && (
-                <Button size="sm" className="mt-3 bg-blue-600 hover:bg-blue-700 gap-1.5" onClick={() => setShowNew(true)}>
+                <Button size="sm" className="mt-3 gap-1.5" onClick={() => setShowNew(true)}>
                   <Plus size={13} /> New document
                 </Button>
               )}

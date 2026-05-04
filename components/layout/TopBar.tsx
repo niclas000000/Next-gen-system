@@ -2,6 +2,7 @@
 
 import { Search, ChevronRight } from 'lucide-react'
 import { usePathname } from 'next/navigation'
+import { NotificationBell } from './NotificationBell'
 
 const routeLabels: Record<string, string> = {
   dashboard: 'Dashboard',
@@ -77,6 +78,9 @@ export function TopBar() {
         <Breadcrumb />
       </div>
 
+      {/* Notifications */}
+      <NotificationBell />
+
       {/* Search hint */}
       <button
         className="hidden md:flex items-center gap-2 px-3 h-8 rounded text-sm transition-colors"
@@ -88,6 +92,7 @@ export function TopBar() {
         }}
         onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--ink-4)')}
         onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--rule)')}
+        onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { ctrlKey: true, key: 'k', bubbles: true }))}
       >
         <Search size={13} />
         <span className="flex-1 text-left text-sm">Search…</span>

@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db/client'
 import type { WorkflowNode, WorkflowEdge, NodeType } from '@/types/workflow'
+import type { Assignment, SLAConfig } from '@/types/workflow'
 import { ExpressionParser } from '@/lib/expression-parser/parser'
 
 const exprParser = new ExpressionParser()
@@ -129,6 +130,7 @@ export class WorkflowEngine {
         completedAt: new Date(),
         formData: payload.formData ?? undefined,
         decision: payload.decision ?? undefined,
+        assignedTo: userId,
       },
     })
 
@@ -174,9 +176,10 @@ export class WorkflowEngine {
         let matched: WorkflowEdge | null = null
         for (let i = 0; i < outgoing.length - 1; i++) {
           const edge = outgoing[i]
-          if (edge.condition) {
+          const condition = (edge.data?.condition as string) ?? edge.condition
+          if (condition) {
             try {
-              if (exprParser.evaluateBoolean(edge.condition, evalContext)) {
+              if (exprParser.evaluateBoolean(condition, evalContext)) {
                 matched = edge
                 break
               }
@@ -216,7 +219,7 @@ export class WorkflowEngine {
       return
     }
 
-    await this._createStep(instanceId, nextInteractive, userId)
+    await this._createStep(instanceId, nextInteractive, instance.createdBy)
     await prisma.workflowInstance.update({
       where: { id: instanceId },
       data: { currentStep: nextInteractive.id },
@@ -239,16 +242,76 @@ export class WorkflowEngine {
     await audit(instanceId, userId, 'instance_cancelled', {})
   }
 
-  private async _createStep(instanceId: string, node: WorkflowNode, _userId: string) {
-    await prisma.workflowStep.create({
+  private async _resolveAssignee(
+    assignment: Assignment | undefined,
+    instanceId: string,
+    initiatorId: string
+  ): Promise<{ assignedTo?: string; assignedRole?: string }> {
+    if (!assignment) return {}
+
+    switch (assignment.type) {
+      case 'user':
+        return { assignedTo: assignment.value || undefined }
+
+      case 'initiator':
+        return { assignedTo: initiatorId }
+
+      case 'role':
+        return { assignedRole: assignment.value || undefined }
+
+      case 'previous_step_user': {
+        const lastStep = await prisma.workflowStep.findFirst({
+          where: { instanceId, status: 'completed', assignedTo: { not: null } },
+          orderBy: { completedAt: 'desc' },
+        })
+        return { assignedTo: lastStep?.assignedTo ?? initiatorId }
+      }
+
+      case 'expression':
+        // Expression-based assignment is evaluated at runtime; fall back to initiator
+        return { assignedTo: initiatorId }
+
+      default:
+        return {}
+    }
+  }
+
+  private _computeDueAt(sla: SLAConfig | undefined): Date | undefined {
+    if (!sla?.duration) return undefined
+    const ms = sla.unit === 'days' ? sla.duration * 86_400_000 : sla.duration * 3_600_000
+    return new Date(Date.now() + ms)
+  }
+
+  private async _createStep(instanceId: string, node: WorkflowNode, initiatorId: string) {
+    const nodeData = node.data as { name?: string; assignment?: Assignment; sla?: SLAConfig }
+    const assignee = await this._resolveAssignee(nodeData.assignment, instanceId, initiatorId)
+    const dueAt = this._computeDueAt(nodeData.sla)
+
+    const step = await prisma.workflowStep.create({
       data: {
         instanceId,
         nodeId: node.id,
-        stepName: (node.data as { name?: string }).name ?? node.type,
+        stepName: nodeData.name ?? node.type,
         stepType: node.type,
         status: 'in_progress',
         startedAt: new Date(),
+        dueAt: dueAt ?? null,
+        ...assignee,
       },
+      include: { instance: { select: { title: true } } },
     })
+
+    // Fire in-app notification for directly-assigned user
+    if (assignee.assignedTo && assignee.assignedTo !== SYSTEM_USER_ID) {
+      await prisma.notification.create({
+        data: {
+          userId: assignee.assignedTo,
+          type: 'step_assigned',
+          title: `Task assigned: ${step.stepName}`,
+          body: step.instance.title,
+          link: `/workflows/instances/${instanceId}`,
+        },
+      })
+    }
   }
 }

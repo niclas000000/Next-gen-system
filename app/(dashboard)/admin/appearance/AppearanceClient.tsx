@@ -77,8 +77,8 @@ export function AppearanceClient({ initialSettings }: Props) {
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
       <div>
-        <h1 className="text-2xl font-semibold text-slate-900">Appearance</h1>
-        <p className="text-sm text-slate-500 mt-1">Customize the look and feel of the application.</p>
+        <h1 className="text-2xl font-semibold" style={{ color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>Appearance</h1>
+        <p className="text-sm mt-1" style={{ color: 'var(--ink-4)' }}>Customize the look and feel of the application.</p>
       </div>
 
       {/* Navigation style */}
@@ -149,11 +149,11 @@ export function AppearanceClient({ initialSettings }: Props) {
               />
               {imageUrl && (
                 <Button variant="outline" size="icon" onClick={handleClear} title="Remove image">
-                  <Trash2 size={14} className="text-red-500" />
+                  <Trash2 size={14} style={{ color: 'var(--risk)' }} />
                 </Button>
               )}
             </div>
-            <p className="text-xs text-slate-400">Supports JPG, PNG, WebP, AVIF, SVG. Use a high-resolution image (min 1920×1080) for best results.</p>
+            <p className="text-xs" style={{ color: 'var(--ink-4)' }}>Supports JPG, PNG, WebP, AVIF, SVG. Use a high-resolution image (min 1920×1080) for best results.</p>
           </div>
 
           {/* Sample images */}
@@ -164,9 +164,10 @@ export function AppearanceClient({ initialSettings }: Props) {
                 <button
                   key={img.url}
                   onClick={() => handlePresetImage(img.url)}
-                  className={`relative rounded-lg overflow-hidden border-2 transition-all aspect-video ${
-                    imageUrl === img.url ? 'border-blue-600 shadow-md' : 'border-transparent hover:border-slate-300'
-                  }`}
+                  className="relative rounded-[2px] overflow-hidden border-2 transition-all aspect-video"
+                  style={{
+                    borderColor: imageUrl === img.url ? 'var(--nw-accent)' : 'transparent',
+                  }}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={img.url} alt={img.label} className="w-full h-full object-cover" />
@@ -174,7 +175,7 @@ export function AppearanceClient({ initialSettings }: Props) {
                     <span className="text-white text-[10px] font-medium">{img.label}</span>
                   </div>
                   {imageUrl === img.url && (
-                    <div className="absolute top-1 right-1 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
+                    <div className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'var(--nw-accent)' }}>
                       <Check size={11} className="text-white" />
                     </div>
                   )}
@@ -187,12 +188,13 @@ export function AppearanceClient({ initialSettings }: Props) {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label className="text-xs">Opacity</Label>
-              <span className="text-xs font-mono text-slate-500">{opacityNum}%</span>
+              <span className="text-xs font-mono" style={{ color: 'var(--ink-4)' }}>{opacityNum}%</span>
             </div>
             <input
               type="range" min="0" max="100" value={opacityNum}
               onChange={(e) => handleOpacityChange(e.target.value)}
-              className="w-full accent-blue-600"
+              className="w-full"
+              style={{ accentColor: 'var(--nw-accent)' }}
               aria-label="Background image opacity"
             />
             <div className="flex gap-2">
@@ -200,9 +202,12 @@ export function AppearanceClient({ initialSettings }: Props) {
                 <button
                   key={p.value}
                   onClick={() => handleOpacityChange(p.value)}
-                  className={`flex-1 py-1 rounded text-xs font-medium border transition-colors ${
-                    opacity === p.value ? 'bg-blue-600 text-white border-blue-600' : 'border-slate-200 text-slate-600 hover:border-blue-300'
-                  }`}
+                  className="flex-1 py-1 rounded-[2px] text-xs font-medium transition-colors"
+                  style={{
+                    border: `1px solid ${opacity === p.value ? 'var(--nw-accent)' : 'var(--rule)'}`,
+                    background: opacity === p.value ? 'var(--nw-accent)' : 'var(--surface)',
+                    color: opacity === p.value ? '#fff' : 'var(--ink-3)',
+                  }}
                 >
                   {p.label}
                 </button>
@@ -214,7 +219,7 @@ export function AppearanceClient({ initialSettings }: Props) {
           {imageUrl && (
             <div className="space-y-1.5">
               <Label className="text-xs">Preview</Label>
-              <div className="relative rounded-lg overflow-hidden border border-slate-200 h-32 bg-slate-100">
+              <div className="relative rounded-[2px] overflow-hidden h-32" style={{ border: '1px solid var(--rule)', background: 'var(--paper-2)' }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={imageUrl}
@@ -223,12 +228,12 @@ export function AppearanceClient({ initialSettings }: Props) {
                   style={{ opacity: opacityNum / 100 }}
                 />
                 <div className="relative p-4">
-                  <div className="h-3 w-32 bg-slate-800 rounded mb-2 opacity-60" />
-                  <div className="h-2 w-48 bg-slate-600 rounded opacity-40" />
-                  <div className="h-2 w-40 bg-slate-600 rounded mt-1 opacity-40" />
+                  <div className="h-3 w-32 rounded mb-2 opacity-60" style={{ background: 'var(--ink)' }} />
+                  <div className="h-2 w-48 rounded opacity-40" style={{ background: 'var(--ink-3)' }} />
+                  <div className="h-2 w-40 rounded mt-1 opacity-40" style={{ background: 'var(--ink-3)' }} />
                 </div>
               </div>
-              <p className="text-xs text-slate-400">This is how the background will look behind your content.</p>
+              <p className="text-xs" style={{ color: 'var(--ink-4)' }}>This is how the background will look behind your content.</p>
             </div>
           )}
         </CardContent>

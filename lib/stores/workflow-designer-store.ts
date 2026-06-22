@@ -150,11 +150,15 @@ export const useWorkflowDesignerStore = create<WorkflowDesignerState>((set, get)
           description: s.workflowDescription,
           nodes: nodes ?? s.nodes,
           edges: edges
-            ? (edges as Array<Record<string, unknown>>).map((e) => ({
-                id: e.id, source: e.source, target: e.target,
-                sourceHandle: e.sourceHandle, targetHandle: e.targetHandle, label: e.label,
-                condition: (e.data as Record<string, unknown>)?.condition ?? e.condition ?? undefined,
-              }))
+            ? (edges as Array<Record<string, unknown>>).map((e) => {
+                const d = e.data as Record<string, unknown> | undefined
+                return {
+                  id: e.id, source: e.source, target: e.target,
+                  sourceHandle: e.sourceHandle, targetHandle: e.targetHandle, label: e.label,
+                  condition: d?.condition ?? e.condition ?? undefined,
+                  data: d ? { condition: d.condition, conditionConfig: d.conditionConfig, conditionMode: d.conditionMode } : undefined,
+                }
+              })
             : s.edges,
           settings: s.workflowSettings,
         }),

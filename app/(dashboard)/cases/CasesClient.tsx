@@ -7,22 +7,14 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import {
-  List, Clock, CheckCircle, User, GitBranch, Bookmark, Plus, Trash2,
-  ChevronDown, ChevronRight, Search, Loader2,
+  List, Clock, CheckCircle, User, GitBranch, Bookmark,
+  Plus, Trash2, ChevronDown, ChevronRight, Search, Loader2,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -34,6 +26,16 @@ interface Instance {
   updatedAt: string
   workflow: { name: string }
   creator?: { name: string }
+}
+
+interface SystemView {
+  id: string
+  name: string
+  section: string
+  icon: string
+  filters: Record<string, string>
+  order: number
+  isDefault: boolean
 }
 
 interface SavedView {
@@ -54,21 +56,28 @@ const STATUS_VARIANT: Record<string, 'warn' | 'ok' | 'default' | 'risk'> = {
   error:     'risk',
 }
 
-const PREDEFINED_VIEWS = [
-  { label: 'All cases',   href: '/cases',                     icon: <List size={14} /> },
-  { label: 'Running',     href: '/cases?status=running',      icon: <Clock size={14} /> },
-  { label: 'Completed',   href: '/cases?status=completed',    icon: <CheckCircle size={14} /> },
-  { label: 'Cancelled',   href: '/cases?status=cancelled',    icon: <List size={14} /> },
-  { label: 'My cases',    href: '/cases?view=mine',           icon: <User size={14} /> },
-  { label: 'Per workflow',href: '/cases?view=by-workflow',    icon: <GitBranch size={14} /> },
-]
+const ICON_MAP: Record<string, React.ReactNode> = {
+  List: <List size={14} />, Clock: <Clock size={14} />, CheckCircle: <CheckCircle size={14} />,
+  User: <User size={14} />, GitBranch: <GitBranch size={14} />,
+}
+function iconFromName(n: string) { return ICON_MAP[n] ?? <List size={14} /> }
 
-function ViewNav({
+function buildHref(base: string, filters: Record<string, string>) {
+  const p = new URLSearchParams(filters)
+  return p.toString() ? `${base}?${p}` : base
+}
+
+// ---------------------------------------------------------------------------
+// Left panel
+// ---------------------------------------------------------------------------
+function ViewPanel({
+  systemViews,
   savedViews,
   onDelete,
   onSave,
   onStartCase,
 }: {
+  systemViews: SystemView[]
   savedViews: SavedView[]
   onDelete: (id: string) => void
   onSave: () => void
@@ -77,94 +86,93 @@ function ViewNav({
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  const isCurrent = (href: string) => {
+  const isViewActive = (href: string) => {
     const url = new URL(href, 'http://x')
-    const status = url.searchParams.get('status')
-    const view = url.searchParams.get('view')
-    return (
-      url.pathname === '/cases' &&
-      (status ?? '') === (searchParams.get('status') ?? '') &&
-      (view ?? '') === (searchParams.get('view') ?? '') &&
-      !searchParams.get('saved')
-    )
+    const sp = searchParams
+    if (!window.location.pathname.startsWith(url.pathname)) return false
+    for (const [k, v] of url.searchParams.entries()) {
+      if (sp.get(k) !== v) return false
+    }
+    if (url.searchParams.size === 0 && sp.toString() !== '') return sp.toString() === ''
+    return true
   }
 
-  const isSavedActive = (v: SavedView) => searchParams.get('saved') === v.id
+  const isSavedActive = (id: string) => searchParams.get('saved') === id
+
+  const navBtn = (href: string, label: string, icon: React.ReactNode, active: boolean) => (
+    <button
+      key={href}
+      onClick={() => router.push(href)}
+      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-[2px] text-sm transition-colors text-left"
+      style={{
+        color: active ? 'var(--nw-accent)' : 'var(--ink-3)',
+        background: active ? 'var(--accent-tint)' : '',
+        fontWeight: active ? '500' : '400',
+        borderLeft: active ? '2px solid var(--nw-accent)' : '2px solid transparent',
+      }}
+      onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = 'var(--paper-3)' }}
+      onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = '' }}
+    >
+      {icon}
+      <span className="truncate">{label}</span>
+    </button>
+  )
 
   return (
-    <aside className="w-52 shrink-0 flex flex-col" style={{ background: 'var(--paper-2)', borderRight: '1px solid var(--rule)' }}>
+    <aside className="w-52 shrink-0 flex flex-col h-full" style={{ background: 'var(--paper-2)', borderRight: '1px solid var(--rule)' }}>
       <div className="p-2" style={{ borderBottom: '1px solid var(--rule)' }}>
-        <Button className="w-full gap-1.5 text-sm" onClick={onStartCase}>
+        <Button className="w-full gap-1.5 text-sm h-8" onClick={onStartCase}>
           <Plus size={14} /> Start case
         </Button>
       </div>
-      <div className="px-3 pt-3 pb-1">
-        <p className="mono-meta text-[10px]">Views</p>
-      </div>
-      <nav className="flex-1 overflow-y-auto sidebar-scroll p-1.5 space-y-0.5">
-        {PREDEFINED_VIEWS.map((v) => {
-          const active = isCurrent(v.href)
-          return (
-            <button
-              key={v.href}
-              onClick={() => router.push(v.href)}
-              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-[2px] text-sm transition-colors text-left"
-              style={{
-                color: active ? 'var(--nw-accent)' : 'var(--ink-3)',
-                background: active ? 'var(--accent-tint)' : '',
-                fontWeight: active ? '500' : '400',
-                borderLeft: active ? '2px solid var(--nw-accent)' : '2px solid transparent',
-              }}
-              onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = 'var(--paper-3)' }}
-              onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = '' }}
-            >
-              {v.icon}
-              {v.label}
-            </button>
-          )
+
+      <div className="flex-1 overflow-y-auto sidebar-scroll p-1.5 space-y-0.5">
+        {systemViews.length > 0 && (
+          <p className="mono-meta text-[10px] px-2 pt-1 pb-0.5" style={{ color: 'var(--ink-4)' }}>Views</p>
+        )}
+        {systemViews.map((v) => {
+          const href = buildHref('/cases', v.filters)
+          return navBtn(href, v.name, iconFromName(v.icon), isViewActive(href))
         })}
 
         {savedViews.length > 0 && (
-          <>
-            <div className="pt-3 pb-1 px-2">
-              <p className="mono-meta text-[10px]">Saved views</p>
-            </div>
-            {savedViews.map((v) => {
-              const active = isSavedActive(v)
-              return (
-                <div key={v.id} className="flex items-center group">
-                  <button
-                    onClick={() => router.push(`/cases?saved=${v.id}`)}
-                    className="flex-1 flex items-center gap-2 px-2 py-1.5 rounded-[2px] text-sm transition-colors text-left"
-                    style={{
-                      color: active ? 'var(--nw-accent)' : 'var(--ink-3)',
-                      background: active ? 'var(--accent-tint)' : '',
-                      fontWeight: active ? '500' : '400',
-                      borderLeft: active ? '2px solid var(--nw-accent)' : '2px solid transparent',
-                    }}
-                    onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = 'var(--paper-3)' }}
-                    onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = '' }}
-                  >
-                    <Bookmark size={14} />
-                    <span className="truncate">{v.name}</span>
-                  </button>
-                  <button
-                    onClick={() => onDelete(v.id)}
-                    className="p-1 opacity-0 group-hover:opacity-100 transition-all"
-                    style={{ color: 'var(--ink-4)' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--risk)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-4)')}
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              )
-            })}
-          </>
+          <p className="mono-meta text-[10px] px-2 pt-3 pb-0.5" style={{ color: 'var(--ink-4)' }}>My views</p>
         )}
-      </nav>
+        {savedViews.map((v) => {
+          const active = isSavedActive(v.id)
+          return (
+            <div key={v.id} className="flex items-center group">
+              <button
+                onClick={() => router.push(`/cases?saved=${v.id}`)}
+                className="flex-1 flex items-center gap-2 px-2 py-1.5 rounded-[2px] text-sm transition-colors text-left"
+                style={{
+                  color: active ? 'var(--nw-accent)' : 'var(--ink-3)',
+                  background: active ? 'var(--accent-tint)' : '',
+                  fontWeight: active ? '500' : '400',
+                  borderLeft: active ? '2px solid var(--nw-accent)' : '2px solid transparent',
+                }}
+                onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = 'var(--paper-3)' }}
+                onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = '' }}
+              >
+                <Bookmark size={14} />
+                <span className="truncate">{v.name}</span>
+              </button>
+              <button
+                onClick={() => onDelete(v.id)}
+                className="p-1 opacity-0 group-hover:opacity-100 transition-all shrink-0"
+                style={{ color: 'var(--ink-4)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--risk)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-4)')}
+              >
+                <Trash2 size={12} />
+              </button>
+            </div>
+          )
+        })}
+      </div>
+
       <div className="p-2" style={{ borderTop: '1px solid var(--rule)' }}>
-        <Button variant="secondary" size="sm" className="w-full text-xs gap-1" onClick={onSave}>
+        <Button variant="secondary" size="sm" className="w-full text-xs gap-1 h-7" onClick={onSave}>
           <Plus size={12} /> Save current view
         </Button>
       </div>
@@ -172,6 +180,9 @@ function ViewNav({
   )
 }
 
+// ---------------------------------------------------------------------------
+// Case list components
+// ---------------------------------------------------------------------------
 function GroupedByWorkflow({ instances }: { instances: Instance[] }) {
   const groups: Record<string, Instance[]> = {}
   for (const i of instances) {
@@ -182,7 +193,6 @@ function GroupedByWorkflow({ instances }: { instances: Instance[] }) {
   const [open, setOpen] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(Object.keys(groups).map((k) => [k, true]))
   )
-
   return (
     <div className="space-y-3">
       {Object.entries(groups).map(([wfName, items]) => (
@@ -199,7 +209,7 @@ function GroupedByWorkflow({ instances }: { instances: Instance[] }) {
             <Badge variant="default" className="ml-auto text-xs">{items.length}</Badge>
           </button>
           {open[wfName] && (
-            <div className="divide-y divide-slate-100/80">
+            <div className="divide-y" style={{ borderColor: 'var(--rule)' }}>
               {items.map((inst) => <CaseRow key={inst.id} inst={inst} />)}
             </div>
           )}
@@ -232,23 +242,31 @@ function CaseRow({ inst }: { inst: Instance }) {
   )
 }
 
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
 export function CasesClient({ userId }: { userId: string }) {
   const searchParams = useSearchParams()
-  const [instances, setInstances] = useState<Instance[]>([])
-  const [savedViews, setSavedViews] = useState<SavedView[]>([])
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [saveDialogOpen, setSaveDialogOpen] = useState(false)
-  const [saveName, setSaveName] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [startDialogOpen, setStartDialogOpen] = useState(false)
-  const [workflows, setWorkflows] = useState<Workflow[]>([])
-  const [selectedWorkflow, setSelectedWorkflow] = useState('')
-  const [caseTitle, setCaseTitle] = useState('')
-  const [starting, setStarting] = useState(false)
+  const router = useRouter()
 
-  const status = searchParams.get('status')
-  const view = searchParams.get('view')
+  const [instances, setInstances]   = useState<Instance[]>([])
+  const [systemViews, setSystemViews] = useState<SystemView[]>([])
+  const [savedViews, setSavedViews] = useState<SavedView[]>([])
+  const [loading, setLoading]       = useState(true)
+  const [search, setSearch]         = useState('')
+
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false)
+  const [saveName, setSaveName]             = useState('')
+  const [saving, setSaving]                 = useState(false)
+
+  const [startDialogOpen, setStartDialogOpen] = useState(false)
+  const [workflows, setWorkflows]             = useState<Workflow[]>([])
+  const [selectedWorkflow, setSelectedWorkflow] = useState('')
+  const [caseTitle, setCaseTitle]             = useState('')
+  const [starting, setStarting]               = useState(false)
+
+  const status  = searchParams.get('status')
+  const view    = searchParams.get('view')
   const savedId = searchParams.get('saved')
 
   const fetchViews = useCallback(async () => {
@@ -259,6 +277,13 @@ export function CasesClient({ userId }: { userId: string }) {
 
   useEffect(() => { fetchViews() }, [fetchViews])
 
+  useEffect(() => {
+    fetch('/api/system-views?section=cases')
+      .then((r) => r.json())
+      .then((d: { views: SystemView[] }) => setSystemViews(d.views ?? []))
+      .catch(() => {})
+  }, [])
+
   const openStartDialog = useCallback(async () => {
     const res = await fetch('/api/workflows')
     const data = await res.json()
@@ -268,8 +293,6 @@ export function CasesClient({ userId }: { userId: string }) {
     setStartDialogOpen(true)
   }, [])
 
-  const router = useRouter()
-
   const handleStartCase = async () => {
     if (!selectedWorkflow) return
     setStarting(true)
@@ -277,10 +300,7 @@ export function CasesClient({ userId }: { userId: string }) {
     const res = await fetch('/api/instances', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        workflowId: selectedWorkflow,
-        title: caseTitle.trim() || wf?.name,
-      }),
+      body: JSON.stringify({ workflowId: selectedWorkflow, title: caseTitle.trim() || wf?.name }),
     })
     const data = await res.json()
     setStarting(false)
@@ -293,15 +313,10 @@ export function CasesClient({ userId }: { userId: string }) {
     const params = new URLSearchParams()
     if (status) params.set('status', status)
     if (view === 'mine') params.set('createdBy', userId)
-
-    // If saved view — load filters from it
     if (savedId) {
       const sv = savedViews.find((v) => v.id === savedId)
-      if (sv) {
-        Object.entries(sv.filters).forEach(([k, v]) => params.set(k, v))
-      }
+      if (sv) Object.entries(sv.filters).forEach(([k, v]) => params.set(k, v))
     }
-
     fetch(`/api/instances?${params}`)
       .then((r) => r.json())
       .then((d) => { setInstances(d.instances ?? []); setLoading(false) })
@@ -333,12 +348,12 @@ export function CasesClient({ userId }: { userId: string }) {
   const filtered = instances.filter((i) =>
     !search || i.title.toLowerCase().includes(search.toLowerCase()) || i.workflow.name.toLowerCase().includes(search.toLowerCase())
   )
-
   const byWorkflow = view === 'by-workflow'
 
   return (
     <div className="flex h-full">
-      <ViewNav
+      <ViewPanel
+        systemViews={systemViews}
         savedViews={savedViews}
         onDelete={deleteView}
         onSave={() => setSaveDialogOpen(true)}
@@ -347,7 +362,7 @@ export function CasesClient({ userId }: { userId: string }) {
 
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
         <div className="flex items-center justify-between gap-4">
-          <h1 className="text-2xl font-semibold" style={{ color: 'var(--ink)' }}>Cases</h1>
+          <h1 className="text-2xl font-semibold" style={{ color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>Cases</h1>
           <div className="relative w-64">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--ink-4)' }} />
             <Input
@@ -374,11 +389,10 @@ export function CasesClient({ userId }: { userId: string }) {
         )}
       </div>
 
+      {/* Dialogs */}
       <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
         <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Save view</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Save view</DialogTitle></DialogHeader>
           <Input
             placeholder="View name"
             value={saveName}
@@ -388,18 +402,14 @@ export function CasesClient({ userId }: { userId: string }) {
           />
           <DialogFooter>
             <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={saving || !saveName.trim()}>
-              {saving ? 'Saving…' : 'Save'}
-            </Button>
+            <Button onClick={handleSave} disabled={saving || !saveName.trim()}>{saving ? 'Saving…' : 'Save'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Dialog open={startDialogOpen} onOpenChange={setStartDialogOpen}>
         <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Start case</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Start case</DialogTitle></DialogHeader>
           <div className="space-y-3 py-1">
             <div className="space-y-1.5">
               <label className="text-xs font-medium" style={{ color: 'var(--ink-3)' }}>Workflow</label>
@@ -407,13 +417,9 @@ export function CasesClient({ userId }: { userId: string }) {
                 <p className="text-sm" style={{ color: 'var(--ink-4)' }}>No published workflows available.</p>
               ) : (
                 <Select value={selectedWorkflow} onValueChange={setSelectedWorkflow}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a workflow…" />
-                  </SelectTrigger>
+                  <SelectTrigger className="w-full"><SelectValue placeholder="Select a workflow…" /></SelectTrigger>
                   <SelectContent>
-                    {workflows.map((w) => (
-                      <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
-                    ))}
+                    {workflows.map((w) => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               )}

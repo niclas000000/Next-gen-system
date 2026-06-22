@@ -21,6 +21,12 @@ interface LookupRow {
   active: boolean
 }
 
+interface UserOption {
+  id: string
+  name: string
+  email: string
+}
+
 const LAYOUT_TYPES = ['section', 'heading', 'paragraph', 'divider']
 
 // ---------------------------------------------------------------------------
@@ -52,16 +58,42 @@ function FieldInput({
   field,
   value,
   options,
+  users,
   onChange,
 }: {
   field: FormField
   value: unknown
   options: { label: string; value: string }[]
+  users: UserOption[]
   onChange: (val: unknown) => void
 }) {
   const strVal = (value as string) ?? ''
 
   switch (field.type) {
+    case 'user_role': {
+      const roleName = (field.properties as Record<string, unknown>)?.roleName as string | undefined
+      return (
+        <div className="space-y-1">
+          {roleName && (
+            <p className="text-[10px] font-mono" style={{ color: 'var(--ink-4)' }}>
+              Assigns user to role: <span style={{ color: 'var(--nw-accent)' }}>{roleName}</span>
+            </p>
+          )}
+          <select
+            id={field.id}
+            value={strVal}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full rounded-[2px] px-3 py-2 text-sm focus:outline-none"
+            style={{ border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)' }}
+          >
+            <option value="">Select person…</option>
+            {users.map((u) => (
+              <option key={u.id} value={u.id}>{u.name} — {u.email}</option>
+            ))}
+          </select>
+        </div>
+      )
+    }
     case 'text':
     case 'user':
       return (
@@ -202,6 +234,7 @@ export function FormRenderer({ form, onSubmit, submitting }: FormRendererProps) 
 
   // Fetch lookup rows for all lookup-typed fields (needed for cascade)
   const [lookupRows, setLookupRows] = useState<Record<string, LookupRow[]>>({})
+  const [users, setUsers] = useState<UserOption[]>([])
 
   useEffect(() => {
     const lookupFields = form.fields.filter((f) => f.dataSource?.type === 'lookup' && f.dataSource.tableId)
@@ -212,6 +245,13 @@ export function FormRenderer({ form, onSubmit, submitting }: FormRendererProps) 
         .then((d: { values: LookupRow[] }) => setLookupRows((prev) => ({ ...prev, [tableId]: d.values })))
         .catch(() => {})
     })
+    // Fetch users if any user_role fields are present
+    if (form.fields.some((f) => f.type === 'user_role' || f.type === 'user')) {
+      fetch('/api/users')
+        .then((r) => r.json())
+        .then((d: { users: UserOption[] }) => setUsers(d.users ?? []))
+        .catch(() => {})
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -314,6 +354,7 @@ export function FormRenderer({ form, onSubmit, submitting }: FormRendererProps) 
               field={field}
               value={values[field.name]}
               options={options}
+              users={users}
               onChange={(val) => handleChange(field, val)}
             />
             {errors[field.name] && (

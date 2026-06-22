@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/client'
 
 const DEFAULTS: Record<string, string> = {
-  backgroundImage: '',
-  backgroundOpacity: '15',
   theme: 'default',
   navMode: 'v1',
 }

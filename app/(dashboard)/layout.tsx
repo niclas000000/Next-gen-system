@@ -1,11 +1,10 @@
 'use client'
 
-import { Suspense, useState, useEffect, useCallback } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { IconRail } from '@/components/layout/IconRail'
 import { TopBar } from '@/components/layout/TopBar'
 import { CommandPalette } from '@/components/layout/CommandPalette'
-import { DashboardBackground } from '@/components/layout/DashboardBackground'
 import { useSettings } from '@/lib/settings-context'
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
@@ -13,8 +12,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   const [paletteOpen, setPaletteOpen] = useState(false)
   const navMode = settings.navMode ?? 'v1'
 
-  const openPalette = useCallback(() => setPaletteOpen(true), [])
-  const closePalette = useCallback(() => setPaletteOpen(false), [])
+  const closePalette = () => setPaletteOpen(false)
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -41,9 +39,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         <Suspense fallback={<div className="h-14 shrink-0" style={{ background: 'var(--paper)', borderBottom: '1px solid var(--rule)' }} />}>
           <TopBar />
         </Suspense>
-        <DashboardBackground>
-          <main className="flex-1 overflow-y-auto p-6">{children}</main>
-        </DashboardBackground>
+        <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
 
       <CommandPalette open={paletteOpen} onClose={closePalette} />

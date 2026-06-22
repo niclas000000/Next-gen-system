@@ -17,6 +17,7 @@ export type FieldType =
   | 'user'
   | 'multiuser'
   | 'group'
+  | 'user_role'
   | 'table'
   | 'keyvalue'
   | 'section'
@@ -82,7 +83,12 @@ export type FieldProperties =
   | FileFieldProperties
   | TableFieldProperties
   | SelectFieldProperties
+  | UserRoleFieldProperties
   | BaseFieldProperties
+
+export interface UserRoleFieldProperties extends BaseFieldProperties {
+  roleName: string  // which ProcessRole.name this field assigns to
+}
 
 export interface BaseFieldProperties {
   cssClass?: string

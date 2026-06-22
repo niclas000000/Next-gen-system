@@ -6,8 +6,10 @@ import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { Trash2, Plus, Eye, EyeOff, Link2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import type { FormField } from '@/types/field'
+
+interface ProcessRole { id: string; name: string }
 
 interface LookupTableOption { id: string; name: string }
 
@@ -16,6 +18,17 @@ const LAYOUT_TYPES = ['section', 'heading', 'divider', 'paragraph']
 export function FieldProperties() {
   const { fields, selectedFieldId, updateField } = useFormBuilderStore()
   const field = fields.find((f) => f.id === selectedFieldId)
+
+  const [processRoles, setProcessRoles] = useState<ProcessRole[]>([])
+  const fetchRoles = useCallback(async () => {
+    if (field?.type !== 'user_role') return
+    const res = await fetch('/api/roles')
+    if (res.ok) {
+      const data = await res.json() as { roles: ProcessRole[] }
+      setProcessRoles(data.roles)
+    }
+  }, [field?.type])
+  useEffect(() => { fetchRoles() }, [fetchRoles])
 
   if (!field) {
     return (
@@ -108,6 +121,27 @@ export function FieldProperties() {
                 className="h-8 text-sm"
               />
             </div>
+          </div>
+        )}
+
+        {/* user_role properties — role selector */}
+        {field.type === 'user_role' && (
+          <div className="space-y-1">
+            <Label className="text-xs">Assigns to role</Label>
+            <select
+              value={(field.properties as Record<string, unknown>)?.roleName as string ?? ''}
+              onChange={(e) => update('properties', { ...field.properties, roleName: e.target.value })}
+              className="w-full rounded-[2px] text-sm px-3 h-8 focus:outline-none"
+              style={{ border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)' }}
+            >
+              <option value="">Select a role…</option>
+              {processRoles.map((r) => (
+                <option key={r.id} value={r.name}>{r.name}</option>
+              ))}
+            </select>
+            {processRoles.length === 0 && (
+              <p className="text-[10px]" style={{ color: 'var(--ink-4)' }}>No roles defined yet. Create them in Admin → Roles.</p>
+            )}
           </div>
         )}
 

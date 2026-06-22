@@ -6,7 +6,10 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Trash2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import type { NodeType } from '@/types/workflow'
+
+interface ProcessRole { id: string; name: string }
 
 const nodeTypeLabels: Record<NodeType, string> = {
   start: 'Start', task: 'Task', decision: 'Decision', automation: 'Automation',
@@ -19,6 +22,11 @@ interface Props { nodeId: string }
 export function NodeProperties({ nodeId }: Props) {
   const { rfNodes, setRfNodes } = useCanvas()
   const { clearSelection, markDirty } = useWorkflowDesignerStore()
+  const [processRoles, setProcessRoles] = useState<ProcessRole[]>([])
+
+  useEffect(() => {
+    fetch('/api/roles').then((r) => r.json()).then((d: { roles: ProcessRole[] }) => setProcessRoles(d.roles ?? [])).catch(() => {})
+  }, [])
 
   const node = rfNodes.find((n) => n.id === nodeId)
   if (!node) return null
@@ -76,7 +84,8 @@ export function NodeProperties({ nodeId }: Props) {
               >
                 <option value="initiator">Initiator (person who started)</option>
                 <option value="user">Specific user</option>
-                <option value="role">Role</option>
+                <option value="role">Group / system role</option>
+                <option value="workflow_role">Process role (assigned in form)</option>
                 <option value="previous_step_user">Same as previous step</option>
               </select>
               {(((data.assignment as Record<string, unknown>)?.type as string) === 'user' ||
@@ -85,8 +94,21 @@ export function NodeProperties({ nodeId }: Props) {
                   value={((data.assignment as Record<string, unknown>)?.value as string) ?? ''}
                   onChange={(e) => update('assignment', { ...(data.assignment as object ?? {}), value: e.target.value })}
                   className="h-8 text-sm mt-1"
-                  placeholder={((data.assignment as Record<string, unknown>)?.type as string) === 'role' ? 'Role name (e.g. admin, manager)' : 'User ID'}
+                  placeholder={((data.assignment as Record<string, unknown>)?.type as string) === 'role' ? 'Group name (e.g. admin, managers)' : 'User ID'}
                 />
+              )}
+              {((data.assignment as Record<string, unknown>)?.type as string) === 'workflow_role' && (
+                <select
+                  value={((data.assignment as Record<string, unknown>)?.value as string) ?? ''}
+                  onChange={(e) => update('assignment', { ...(data.assignment as object ?? {}), value: e.target.value })}
+                  className="w-full rounded-[2px] text-sm px-3 mt-1 focus:outline-none"
+                  style={{ border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)', height: '32px' }}
+                >
+                  <option value="">Select role…</option>
+                  {processRoles.map((r) => (
+                    <option key={r.id} value={r.name}>{r.name}</option>
+                  ))}
+                </select>
               )}
             </div>
 

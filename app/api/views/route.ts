@@ -24,7 +24,7 @@ export async function POST(req: Request) {
   if (!body.name?.trim()) return NextResponse.json({ error: 'name required' }, { status: 400 })
 
   const view = await prisma.savedView.create({
-    data: { name: body.name.trim(), userId, filters: body.filters ?? {} },
+    data: { name: body.name.trim(), userId, filters: (body.filters ?? {}) as never },
   })
   return NextResponse.json({ view }, { status: 201 })
 }

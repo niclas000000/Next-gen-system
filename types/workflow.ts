@@ -90,14 +90,31 @@ export interface DecisionBranch {
   targetNodeId: string
 }
 
+// Typed automation action configs
+export type AutomationConfig =
+  | { type: 'set_variable'; variableName: string; expression: string }
+  | { type: 'send_notification'; recipientType: 'user' | 'role' | 'initiator'; recipientValue: string; title: string; body: string }
+  | { type: 'send_email'; to: string; subject: string; body: string }
+
 export interface AutomationNodeData {
   name: string
-  type: 'calculation' | 'webhook' | 'database' | 'document' | 'email' | 'subprocess'
-  config: Record<string, unknown>
-  inputMapping: Record<string, string>
-  outputMapping: Record<string, string>
-  errorHandling?: 'fail' | 'skip' | 'retry'
+  config: AutomationConfig
+  errorHandling: 'fail' | 'skip'
 }
+
+// Condition tree for AND/OR visual builder
+export interface ConditionLeaf {
+  type: 'leaf'
+  field: string
+  operator: string
+  value: string
+}
+export interface ConditionGroup {
+  type: 'group'
+  logic: 'AND' | 'OR'
+  conditions: (ConditionLeaf | ConditionGroup)[]
+}
+export type ConditionTree = ConditionLeaf | ConditionGroup
 
 export interface NotificationNodeData {
   name: string
@@ -139,7 +156,7 @@ export interface EndNodeData {
 }
 
 export interface Assignment {
-  type: 'user' | 'role' | 'expression' | 'previous_step_user' | 'initiator'
+  type: 'user' | 'role' | 'expression' | 'previous_step_user' | 'initiator' | 'workflow_role'
   value: string
 }
 

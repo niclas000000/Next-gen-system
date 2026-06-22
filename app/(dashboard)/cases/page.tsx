@@ -9,7 +9,7 @@ export default async function CasesPage() {
   if (!session) redirect('/login')
   const userId = (session.user as { id?: string }).id ?? ''
   return (
-    <div className="-m-6 h-[calc(100%+3rem)] flex flex-col">
+    <div className="-m-6 h-[calc(100%+3rem)]">
       <Suspense>
         <CasesClient userId={userId} />
       </Suspense>

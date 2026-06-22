@@ -24,7 +24,7 @@ export function makeDefaultNodeData(type: NodeType): Record<string, unknown> {
     case 'decision':
       return { name: 'Decision', conditions: [], defaultBranch: '' } satisfies DecisionNodeData as Record<string, unknown>
     case 'automation':
-      return { name: 'Automation', type: 'calculation', config: {}, inputMapping: {}, outputMapping: {}, errorHandling: 'fail' } satisfies AutomationNodeData as Record<string, unknown>
+      return { name: 'Automation', config: { type: 'set_variable', variableName: '', expression: '' }, errorHandling: 'fail' } satisfies AutomationNodeData as Record<string, unknown>
     case 'notification':
       return { name: 'Notification', recipients: [], deliveryMethod: ['in_app'] } satisfies NotificationNodeData as Record<string, unknown>
     case 'subprocess':

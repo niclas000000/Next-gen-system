@@ -50,8 +50,8 @@ export default async function WorkflowInstanceDetailPage({ params }: { params: P
         workflowId: formRecord.workflowId,
         nodeId: formRecord.nodeId,
         name: formRecord.name,
-        fields: formRecord.fields as FormDefinition['fields'],
-        settings: formRecord.settings as FormDefinition['settings'],
+        fields: formRecord.fields as unknown as FormDefinition['fields'],
+        settings: formRecord.settings as unknown as FormDefinition['settings'],
       }
     }
   }

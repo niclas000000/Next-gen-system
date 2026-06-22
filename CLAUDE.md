@@ -161,13 +161,18 @@ The UI uses the **Northwind design system** throughout. Never use raw Tailwind b
 
 ## Prisma Schema (current models)
 
-`User`, `Group`, `Document`, `DocumentVersion`, `ReadReceipt`, `Workflow`, `WorkflowForm`, `WorkflowRule`, `WorkflowInstance`, `WorkflowStep`, `Comment`, `Attachment`, `AuditLog`, `SystemSetting`, `RegistryItem`, `Process`, `ProcessDocument`, `ProcessWorkflow`, `Form`, `SavedView`, `DocumentType`, `ApprovalFlow`, `LookupTable`, `LookupTableRow`, `ViewFolder`
+`User`, `Group`, `Document`, `DocumentVersion`, `ReadReceipt`, `DocumentApproval`, `Workflow`, `WorkflowForm`, `WorkflowRule`, `WorkflowInstance`, `WorkflowStep`, `Comment`, `Attachment`, `AuditLog`, `SystemSetting`, `RegistryItem`, `Process`, `ProcessRole`, `ProcessDocument`, `ProcessWorkflow`, `Form`, `SavedView`, `SystemView`, `DocumentType`, `ApprovalFlow`, `LookupTable`, `LookupTableRow`, `ViewFolder`, `Notification`
 
 Key models:
 - `Form` — standalone reusable forms (fields JSON, settings JSON)
 - `SavedView` — user-saved case view filters (userId, filters JSON)
+- `SystemView` — admin-defined saved views for Cases/Documents sidebars (section, icon, filters JSON, order, isDefault); filter keys are `status` / `view` only
 - `DocumentType` — document type definitions (prefix, format, propertyPackage JSON, approvalFlowId)
-- `ApprovalFlow` — multi-phase approval flows (phases JSON)
+- `ApprovalFlow` — multi-phase approval flows (phases JSON; each phase has `role` = a `ProcessRole.name`, `rule` = any|all)
+- `DocumentApproval` — per-phase approval record for a document in flight (phase, status, assignedTo[], responses JSON)
+- `ProcessRole` — named workflow/approval roles (e.g. "Reviewer"); bound to actual users per-instance via `user_role` form fields → `WorkflowInstance.roles`, or per-document at submit via `Document.approvalAssignments`
+- `WorkflowRule` — lifecycle automation rules (trigger `on_start`|`on_step_complete`|`on_instance_complete`, expression, actions JSON, priority, active); evaluated by the engine
+- `Notification` — in-app notifications (userId, type, title, body, link, read)
 - `LookupTable` / `LookupTableRow` — reusable dropdown data for FormBuilder `lookup` fields
 - `Process` — full process tree with canvas (nodes/edges JSON), KPIs, linked documents/workflows
 
@@ -195,6 +200,12 @@ Key models:
 - **V2 navigation**: Icon rail (`components/layout/IconRail.tsx`) + Ctrl+K command palette (`components/layout/CommandPalette.tsx`)
 - **Northwind design system**: fully applied across all pages — CSS tokens, ink/paper/ok/warn/risk palette, 2px radius, no shadows, teal accent, Inter Tight + JetBrains Mono typography
 - Lookup tables (`/admin/lookup-tables`): CRUD for reusable dropdown data, used in FormBuilder `lookup` field type
+- **Roles** (`/admin/roles`): CRUD for `ProcessRole` catalog — names used by `user_role` form fields, `workflow_role` task assignment, and approval flow phases
+- **Workflow rules** (`Logic → Rules` tab): `RuleBuilder` + `ActionConfigForm` → `/api/workflows/[id]/rules`; engine evaluates active rules at `on_start` / `on_step_complete` / `on_instance_complete`. Actions: `set_variable`, `send_notification` (creates Notification rows), `send_email` (console stub — no SMTP yet)
+- **Document approval lifecycle**: draft → submit (assign approvers per phase) → pending → approve/reject per phase → publish. Routes `/api/documents/[id]/submit|approve|reject|approval`. Approvers chosen at submit are persisted in `Document.approvalAssignments` and consumed as phases advance (role resolution as fallback). Approve/reject create Notifications
+- **DB-driven System Views** (`/design/views`): admin-managed saved views for Cases/Documents; Sidebar + list pages fetch `/api/system-views` and apply `filters` as query params; defaults seeded idempotently
+- **Notifications**: `NotificationBell` (TopBar) + `/api/notifications` (list / mark-read / read-all)
+- **Tasks** (`/tasks`): user's open workflow steps + pending document approvals
 
 ### Navigation structure (Sidebar — V1)
 ```
@@ -213,23 +224,25 @@ Design
   ├── Processes        /design/processes  → redirect /processes
   ├── Forms            /design/forms
   ├── Document Types   /design/document-types
-  └── Approval Flows   /design/approval-flows
+  ├── Approval Flows   /design/approval-flows
+  └── Views            /design/views
 Admin
   ├── Users            /admin/users
   ├── Groups           /admin/settings
   ├── Register         /admin/register
   ├── Lookup Tables    /admin/lookup-tables
+  ├── Roles            /admin/roles
   ├── Appearance       /admin/appearance
   └── System           /admin/system
 ```
 
 ### Possible next areas
-- Document approval workflow (submit → approval flow phases → publish)
-- Notifications system (in-app + email)
+- Email delivery for `send_email` rule action + approval notifications (SMTP — currently console stub)
 - Full-text search across documents/cases
 - Dashboard widgets customization
 - BPMN 2.0 node types for process canvas
 - `isProcessRoot` usage in process tree UI
+- Multi-approver-per-phase UI (model `assignedTo[]` already supports it; submit modal picks one per phase)
 
 ---
 
@@ -240,14 +253,19 @@ Admin
 - `form-builder-store` (Zustand) is shared between workflow FormBuilder and standalone FormDesigner — both call `loadForm(id, fields, settings)`
 - Designer and Cases pages use `-m-6` to escape dashboard's `p-6` padding for full-height layouts
 - Sidebar uses `useSearchParams()` — requires Suspense boundary in `layout.tsx`
-- `proxy.ts` replaces `middleware.ts` (Next.js 16 convention change)
+- `proxy.ts` replaces `middleware.ts` (Next.js 16 convention change); its matcher protects everything except `/api/auth`, `_next`, `login`, `register` — so API route handlers can rely on the middleware for auth
 - `params` in pages and API routes is a `Promise` — always `await params`
+- **Node forms live in the `WorkflowForm` table** (keyed by `workflowId_nodeId`), NOT in `node.data` — the engine reads `prisma.workflowForm` to extract `user_role` submissions into `WorkflowInstance.roles`
+- **Role key consistency**: `user_role` field `roleName`, `workflow_role` assignment `value`, and `WorkflowInstance.roles` keys are all the `ProcessRole.name` (never the id)
+- Prisma JSON fields use `as never` casts on write (repo convention) since `Record<string, unknown>` / `unknown[]` aren't assignable to `InputJsonValue`
 
 ---
 
 ## Key Field Types (Form Builder)
 
-`text | textarea | number | date | select | multiselect | checkbox | radio | file | user | table | richtext`
+`text | textarea | number | date | select | multiselect | checkbox | radio | file | user | user_role | table | richtext`
+
+- `user_role` — picks a user to fill a named `ProcessRole` for this instance; on step complete the engine writes `{ [roleName]: userId }` into `WorkflowInstance.roles`, later resolved by `workflow_role` task assignment
 
 ---
 

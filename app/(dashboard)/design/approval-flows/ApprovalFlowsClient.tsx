@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -32,14 +32,16 @@ interface Props {
   initialFlows: FlowData[]
 }
 
-const ROLES = ['Author', 'Reviewer', 'Approver', 'Owner']
+interface ProcessRole { id: string; name: string }
 
 function PhaseCard({
   phase,
+  roles,
   onUpdate,
   onRemove,
 }: {
   phase: Phase
+  roles: ProcessRole[]
   onUpdate: (updates: Partial<Phase>) => void
   onRemove: () => void
 }) {
@@ -67,8 +69,9 @@ function PhaseCard({
               className="w-full h-7 px-2 text-xs rounded-[2px] focus:outline-none focus:ring-1"
               style={{ border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)' }}
             >
-              {ROLES.map((r) => (
-                <option key={r} value={r}>{r}</option>
+              <option value="">Select role…</option>
+              {roles.map((r) => (
+                <option key={r.id} value={r.name}>{r.name}</option>
               ))}
             </select>
           </div>
@@ -125,11 +128,16 @@ function FlowEditor({
   const [name, setName] = useState(flow?.name ?? '')
   const [phases, setPhases] = useState<Phase[]>(
     flow?.phases ?? [
-      { id: 'p1', name: 'Review', role: 'Reviewer', rule: 'any', deadlineDays: 5, order: 0 },
-      { id: 'p2', name: 'Approve', role: 'Approver', rule: 'all', deadlineDays: 3, order: 1 },
+      { id: 'p1', name: 'Review', role: '', rule: 'any', deadlineDays: 5, order: 0 },
+      { id: 'p2', name: 'Approve', role: '', rule: 'all', deadlineDays: 3, order: 1 },
     ]
   )
   const [saving, setSaving] = useState(false)
+  const [processRoles, setProcessRoles] = useState<ProcessRole[]>([])
+
+  useEffect(() => {
+    fetch('/api/roles').then((r) => r.json()).then((d: { roles: ProcessRole[] }) => setProcessRoles(d.roles ?? [])).catch(() => {})
+  }, [])
 
   const addPhase = () => {
     const newPhase: Phase = {
@@ -206,6 +214,7 @@ function FlowEditor({
               <PhaseCard
                 key={phase.id}
                 phase={phase}
+                roles={processRoles}
                 onUpdate={(updates) => updatePhase(phase.id, updates)}
                 onRemove={() => removePhase(phase.id)}
               />

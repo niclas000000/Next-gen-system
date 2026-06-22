@@ -1,7 +1,7 @@
 'use client'
 
 import { useFormBuilderStore } from '@/lib/stores/form-builder-store'
-import { Type, AlignLeft, Hash, Calendar, ChevronDown, CheckSquare, ToggleLeft, Upload, User, Table, Minus, Heading, List } from 'lucide-react'
+import { Type, AlignLeft, Hash, Calendar, ChevronDown, CheckSquare, ToggleLeft, Upload, User, Table, Minus, Heading, List, Shield } from 'lucide-react'
 import type { FieldType } from '@/types/field'
 
 const groups: { label: string; fields: { type: FieldType; label: string; icon: React.ReactNode }[] }[] = [
@@ -29,6 +29,7 @@ const groups: { label: string; fields: { type: FieldType; label: string; icon: R
     fields: [
       { type: 'file',        label: 'File Upload', icon: <Upload size={13} /> },
       { type: 'user',        label: 'User Picker', icon: <User size={13} /> },
+      { type: 'user_role',   label: 'Role Assignment', icon: <Shield size={13} /> },
       { type: 'table',       label: 'Table',       icon: <Table size={13} /> },
     ],
   },

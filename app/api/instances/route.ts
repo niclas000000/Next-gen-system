@@ -11,13 +11,17 @@ export async function GET(req: Request) {
   const workflowId = searchParams.get('workflowId')
   const status = searchParams.get('status')
   const createdBy = searchParams.get('createdBy')
+  const q = searchParams.get('q')
+  const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!, 10) : undefined
 
   const instances = await prisma.workflowInstance.findMany({
     where: {
       ...(workflowId ? { workflowId } : {}),
       ...(status ? { status } : {}),
       ...(createdBy ? { createdBy } : {}),
+      ...(q ? { title: { contains: q, mode: 'insensitive' } } : {}),
     },
+    ...(limit ? { take: limit } : {}),
     include: {
       workflow: { select: { name: true } },
       creator: { select: { name: true } },

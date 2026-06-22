@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, FileText, Layers, GitBranch, Workflow, Settings, ArrowRight } from 'lucide-react'
+import { Search, FileText, Layers, GitBranch, Workflow, Settings, ArrowRight, Clock } from 'lucide-react'
 
 interface Result {
   id: string
@@ -34,25 +34,32 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
   const [docResults, setDocResults] = useState<Result[]>([])
+  const [caseResults, setCaseResults] = useState<Result[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
 
-  // Fetch document results when query changes
   useEffect(() => {
-    if (!query.trim() || query.length < 2) { setDocResults([]); return }
+    if (!query.trim() || query.length < 2) { setDocResults([]); setCaseResults([]); return }
     const ctrl = new AbortController()
-    fetch(`/api/documents?q=${encodeURIComponent(query)}&limit=5`, { signal: ctrl.signal })
-      .then((r) => r.json())
-      .then((d: { documents: { id: string; title: string; status: string; documentType?: { prefix: string } }[] }) => {
-        setDocResults((d.documents ?? []).map((doc) => ({
-          id: doc.id,
-          label: doc.title,
-          sub: doc.documentType?.prefix,
-          href: `/documents/${doc.id}`,
-          icon: <FileText size={15} />,
-          group: 'Documents',
-        })))
-      })
+    Promise.all([
+      fetch(`/api/documents?q=${encodeURIComponent(query)}&limit=5`, { signal: ctrl.signal })
+        .then((r) => r.json())
+        .then((d: { documents: { id: string; title: string; status: string; documentType?: { prefix: string } }[] }) =>
+          (d.documents ?? []).map((doc) => ({
+            id: doc.id, label: doc.title, sub: doc.documentType?.prefix,
+            href: `/documents/${doc.id}`, icon: <FileText size={15} />, group: 'Documents',
+          }))
+        ),
+      fetch(`/api/instances?q=${encodeURIComponent(query)}&limit=5`, { signal: ctrl.signal })
+        .then((r) => r.json())
+        .then((d: { instances: { id: string; title: string; status: string; workflow: { name: string } }[] }) =>
+          (d.instances ?? []).map((inst) => ({
+            id: inst.id, label: inst.title, sub: inst.workflow.name,
+            href: `/workflows/instances/${inst.id}`, icon: <Clock size={15} />, group: 'Cases',
+          }))
+        ),
+    ])
+      .then(([docs, cases]) => { setDocResults(docs); setCaseResults(cases) })
       .catch(() => {})
     return () => ctrl.abort()
   }, [query])
@@ -60,6 +67,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const filtered = query.trim()
     ? [
         ...docResults,
+        ...caseResults,
         ...STATIC_RESULTS.filter(
           (r) =>
             r.label.toLowerCase().includes(query.toLowerCase()) ||

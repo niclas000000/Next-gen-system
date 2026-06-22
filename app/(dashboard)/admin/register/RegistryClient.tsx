@@ -43,8 +43,7 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (c: string)
         {PRESET_COLORS.map((c) => (
           <button key={c} type="button" onClick={() => onChange(c)}
             className={`w-6 h-6 rounded-full border-2 transition-all ${value === c ? 'scale-110' : 'border-transparent'}`}
-            style={{ borderColor: value === c ? 'var(--ink)' : undefined }}
-            style={{ backgroundColor: c }}
+            style={{ borderColor: value === c ? 'var(--ink)' : undefined, backgroundColor: c }}
           />
         ))}
       </div>

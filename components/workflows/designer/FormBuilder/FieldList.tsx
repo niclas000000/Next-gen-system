@@ -64,12 +64,16 @@ export function FieldList() {
 
           {/* Conditional visibility indicator */}
           {field.conditional && (
-            <Eye size={12} className="shrink-0" style={{ color: 'var(--nw-accent)' }} title="Has visibility condition" />
+            <span className="shrink-0 inline-flex" title="Has visibility condition">
+              <Eye size={12} style={{ color: 'var(--nw-accent)' }} />
+            </span>
           )}
 
           {/* Cascade indicator */}
           {field.dataSource?.filterByField && (
-            <Link2 size={12} className="shrink-0" style={{ color: 'var(--ink-4)' }} title={`Filtered by: ${field.dataSource.filterByField}`} />
+            <span className="shrink-0 inline-flex" title={`Filtered by: ${field.dataSource.filterByField}`}>
+              <Link2 size={12} style={{ color: 'var(--ink-4)' }} />
+            </span>
           )}
 
           {/* Move up/down */}

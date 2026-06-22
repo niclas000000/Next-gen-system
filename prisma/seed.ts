@@ -49,6 +49,35 @@ async function main() {
   } else {
     console.log('Admin user already exists — skipping.')
   }
+
+  // Seed default system views (idempotent — upsert by section+name+isDefault)
+  const defaultViews = [
+    // Cases
+    { name: 'All cases',    section: 'cases',     icon: 'List',        filters: {},                      order: 0 },
+    { name: 'Running',      section: 'cases',     icon: 'Clock',       filters: { status: 'running' },   order: 1 },
+    { name: 'Completed',    section: 'cases',     icon: 'CheckCircle', filters: { status: 'completed' }, order: 2 },
+    { name: 'Cancelled',    section: 'cases',     icon: 'FileX',       filters: { status: 'cancelled' }, order: 3 },
+    { name: 'My cases',     section: 'cases',     icon: 'User',        filters: { view: 'mine' },        order: 4 },
+    { name: 'Per workflow', section: 'cases',     icon: 'GitBranch',   filters: { view: 'by-workflow' }, order: 5 },
+    // Documents
+    { name: 'Library',          section: 'documents', icon: 'Library',     filters: {},                       order: 0 },
+    { name: 'Pending Approval', section: 'documents', icon: 'Clock',       filters: { status: 'pending' },    order: 1 },
+    { name: 'My Documents',     section: 'documents', icon: 'User',        filters: { view: 'mine' },         order: 2 },
+    { name: 'Drafts',           section: 'documents', icon: 'FileInput',   filters: { status: 'draft' },      order: 3 },
+    { name: 'Archived',         section: 'documents', icon: 'Archive',     filters: { status: 'archived' },   order: 4 },
+  ]
+
+  for (const v of defaultViews) {
+    const existing = await prisma.systemView.findFirst({
+      where: { section: v.section, name: v.name, isDefault: true },
+    })
+    if (!existing) {
+      await prisma.systemView.create({
+        data: { ...v, isDefault: true },
+      })
+    }
+  }
+  console.log('Default system views seeded.')
 }
 
 main()

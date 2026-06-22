@@ -7,9 +7,10 @@ import { WorkflowProperties } from './PropertiesPanel/WorkflowProperties'
 import { ConnectionProperties } from './PropertiesPanel/ConnectionProperties'
 import { FormBuilder } from './FormBuilder/FormBuilder'
 import { LogicBuilder } from './LogicBuilder/LogicBuilder'
+import { ActionBuilder } from './LogicBuilder/ActionBuilder'
+import { RuleBuilder } from './LogicBuilder/RuleBuilder'
 import { WorkflowSettingsTab } from './WorkflowSettingsTab'
 import { useWorkflowDesignerStore } from '@/lib/stores/workflow-designer-store'
-import { cn } from '@/lib/utils'
 
 const tabs = [
   { id: 'canvas', label: 'Canvas' },
@@ -18,8 +19,15 @@ const tabs = [
   { id: 'settings', label: 'Settings' },
 ]
 
+const logicSubTabs = [
+  { id: 'branching', label: 'Branching' },
+  { id: 'automation', label: 'Automation' },
+  { id: 'rules', label: 'Rules' },
+]
+
 export function DesignerTabs() {
   const [activeTab, setActiveTab] = useState('canvas')
+  const [activeLogicTab, setActiveLogicTab] = useState('branching')
   const { selectedNodeId, selectedEdgeId } = useWorkflowDesignerStore()
 
   return (
@@ -62,7 +70,33 @@ export function DesignerTabs() {
 
         {activeTab === 'forms' && <FormBuilder />}
 
-        {activeTab === 'logic' && <LogicBuilder />}
+        {activeTab === 'logic' && (
+          <div className="flex flex-col flex-1 overflow-hidden min-h-0">
+            {/* Logic sub-tab strip */}
+            <div className="flex shrink-0 px-3" style={{ borderBottom: '1px solid var(--rule)', background: 'var(--paper-2)' }}>
+              {logicSubTabs.map((sub) => (
+                <button
+                  key={sub.id}
+                  onClick={() => setActiveLogicTab(sub.id)}
+                  className="px-3 py-2 text-xs font-medium border-b-2 transition-colors"
+                  style={{
+                    borderBottomColor: activeLogicTab === sub.id ? 'var(--nw-accent)' : 'transparent',
+                    color: activeLogicTab === sub.id ? 'var(--nw-accent)' : 'var(--ink-4)',
+                  }}
+                  onMouseEnter={(e) => { if (activeLogicTab !== sub.id) e.currentTarget.style.color = 'var(--ink)' }}
+                  onMouseLeave={(e) => { if (activeLogicTab !== sub.id) e.currentTarget.style.color = 'var(--ink-4)' }}
+                >
+                  {sub.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-1 overflow-hidden min-h-0">
+              {activeLogicTab === 'branching' && <LogicBuilder />}
+              {activeLogicTab === 'automation' && <ActionBuilder />}
+              {activeLogicTab === 'rules' && <RuleBuilder />}
+            </div>
+          </div>
+        )}
 
         {activeTab === 'settings' && <WorkflowSettingsTab />}
       </div>

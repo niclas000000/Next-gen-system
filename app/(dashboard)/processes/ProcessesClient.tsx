@@ -79,10 +79,12 @@ const docStatusVariant: Record<string, 'default' | 'ok' | 'warn'> = {
 }
 
 // ── Tree helpers ───────────────────────────────────────────────────────────
-function buildTree(processes: Process[]): (Process & { childProcesses: Process[] })[] {
-  const map = new Map<string, Process & { childProcesses: Process[] }>()
+type ProcessTreeNode = Process & { childProcesses: ProcessTreeNode[] }
+
+function buildTree(processes: Process[]): ProcessTreeNode[] {
+  const map = new Map<string, ProcessTreeNode>()
   for (const p of processes) map.set(p.id, { ...p, childProcesses: [] })
-  const roots: (Process & { childProcesses: Process[] })[] = []
+  const roots: ProcessTreeNode[] = []
   for (const p of processes) {
     const node = map.get(p.id)!
     if (p.parentId && map.has(p.parentId)) map.get(p.parentId)!.childProcesses.push(node)
@@ -94,7 +96,7 @@ function buildTree(processes: Process[]): (Process & { childProcesses: Process[]
 interface ContextMenu { x: number; y: number; process: Process }
 
 function TreeNode({ node, depth, selectedId, onSelect, expanded, onToggle, onContextMenu }: {
-  node: Process & { childProcesses: (Process & { childProcesses: Process[] })[] }
+  node: ProcessTreeNode
   depth: number; selectedId: string | null
   onSelect: (id: string) => void; expanded: Set<string>
   onToggle: (id: string) => void
@@ -114,8 +116,8 @@ function TreeNode({ node, depth, selectedId, onSelect, expanded, onToggle, onCon
           color: isSelected ? 'var(--nw-accent)' : 'var(--ink-3)',
           fontWeight: isSelected ? '500' : '400',
           borderLeft: isSelected ? '2px solid var(--nw-accent)' : '2px solid transparent',
+          paddingLeft: `${8 + depth * 16}px`,
         }}
-        style={{ paddingLeft: `${8 + depth * 16}px` }}
       >
         {hasChildren
           ? (isExpanded ? <ChevronDown size={13} className="shrink-0" /> : <ChevronRight size={13} className="shrink-0" />)
@@ -126,7 +128,7 @@ function TreeNode({ node, depth, selectedId, onSelect, expanded, onToggle, onCon
       {hasChildren && isExpanded && (
         <div>
           {node.childProcesses.map((child) => (
-            <TreeNode key={child.id} node={child as Process & { childProcesses: (Process & { childProcesses: Process[] })[] }}
+            <TreeNode key={child.id} node={child}
               depth={depth + 1} selectedId={selectedId} onSelect={onSelect}
               expanded={expanded} onToggle={onToggle} onContextMenu={onContextMenu} />
           ))}

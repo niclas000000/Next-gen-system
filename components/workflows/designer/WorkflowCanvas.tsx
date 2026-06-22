@@ -287,8 +287,7 @@ export function WorkflowCanvas() {
       {nodeMenu.visible && (
         <div
           className="absolute z-50 rounded-[2px] py-1 w-36"
-          style={{ background: 'var(--surface)', border: '1px solid var(--rule)', boxShadow: '0 8px 24px rgba(17,17,17,0.12)' }}
-          style={{ left: nodeMenu.x, top: nodeMenu.y }}
+          style={{ background: 'var(--surface)', border: '1px solid var(--rule)', boxShadow: '0 8px 24px rgba(17,17,17,0.12)', left: nodeMenu.x, top: nodeMenu.y }}
         >
           <button
             onClick={() => deleteNodeById(nodeMenu.nodeId)}

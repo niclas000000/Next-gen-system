@@ -73,7 +73,7 @@ interface ProcessDetail {
   tags: string[]
   parentId: string | null
   parent: { id: string; name: string } | null
-  owner: { id: true; name: string } | null
+  owner: { id: string; name: string } | null
   children: { id: string; name: string; status: string }[]
   nodes: unknown[]
   edges: unknown[]

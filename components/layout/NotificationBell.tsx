@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { Bell, CheckSquare, CheckCheck } from 'lucide-react'
+import { Bell, CheckSquare, CheckCheck, ThumbsUp, ThumbsDown, GitBranch } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
 interface Notification {
@@ -16,9 +16,12 @@ interface Notification {
 }
 
 const TYPE_ICON: Record<string, React.ReactNode> = {
-  step_assigned: <CheckSquare size={14} style={{ color: 'var(--nw-accent)' }} />,
-  step_due: <CheckSquare size={14} style={{ color: 'var(--warn)' }} />,
-  instance_completed: <CheckCheck size={14} style={{ color: 'var(--ok)' }} />,
+  step_assigned:        <CheckSquare size={14} style={{ color: 'var(--nw-accent)' }} />,
+  step_due:             <CheckSquare size={14} style={{ color: 'var(--warn)' }} />,
+  instance_completed:   <CheckCheck size={14} style={{ color: 'var(--ok)' }} />,
+  approval_requested:   <GitBranch size={14} style={{ color: 'var(--warn)' }} />,
+  approved:             <ThumbsUp size={14} style={{ color: 'var(--ok)' }} />,
+  rejected:             <ThumbsDown size={14} style={{ color: 'var(--risk)' }} />,
 }
 
 export function NotificationBell() {

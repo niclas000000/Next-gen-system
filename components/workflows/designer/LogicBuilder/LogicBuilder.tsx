@@ -1,13 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useCanvas } from '../CanvasContext'
 import { useWorkflowDesignerStore } from '@/lib/stores/workflow-designer-store'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { ExpressionEditor } from './ExpressionEditor'
-import { GitBranch, ChevronRight, Info, Code2 } from 'lucide-react'
+import { GitBranch, ChevronRight, Info, Code2, Plus, X, ChevronDown } from 'lucide-react'
+import type { ConditionTree, ConditionLeaf, ConditionGroup } from '@/types/workflow'
 
+// ---------------------------------------------------------------------------
+// Operators
+// ---------------------------------------------------------------------------
 const OPERATORS = [
   { value: '==', label: 'equals' },
   { value: '!=', label: 'not equals' },
@@ -21,127 +26,312 @@ const OPERATORS = [
   { value: 'is_not_empty', label: 'is not empty' },
 ]
 
-function parseCondition(expr: string): { field: string; operator: string; value: string } {
-  if (!expr) return { field: '', operator: '==', value: '' }
+// ---------------------------------------------------------------------------
+// Compile ConditionTree → expression string (for engine)
+// ---------------------------------------------------------------------------
+export function buildExpressionFromTree(tree: ConditionTree): string {
+  if (tree.type === 'leaf') {
+    const { field, operator, value } = tree
+    if (!field) return ''
+    if (operator === 'is_empty' || operator === 'is_not_empty') return `${field} ${operator}`
+    if (operator === 'contains' || operator === 'not_contains') return `${field} ${operator} ${value}`
+    return `${field} ${operator} ${value}`
+  }
+  // group
+  const parts = tree.conditions
+    .map((c) => buildExpressionFromTree(c))
+    .filter(Boolean)
+  if (parts.length === 0) return ''
+  if (parts.length === 1) return parts[0]
+  const joined = parts.map((p) => (p.includes(' OR ') || p.includes(' AND ') ? `(${p})` : p)).join(` ${tree.logic} `)
+  return joined
+}
+
+// ---------------------------------------------------------------------------
+// Parse a simple expression string back to a ConditionLeaf (best-effort)
+// ---------------------------------------------------------------------------
+function parseToLeaf(expr: string): ConditionLeaf {
+  if (!expr) return { type: 'leaf', field: '', operator: '==', value: '' }
   for (const op of ['>=', '<=', '!=', '>', '<', '==']) {
     const idx = expr.indexOf(op)
     if (idx !== -1) {
-      return {
-        field: expr.slice(0, idx).trim(),
-        operator: op,
-        value: expr.slice(idx + op.length).trim(),
-      }
+      return { type: 'leaf', field: expr.slice(0, idx).trim(), operator: op, value: expr.slice(idx + op.length).trim() }
     }
   }
-  if (expr.includes('contains')) {
-    const parts = expr.split('contains')
-    return { field: parts[0].trim(), operator: 'contains', value: parts[1]?.trim() ?? '' }
+  for (const op of ['not_contains', 'contains', 'is_not_empty', 'is_empty']) {
+    if (expr.includes(op)) {
+      const [f, ...rest] = expr.split(op)
+      return { type: 'leaf', field: f.trim(), operator: op, value: rest.join(op).trim() }
+    }
   }
-  if (expr.includes('not_contains')) {
-    const parts = expr.split('not_contains')
-    return { field: parts[0].trim(), operator: 'not_contains', value: parts[1]?.trim() ?? '' }
-  }
-  if (expr.includes('is_not_empty')) {
-    return { field: expr.replace('is_not_empty', '').trim(), operator: 'is_not_empty', value: '' }
-  }
-  if (expr.includes('is_empty')) {
-    return { field: expr.replace('is_empty', '').trim(), operator: 'is_empty', value: '' }
-  }
-  return { field: expr, operator: '==', value: '' }
+  return { type: 'leaf', field: expr, operator: '==', value: '' }
 }
 
-function buildCondition(field: string, operator: string, value: string): string {
-  if (!field) return ''
-  if (operator === 'is_empty' || operator === 'is_not_empty') return `${field} ${operator}`
-  if (operator === 'contains' || operator === 'not_contains') return `${field} ${operator} ${value}`
-  return `${field} ${operator} ${value}`
+function defaultLeaf(): ConditionLeaf {
+  return { type: 'leaf', field: 'variables.', operator: '==', value: '' }
 }
 
-interface ConditionRowProps {
-  edgeId: string
-  label: string
-  condition: string
-  targetName: string
-  isDefault: boolean
-  onChange: (edgeId: string, label: string, condition: string) => void
+// ---------------------------------------------------------------------------
+// ConditionLeafRow
+// ---------------------------------------------------------------------------
+function LeafRow({
+  leaf,
+  onChange,
+  onRemove,
+  showRemove,
+}: {
+  leaf: ConditionLeaf
+  onChange: (l: ConditionLeaf) => void
+  onRemove?: () => void
+  showRemove: boolean
+}) {
+  const noVal = leaf.operator === 'is_empty' || leaf.operator === 'is_not_empty'
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap">
+      <Input
+        value={leaf.field}
+        onChange={(e) => onChange({ ...leaf, field: e.target.value })}
+        className="h-7 text-xs w-36 min-w-0 font-mono"
+        placeholder="variables.field"
+      />
+      <select
+        value={leaf.operator}
+        onChange={(e) => onChange({ ...leaf, operator: e.target.value, value: '' })}
+        className="h-7 text-xs rounded-[2px] px-1.5 focus:outline-none"
+        style={{ border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)' }}
+      >
+        {OPERATORS.map((op) => (
+          <option key={op.value} value={op.value}>{op.label}</option>
+        ))}
+      </select>
+      {!noVal && (
+        <Input
+          value={leaf.value}
+          onChange={(e) => onChange({ ...leaf, value: e.target.value })}
+          className="h-7 text-xs w-28 min-w-0"
+          placeholder="value"
+        />
+      )}
+      {showRemove && onRemove && (
+        <button onClick={onRemove} className="p-0.5 rounded transition-colors" style={{ color: 'var(--ink-4)' }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--risk)')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-4)')}>
+          <X size={12} />
+        </button>
+      )}
+    </div>
+  )
 }
 
-function ConditionRow({ edgeId, label, condition, targetName, isDefault, onChange }: ConditionRowProps) {
-  const [exprMode, setExprMode] = useState(false)
-  const parsed = parseCondition(condition)
-  const noValueOp = parsed.operator === 'is_empty' || parsed.operator === 'is_not_empty'
+// ---------------------------------------------------------------------------
+// ConditionTreeEditor (recursive)
+// ---------------------------------------------------------------------------
+function TreeEditor({
+  tree,
+  onChange,
+  onRemove,
+  depth = 0,
+}: {
+  tree: ConditionTree
+  onChange: (t: ConditionTree) => void
+  onRemove?: () => void
+  depth?: number
+}) {
+  if (tree.type === 'leaf') {
+    return (
+      <div className="flex items-start gap-2">
+        <LeafRow
+          leaf={tree}
+          onChange={(l) => onChange(l)}
+          onRemove={onRemove}
+          showRemove={!!onRemove}
+        />
+        <button
+          onClick={() => onChange({ type: 'group', logic: 'AND', conditions: [tree, defaultLeaf()] })}
+          className="h-7 flex items-center gap-1 text-[10px] px-1.5 rounded-[2px] transition-colors shrink-0"
+          style={{ border: '1px solid var(--rule)', color: 'var(--ink-3)' }}
+          onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--nw-accent)')}
+          onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--rule)')}
+          title="Add AND/OR group"
+        >
+          <Plus size={9} /> Group
+        </button>
+      </div>
+    )
+  }
+
+  // group
+  const { logic, conditions } = tree
+
+  const updateChild = (i: number, child: ConditionTree) => {
+    const next = [...conditions]
+    next[i] = child
+    onChange({ ...tree, conditions: next })
+  }
+
+  const removeChild = (i: number) => {
+    const next = conditions.filter((_, idx) => idx !== i)
+    if (next.length === 1) {
+      onChange(next[0]) // collapse group back to single leaf
+    } else {
+      onChange({ ...tree, conditions: next })
+    }
+  }
+
+  const addLeaf = () => onChange({ ...tree, conditions: [...conditions, defaultLeaf()] })
+  const addGroup = () => onChange({ ...tree, conditions: [...conditions, { type: 'group', logic: 'AND', conditions: [defaultLeaf()] }] })
+
+  const logicColor = logic === 'AND' ? 'var(--nw-accent)' : 'var(--warn)'
 
   return (
-    <div className="border border-slate-200 rounded-lg p-3 space-y-3 bg-white">
+    <div
+      className="space-y-2 p-2 rounded-[2px]"
+      style={{ border: `1px solid var(--rule)`, background: depth % 2 === 0 ? 'var(--paper-2)' : 'var(--surface)', marginLeft: depth > 0 ? '8px' : 0 }}
+    >
+      {/* Logic toggle + remove group */}
       <div className="flex items-center gap-2">
-        <div className="w-2 h-2 rounded-full bg-orange-400 shrink-0" />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <Input
-              value={label}
-              onChange={(e) => onChange(edgeId, e.target.value, condition)}
-              className="h-7 text-xs font-medium"
-              placeholder="Branch label"
-            />
-            <ChevronRight size={12} className="text-slate-400 shrink-0" />
-            <span className="text-xs text-slate-500 truncate">{targetName}</span>
-          </div>
+        <div className="flex rounded-[2px] overflow-hidden" style={{ border: '1px solid var(--rule)' }}>
+          {(['AND', 'OR'] as const).map((l) => (
+            <button
+              key={l}
+              onClick={() => onChange({ ...tree, logic: l })}
+              className="px-2 py-0.5 text-[10px] font-semibold transition-colors"
+              style={{
+                background: logic === l ? logicColor : 'transparent',
+                color: logic === l ? '#fff' : 'var(--ink-4)',
+              }}
+            >
+              {l}
+            </button>
+          ))}
         </div>
-        {isDefault && (
-          <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-medium shrink-0">default</span>
+        <span className="text-[10px]" style={{ color: 'var(--ink-4)' }}>Match {logic === 'AND' ? 'all' : 'any'} of:</span>
+        {onRemove && (
+          <button onClick={onRemove} className="ml-auto p-0.5 rounded" style={{ color: 'var(--ink-4)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--risk)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-4)')}>
+            <X size={12} />
+          </button>
         )}
       </div>
 
+      {/* Children */}
+      {conditions.map((child, i) => (
+        <TreeEditor
+          key={i}
+          tree={child}
+          onChange={(c) => updateChild(i, c)}
+          onRemove={conditions.length > 1 ? () => removeChild(i) : undefined}
+          depth={depth + 1}
+        />
+      ))}
+
+      {/* Add buttons */}
+      <div className="flex gap-2 pt-1">
+        <button
+          onClick={addLeaf}
+          className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-[2px] transition-colors"
+          style={{ border: '1px solid var(--rule)', color: 'var(--ink-3)' }}
+          onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--nw-accent)')}
+          onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--rule)')}
+        >
+          <Plus size={9} /> Condition
+        </button>
+        {depth < 2 && (
+          <button
+            onClick={addGroup}
+            className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-[2px] transition-colors"
+            style={{ border: '1px solid var(--rule)', color: 'var(--ink-3)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--nw-accent)')}
+            onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--rule)')}
+          >
+            <Plus size={9} /> Group
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// EdgeConditionEditor — one edge's condition
+// ---------------------------------------------------------------------------
+interface EdgeConditionEditorProps {
+  edgeId: string
+  label: string
+  conditionTree: ConditionTree
+  conditionExpr: string
+  conditionMode: 'builder' | 'expression'
+  targetName: string
+  isDefault: boolean
+  onChange: (edgeId: string, label: string, tree: ConditionTree, expr: string, mode: 'builder' | 'expression') => void
+}
+
+function EdgeConditionEditor({
+  edgeId, label, conditionTree, conditionExpr, conditionMode, targetName, isDefault, onChange,
+}: EdgeConditionEditorProps) {
+  const isExpr = conditionMode === 'expression'
+
+  const handleTreeChange = (tree: ConditionTree) => {
+    onChange(edgeId, label, tree, buildExpressionFromTree(tree), 'builder')
+  }
+
+  const handleExprChange = (expr: string) => {
+    onChange(edgeId, label, conditionTree, expr, 'expression')
+  }
+
+  return (
+    <div className="rounded-[2px] p-3 space-y-3" style={{ border: '1px solid var(--rule)', background: 'var(--surface)' }}>
+      {/* Header */}
+      <div className="flex items-center gap-2">
+        <div className="w-2 h-2 rounded-full shrink-0" style={{ background: 'var(--warn)' }} />
+        <Input
+          value={label}
+          onChange={(e) => onChange(edgeId, e.target.value, conditionTree, conditionExpr, conditionMode)}
+          className="h-7 text-xs font-medium flex-1"
+          placeholder="Branch label"
+        />
+        <ChevronRight size={12} style={{ color: 'var(--ink-4)' }} className="shrink-0" />
+        <span className="text-xs truncate max-w-[100px]" style={{ color: 'var(--ink-3)' }}>{targetName}</span>
+        {isDefault && (
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full shrink-0 font-medium"
+            style={{ background: 'var(--paper-3)', color: 'var(--ink-4)' }}>default</span>
+        )}
+      </div>
+
+      {/* Condition section (hidden for default branch) */}
       {!isDefault && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label className="text-[10px] text-slate-500 uppercase tracking-wide">Condition</Label>
+            <Label className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--ink-4)' }}>Condition</Label>
             <button
-              onClick={() => setExprMode((v) => !v)}
-              className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded transition-colors ${exprMode ? 'bg-blue-100 text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
-              title="Toggle expression mode"
+              onClick={() => onChange(edgeId, label, conditionTree, conditionExpr, isExpr ? 'builder' : 'expression')}
+              className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded transition-colors"
+              style={{
+                background: isExpr ? 'var(--accent-tint)' : 'transparent',
+                color: isExpr ? 'var(--nw-accent)' : 'var(--ink-4)',
+                border: `1px solid ${isExpr ? 'var(--nw-accent)' : 'var(--rule)'}`,
+              }}
             >
-              <Code2 size={10} />
-              Expression
+              <Code2 size={10} /> Expression
             </button>
           </div>
 
-          {exprMode ? (
+          {isExpr ? (
             <ExpressionEditor
-              value={condition}
-              onChange={(val) => onChange(edgeId, label, val)}
+              value={conditionExpr}
+              onChange={handleExprChange}
               placeholder="variables.amount > 1000 AND variables.type == 'urgent'"
             />
           ) : (
-            <div className="flex gap-2 flex-wrap">
-              <Input
-                value={parsed.field}
-                onChange={(e) => onChange(edgeId, label, buildCondition(e.target.value, parsed.operator, parsed.value))}
-                className="h-7 text-xs flex-1 min-w-[100px]"
-                placeholder="variables.fieldName"
-              />
-              <select
-                value={parsed.operator}
-                onChange={(e) => onChange(edgeId, label, buildCondition(parsed.field, e.target.value, parsed.value))}
-                className="h-7 text-xs rounded-md border border-slate-200 px-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {OPERATORS.map((op) => (
-                  <option key={op.value} value={op.value}>{op.label}</option>
-                ))}
-              </select>
-              {!noValueOp && (
-                <Input
-                  value={parsed.value}
-                  onChange={(e) => onChange(edgeId, label, buildCondition(parsed.field, parsed.operator, e.target.value))}
-                  className="h-7 text-xs flex-1 min-w-[80px]"
-                  placeholder="value"
-                />
-              )}
-            </div>
+            <TreeEditor tree={conditionTree} onChange={handleTreeChange} />
           )}
 
-          {condition && !exprMode && (
-            <p className="text-[10px] font-mono text-slate-400 bg-slate-50 rounded px-2 py-1 break-all">{condition}</p>
+          {conditionExpr && (
+            <p className="text-[10px] font-mono px-2 py-1 rounded-[2px] break-all"
+              style={{ background: 'var(--paper-2)', color: 'var(--ink-4)' }}>
+              {conditionExpr}
+            </p>
           )}
         </div>
       )}
@@ -149,28 +339,59 @@ function ConditionRow({ edgeId, label, condition, targetName, isDefault, onChang
   )
 }
 
+// ---------------------------------------------------------------------------
+// LogicBuilder — main component
+// ---------------------------------------------------------------------------
 export function LogicBuilder() {
   const { rfNodes, rfEdges, setRfEdges } = useCanvas()
   const { markDirty } = useWorkflowDesignerStore()
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
 
   const decisionNodes = rfNodes.filter((n) => n.type === 'decision')
-
   const selectedNode = selectedNodeId ? rfNodes.find((n) => n.id === selectedNodeId) : null
-  const outgoingEdges = selectedNode
-    ? rfEdges.filter((e) => e.source === selectedNode.id)
-    : []
+  const outgoingEdges = selectedNode ? rfEdges.filter((e) => e.source === selectedNode.id) : []
 
   const getNodeName = (nodeId: string) => {
     const n = rfNodes.find((x) => x.id === nodeId)
     return (n?.data as Record<string, unknown>)?.name as string || n?.type || nodeId
   }
 
-  const handleEdgeChange = (edgeId: string, label: string, condition: string) => {
+  // Rehydrate tree from edge data
+  const getEdgeTree = useCallback((edge: (typeof rfEdges)[number]): ConditionTree => {
+    const data = edge.data as Record<string, unknown> | undefined
+    const config = data?.conditionConfig as ConditionTree | undefined
+    const mode = data?.conditionMode as string | undefined
+    if (config && mode === 'builder') return config
+    // Fall back: parse the string expression to a single leaf
+    const expr = (data?.condition as string) ?? ''
+    return parseToLeaf(expr)
+  }, [rfEdges])
+
+  const getEdgeMode = (edge: (typeof rfEdges)[number]): 'builder' | 'expression' => {
+    const data = edge.data as Record<string, unknown> | undefined
+    return (data?.conditionMode as 'builder' | 'expression') ?? 'builder'
+  }
+
+  const handleEdgeChange = (
+    edgeId: string,
+    label: string,
+    tree: ConditionTree,
+    expr: string,
+    mode: 'builder' | 'expression'
+  ) => {
     setRfEdges((edges) =>
       edges.map((e) =>
         e.id === edgeId
-          ? { ...e, label, data: { ...((e.data as object) ?? {}), condition } }
+          ? {
+              ...e,
+              label,
+              data: {
+                ...((e.data as object) ?? {}),
+                condition: expr,
+                conditionConfig: mode === 'builder' ? tree : undefined,
+                conditionMode: mode,
+              },
+            }
           : e
       )
     )
@@ -180,12 +401,14 @@ export function LogicBuilder() {
   if (decisionNodes.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center p-8">
-        <div className="p-4 rounded-full bg-orange-50">
-          <GitBranch size={24} className="text-orange-400" />
+        <div className="p-3 rounded-[2px]" style={{ background: 'var(--paper-2)' }}>
+          <GitBranch size={22} style={{ color: 'var(--ink-4)' }} />
         </div>
         <div>
-          <p className="font-medium text-slate-700 text-sm">No decision nodes</p>
-          <p className="text-xs text-slate-400 mt-1">Add a Decision node to the canvas to configure branching logic.</p>
+          <p className="font-medium text-sm" style={{ color: 'var(--ink-3)' }}>No decision nodes</p>
+          <p className="text-xs mt-1" style={{ color: 'var(--ink-4)' }}>
+            Add a Decision node to the canvas to configure branching logic.
+          </p>
         </div>
       </div>
     )
@@ -194,26 +417,30 @@ export function LogicBuilder() {
   return (
     <div className="flex flex-1 overflow-hidden min-h-0">
       {/* Left: decision node list */}
-      <div className="w-56 border-r border-slate-200 bg-slate-50 overflow-y-auto shrink-0">
-        <div className="p-3 border-b border-slate-200">
-          <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Decision Nodes</p>
+      <div className="w-52 shrink-0 overflow-y-auto" style={{ borderRight: '1px solid var(--rule)', background: 'var(--paper-2)' }}>
+        <div className="px-3 py-2.5" style={{ borderBottom: '1px solid var(--rule)' }}>
+          <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--ink-4)' }}>Decision Nodes</p>
         </div>
-        <div className="p-2 space-y-1">
+        <div className="p-2 space-y-0.5">
           {decisionNodes.map((node) => {
             const name = (node.data as Record<string, unknown>)?.name as string || 'Decision'
             const branchCount = rfEdges.filter((e) => e.source === node.id).length
+            const active = selectedNodeId === node.id
             return (
               <button
                 key={node.id}
                 onClick={() => setSelectedNodeId(node.id)}
-                className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                  selectedNodeId === node.id
-                    ? 'bg-orange-100 text-orange-800'
-                    : 'text-slate-700 hover:bg-white'
-                }`}
+                className="w-full text-left px-3 py-2 rounded-[2px] text-sm transition-colors"
+                style={{
+                  background: active ? 'var(--accent-tint)' : 'transparent',
+                  color: active ? 'var(--nw-accent)' : 'var(--ink-3)',
+                  borderLeft: active ? '2px solid var(--nw-accent)' : '2px solid transparent',
+                }}
+                onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = 'var(--paper-3)' }}
+                onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = 'transparent' }}
               >
                 <p className="font-medium truncate">{name}</p>
-                <p className="text-[10px] text-slate-400">{branchCount} branch{branchCount !== 1 ? 'es' : ''}</p>
+                <p className="text-[10px]" style={{ color: 'var(--ink-4)' }}>{branchCount} branch{branchCount !== 1 ? 'es' : ''}</p>
               </button>
             )
           })}
@@ -223,43 +450,52 @@ export function LogicBuilder() {
       {/* Right: branch conditions */}
       <div className="flex-1 overflow-y-auto p-5">
         {!selectedNode ? (
-          <div className="flex items-center justify-center h-full text-slate-400 text-sm">
+          <div className="flex items-center justify-center h-full text-sm" style={{ color: 'var(--ink-4)' }}>
             Select a decision node to configure its branches.
           </div>
         ) : (
           <div className="max-w-xl space-y-4">
             <div>
-              <h3 className="font-semibold text-slate-800 text-sm">
+              <h3 className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>
                 {(selectedNode.data as Record<string, unknown>)?.name as string || 'Decision'} — Branches
               </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Configure conditions for each outgoing branch. Use <code className="font-mono bg-slate-100 px-1 rounded">variables.fieldName</code> to reference form data.
+              <p className="text-xs mt-0.5" style={{ color: 'var(--ink-4)' }}>
+                Configure conditions for each outgoing branch. Use{' '}
+                <code className="font-mono px-1 rounded-[2px]" style={{ background: 'var(--paper-2)' }}>
+                  variables.fieldName
+                </code>{' '}
+                to reference workflow variables.
               </p>
             </div>
 
             {outgoingEdges.length === 0 && (
-              <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+              <div className="flex items-start gap-2 p-3 rounded-[2px] text-xs" style={{ background: 'var(--accent-tint)', border: '1px solid var(--nw-accent)', color: 'var(--nw-accent)' }}>
                 <Info size={14} className="shrink-0 mt-0.5" />
                 No outgoing edges. Connect this node to other nodes on the canvas first.
               </div>
             )}
 
             <div className="space-y-3">
-              {outgoingEdges.map((edge, idx) => (
-                <ConditionRow
-                  key={edge.id}
-                  edgeId={edge.id}
-                  label={(edge.label as string) ?? ''}
-                  condition={(edge.data as Record<string, unknown>)?.condition as string ?? ''}
-                  targetName={getNodeName(edge.target)}
-                  isDefault={idx === outgoingEdges.length - 1 && outgoingEdges.length > 1}
-                  onChange={handleEdgeChange}
-                />
-              ))}
+              {outgoingEdges.map((edge, idx) => {
+                const isDefault = idx === outgoingEdges.length - 1 && outgoingEdges.length > 1
+                return (
+                  <EdgeConditionEditor
+                    key={edge.id}
+                    edgeId={edge.id}
+                    label={(edge.label as string) ?? ''}
+                    conditionTree={getEdgeTree(edge)}
+                    conditionExpr={(edge.data as Record<string, unknown>)?.condition as string ?? ''}
+                    conditionMode={getEdgeMode(edge)}
+                    targetName={getNodeName(edge.target)}
+                    isDefault={isDefault}
+                    onChange={handleEdgeChange}
+                  />
+                )
+              })}
             </div>
 
-            {outgoingEdges.length > 0 && (
-              <p className="text-[10px] text-slate-400">
+            {outgoingEdges.length > 1 && (
+              <p className="text-[10px]" style={{ color: 'var(--ink-4)' }}>
                 The last branch acts as the default if no conditions match.
               </p>
             )}

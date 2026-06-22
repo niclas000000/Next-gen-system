@@ -61,6 +61,7 @@ model Document {
   documentType       DocumentType? @relation(fields: [documentTypeId], references: [id])
   properties         Json          @default("{}")  // Type-specific metadata values
   roles              Json          @default("{}")  // { authorId, reviewerIds, approverIds, ownerId }
+  approvalAssignments Json?                          // { [phaseIndex]: userId[] } captured at submit, consumed as phases advance
   changeDescription  String?
   validFrom          DateTime?
   validTo            DateTime?
@@ -156,6 +157,7 @@ model WorkflowInstance {
 
   // Runtime data
   variables Json @default("{}")
+  roles     Json @default("{}")  // { [roleName]: userId } — assigned via user_role form fields
 
   createdBy String
   creator   User   @relation("InstanceCreator", fields: [createdBy], references: [id])
@@ -426,6 +428,14 @@ model LookupValue {
   @@unique([tableId, value])
 }
 
+model ProcessRole {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model Notification {
   id        String   @id @default(cuid())
   userId    String
@@ -436,4 +446,16 @@ model Notification {
   link      String?
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+model SystemView {
+  id        String   @id @default(cuid())
+  name      String
+  section   String   // 'cases' | 'documents'
+  icon      String   @default("List")
+  filters   Json     @default("{}")
+  order     Int      @default(0)
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

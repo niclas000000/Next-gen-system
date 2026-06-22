@@ -21,7 +21,7 @@ export default async function ApprovalFlowsPage() {
       <ApprovalFlowsClient initialFlows={flows.map(f => ({
         id: f.id,
         name: f.name,
-        phases: f.phases as Phase[],
+        phases: f.phases as unknown as Phase[],
         usedBy: f._count.documentTypes,
         updatedAt: f.updatedAt.toISOString(),
       }))} />

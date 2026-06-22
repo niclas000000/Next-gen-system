@@ -1,15 +1,17 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
-  FileText, Plus, Search, Clock, User, FileInput, FileCheck,
-  FileClock, FileX, FileQuestion, Loader2, Library, Archive,
+  List, Clock, FileInput, FileCheck, FileClock, FileX,
+  FileQuestion, Loader2, Plus, Search,
+  Library, Archive, User, GitBranch, Bookmark, Filter, Bell, Tag,
+  AlertCircle, LayoutList, Star, Layers, Shield,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -34,6 +36,16 @@ interface DocType {
   format: string
 }
 
+interface SystemView {
+  id: string
+  name: string
+  section: string
+  icon: string
+  filters: Record<string, string>
+  order: number
+  isDefault: boolean
+}
+
 interface Props {
   initialDocuments: Doc[]
   documentTypes: DocType[]
@@ -49,47 +61,64 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'ok' | 
   archived:  { label: 'Archived',  variant: 'default', icon: <FileX size={10} /> },
 }
 
-const PREDEFINED_VIEWS = [
-  { label: 'Library',          href: '/documents',                  icon: <Library size={14} /> },
-  { label: 'Pending Approval', href: '/documents?status=pending',   icon: <Clock size={14} /> },
-  { label: 'My Documents',     href: '/documents?view=mine',        icon: <User size={14} /> },
-  { label: 'Drafts',           href: '/documents?status=draft',     icon: <FileInput size={14} /> },
-  { label: 'Archived',         href: '/documents?status=archived',  icon: <Archive size={14} /> },
-]
+const ICON_MAP: Record<string, React.ReactNode> = {
+  List: <List size={14} />, Clock: <Clock size={14} />, FileInput: <FileInput size={14} />,
+  Library: <Library size={14} />, Archive: <Archive size={14} />, User: <User size={14} />,
+  GitBranch: <GitBranch size={14} />, Bookmark: <Bookmark size={14} />, Filter: <Filter size={14} />,
+  Bell: <Bell size={14} />, Tag: <Tag size={14} />, AlertCircle: <AlertCircle size={14} />,
+  LayoutList: <LayoutList size={14} />, Star: <Star size={14} />, Layers: <Layers size={14} />,
+  Shield: <Shield size={14} />,
+}
+function iconFromName(n: string) { return ICON_MAP[n] ?? <List size={14} /> }
 
-function ViewNav({ onNew }: { onNew: () => void }) {
+function buildHref(base: string, filters: Record<string, string>) {
+  const p = new URLSearchParams(filters)
+  return p.toString() ? `${base}?${p}` : base
+}
+
+// ---------------------------------------------------------------------------
+// Left nav panel
+// ---------------------------------------------------------------------------
+function ViewPanel({
+  systemViews,
+  onNew,
+}: {
+  systemViews: SystemView[]
+  onNew: () => void
+}) {
+  const pathname = usePathname()
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  const isCurrent = (href: string) => {
+  const isViewActive = (href: string) => {
     const url = new URL(href, 'http://x')
-    const status = url.searchParams.get('status')
-    const view = url.searchParams.get('view')
-    return (
-      url.pathname === '/documents' &&
-      (status ?? '') === (searchParams.get('status') ?? '') &&
-      (view ?? '') === (searchParams.get('view') ?? '')
-    )
+    if (pathname !== url.pathname) return false
+    for (const [k, v] of url.searchParams.entries()) {
+      if (searchParams.get(k) !== v) return false
+    }
+    if (url.searchParams.size === 0 && searchParams.toString() !== '') return false
+    return true
   }
 
   return (
-    <aside className="w-52 shrink-0 flex flex-col" style={{ background: 'var(--paper-2)', borderRight: '1px solid var(--rule)' }}>
-      <div className="p-3" style={{ borderBottom: '1px solid var(--rule)' }}>
-        <Button onClick={onNew} className="w-full gap-2 h-8 text-xs">
-          <Plus size={13} />
-          New document
+    <aside className="w-52 shrink-0 flex flex-col h-full" style={{ background: 'var(--paper-2)', borderRight: '1px solid var(--rule)' }}>
+      <div className="p-2" style={{ borderBottom: '1px solid var(--rule)' }}>
+        <Button className="w-full gap-1.5 text-sm h-8" onClick={onNew}>
+          <Plus size={14} /> New document
         </Button>
       </div>
-      <div className="px-3 pt-3 pb-1">
-        <p className="mono-meta text-[10px]">Views</p>
-      </div>
-      <nav className="flex-1 overflow-y-auto sidebar-scroll p-1.5 space-y-0.5">
-        {PREDEFINED_VIEWS.map((v) => {
-          const active = isCurrent(v.href)
+
+      <div className="flex-1 overflow-y-auto sidebar-scroll p-1.5 space-y-0.5">
+        {systemViews.length > 0 && (
+          <p className="mono-meta text-[10px] px-2 pt-1 pb-0.5" style={{ color: 'var(--ink-4)' }}>Views</p>
+        )}
+        {systemViews.map((v) => {
+          const href = buildHref('/documents', v.filters)
+          const active = isViewActive(href)
           return (
             <button
-              key={v.href}
-              onClick={() => router.push(v.href)}
+              key={v.id}
+              onClick={() => router.push(href)}
               className="w-full flex items-center gap-2 px-2 py-1.5 rounded-[2px] text-sm transition-colors text-left"
               style={{
                 color: active ? 'var(--nw-accent)' : 'var(--ink-3)',
@@ -100,16 +129,19 @@ function ViewNav({ onNew }: { onNew: () => void }) {
               onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = 'var(--paper-3)' }}
               onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = '' }}
             >
-              {v.icon}
-              {v.label}
+              {iconFromName(v.icon)}
+              <span className="truncate">{v.name}</span>
             </button>
           )
         })}
-      </nav>
+      </div>
     </aside>
   )
 }
 
+// ---------------------------------------------------------------------------
+// New document dialog
+// ---------------------------------------------------------------------------
 function NewDocumentDialog({
   open,
   onClose,
@@ -144,9 +176,7 @@ function NewDocumentDialog({
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>New document</DialogTitle>
-        </DialogHeader>
+        <DialogHeader><DialogTitle>New document</DialogTitle></DialogHeader>
         <div className="space-y-4 pt-1">
           <div className="space-y-1.5">
             <label className="text-xs font-medium" style={{ color: 'var(--ink-3)' }}>Title</label>
@@ -165,7 +195,7 @@ function NewDocumentDialog({
               <select
                 value={typeId}
                 onChange={(e) => setTypeId(e.target.value)}
-                className="w-full h-9 px-3 text-sm rounded-[2px] focus:outline-none focus:ring-1"
+                className="w-full h-9 px-3 text-sm rounded-[2px] focus:outline-none"
                 style={{ border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)' }}
               >
                 <option value="">No type</option>
@@ -177,10 +207,7 @@ function NewDocumentDialog({
           )}
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={onClose}>Cancel</Button>
-            <Button
-              onClick={handleCreate}
-              disabled={!title.trim() || creating}
-            >
+            <Button onClick={handleCreate} disabled={!title.trim() || creating}>
               {creating && <Loader2 size={14} className="animate-spin mr-1" />}
               Create
             </Button>
@@ -191,14 +218,25 @@ function NewDocumentDialog({
   )
 }
 
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
 export function DocumentsClient({
   initialDocuments,
   documentTypes,
   currentStatus,
   currentView,
 }: Props) {
-  const [search, setSearch] = useState('')
-  const [showNew, setShowNew] = useState(false)
+  const [search, setSearch]         = useState('')
+  const [showNew, setShowNew]       = useState(false)
+  const [systemViews, setSystemViews] = useState<SystemView[]>([])
+
+  useEffect(() => {
+    fetch('/api/system-views?section=documents')
+      .then((r) => r.json())
+      .then((d: { views: SystemView[] }) => setSystemViews(d.views ?? []))
+      .catch(() => {})
+  }, [])
 
   const filtered = initialDocuments.filter((d) => {
     if (!search) return true
@@ -219,13 +257,11 @@ export function DocumentsClient({
 
   return (
     <div className="flex -m-6 h-[calc(100vh-56px)]">
-      {/* Left panel — same pattern as Cases */}
-      <ViewNav onNew={() => setShowNew(true)} />
+      <ViewPanel systemViews={systemViews} onNew={() => setShowNew(true)} />
 
-      {/* Right panel — document list */}
-      <div className="flex-1 flex flex-col overflow-hidden" style={{ background: 'var(--paper)' }}>
+      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Toolbar */}
-        <div className="flex items-center gap-3 px-5 py-2.5 shrink-0" style={{ background: 'var(--surface)', borderBottom: '1px solid var(--rule)' }}>
+        <div className="flex items-center gap-3 px-5 py-3 shrink-0" style={{ background: 'var(--surface)', borderBottom: '1px solid var(--rule)' }}>
           <h2 className="text-sm font-semibold flex-1" style={{ color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>{pageTitle}</h2>
           <div className="relative">
             <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--ink-4)' }} />
@@ -233,10 +269,10 @@ export function DocumentsClient({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search…"
-              className="pl-8 h-7 text-xs w-44"
+              className="pl-8 h-7 text-xs w-48"
             />
           </div>
-          <span className="text-xs shrink-0 mono-meta">{filtered.length} doc{filtered.length !== 1 ? 's' : ''}</span>
+          <span className="text-xs shrink-0 mono-meta" style={{ color: 'var(--ink-4)' }}>{filtered.length} doc{filtered.length !== 1 ? 's' : ''}</span>
         </div>
 
         {/* List */}
@@ -261,13 +297,16 @@ export function DocumentsClient({
                   <Link
                     key={doc.id}
                     href={`/documents/${doc.id}`}
-                    className="flex items-center gap-3 px-4 py-3 bg-white border border-[#E8E6DF] rounded-[2px] hover:border-[oklch(0.52_0.08_200)] transition-all group"
+                    className="flex items-center gap-3 px-4 py-3 rounded-[2px] transition-all group"
+                    style={{ background: 'var(--surface)', border: '1px solid var(--rule)' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--nw-accent)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--rule)')}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-medium text-[#111] group-hover:text-[oklch(0.52_0.08_200)] transition-colors truncate">
+                        <p className="text-sm font-medium truncate" style={{ color: 'var(--ink)' }}>
                           {doc.documentType && (
-                            <span className="font-mono text-xs text-[#8A877F] mr-1.5">{doc.documentType.prefix}</span>
+                            <span className="font-mono text-xs mr-1.5" style={{ color: 'var(--ink-4)' }}>{doc.documentType.prefix}</span>
                           )}
                           {doc.title}
                         </p>
@@ -275,7 +314,7 @@ export function DocumentsClient({
                           {cfg.icon}{cfg.label}
                         </Badge>
                         {doc.documentType && (
-                          <span className="text-[10px] bg-[var(--accent-tint)] text-[oklch(0.42_0.08_200)] border border-[oklch(0.80_0.05_200)] rounded-full px-2 py-0.5 shrink-0">
+                          <span className="text-[10px] rounded-full px-2 py-0.5 shrink-0" style={{ background: 'var(--accent-tint)', color: 'var(--nw-accent)' }}>
                             {doc.documentType.name}
                           </span>
                         )}

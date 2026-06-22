@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/db/client'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/config'
-import { FileText, Clock, CheckCircle, GitBranch, ArrowRight, Plus, FileClock, FileCheck, FileX } from 'lucide-react'
+import { FileText, Clock, CheckCircle, GitBranch, ArrowRight, Plus, FileClock, FileCheck, FileX, Bell, CheckSquare } from 'lucide-react'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -10,6 +10,7 @@ import { formatDistanceToNow } from 'date-fns'
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
+  const userId = (session?.user as { id?: string } | undefined)?.id ?? ''
   const userName = (session?.user as { name?: string } | undefined)?.name ?? 'there'
   const firstName = userName.split(' ')[0].replace(/^\w/, (c) => c.toUpperCase())
   const hour = new Date().getHours()
@@ -24,6 +25,8 @@ export default async function DashboardPage() {
     activeProcesses,
     recentInstances,
     recentDocuments,
+    myPendingApprovals,
+    myAssignedSteps,
   ] = await Promise.all([
     prisma.workflowInstance.count({ where: { status: 'running' } }),
     prisma.workflow.count({ where: { status: 'published' } }),
@@ -49,6 +52,18 @@ export default async function DashboardPage() {
       orderBy: { updatedAt: 'desc' },
       take: 5,
       include: { author: { select: { name: true } } },
+    }),
+    prisma.documentApproval.findMany({
+      where: { status: 'pending', assignedTo: { has: userId } },
+      orderBy: { startedAt: 'desc' },
+      take: 5,
+      include: { document: { select: { id: true, title: true } } },
+    }),
+    prisma.workflowStep.findMany({
+      where: { status: 'in_progress', assignedTo: userId },
+      orderBy: { startedAt: 'desc' },
+      take: 5,
+      include: { instance: { select: { id: true, title: true, workflow: { select: { name: true } } } } },
     }),
   ])
 
@@ -108,6 +123,79 @@ export default async function DashboardPage() {
           </Card>
         ))}
       </div>
+
+      {/* My work row */}
+      {(myPendingApprovals.length > 0 || myAssignedSteps.length > 0) && (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          {/* My pending approvals */}
+          {myPendingApprovals.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <Bell size={15} style={{ color: 'var(--warn)' }} /> Pending Approvals
+                </CardTitle>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/documents?status=pending" className="flex items-center gap-1 text-sm" style={{ color: 'var(--nw-accent)' }}>
+                    See all <ArrowRight size={14} />
+                  </Link>
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-0.5">
+                  {myPendingApprovals.map((approval) => (
+                    <Link
+                      key={approval.id}
+                      href={`/documents/${approval.document.id}`}
+                      className="flex items-center gap-3 px-2 py-2.5 rounded-[2px] transition-colors hover:bg-[var(--paper-2)]"
+                    >
+                      <FileText size={14} className="shrink-0" style={{ color: 'var(--ink-4)' }} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate" style={{ color: 'var(--ink)' }}>{approval.document.title}</p>
+                        <p className="text-xs truncate" style={{ color: 'var(--ink-4)' }}>Phase: {approval.phase}</p>
+                      </div>
+                      <Badge variant="warn" className="text-xs shrink-0">Review</Badge>
+                    </Link>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* My assigned cases */}
+          {myAssignedSteps.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <CheckSquare size={15} style={{ color: 'var(--nw-accent)' }} /> My Tasks
+                </CardTitle>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/cases?view=mine" className="flex items-center gap-1 text-sm" style={{ color: 'var(--nw-accent)' }}>
+                    See all <ArrowRight size={14} />
+                  </Link>
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-0.5">
+                  {myAssignedSteps.map((step) => (
+                    <Link
+                      key={step.id}
+                      href={`/workflows/instances/${step.instance.id}`}
+                      className="flex items-center gap-3 px-2 py-2.5 rounded-[2px] transition-colors hover:bg-[var(--paper-2)]"
+                    >
+                      <CheckSquare size={14} className="shrink-0" style={{ color: 'var(--nw-accent)' }} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate" style={{ color: 'var(--ink)' }}>{step.stepName}</p>
+                        <p className="text-xs truncate" style={{ color: 'var(--ink-4)' }}>{step.instance.title}</p>
+                      </div>
+                      <Badge variant="warn" className="text-xs shrink-0">In Progress</Badge>
+                    </Link>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Recent cases */}

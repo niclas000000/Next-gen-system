@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -10,7 +10,8 @@ import { Label } from '@/components/ui/label'
 import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import {
   ArrowLeft, Save, Loader2, CheckCircle, Clock, FileText,
-  History, Eye, Send, MoreHorizontal, Trash2,
+  History, Eye, Send, MoreHorizontal, Trash2, ShieldCheck,
+  ThumbsUp, ThumbsDown, User, ChevronRight,
 } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
 import {
@@ -20,6 +21,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { DocumentPropertiesForm, validateProperties } from '@/components/documents/DocumentPropertiesForm'
+import type { FormField } from '@/types/field'
 
 // ---- Types ----
 
@@ -71,6 +75,41 @@ interface ReceiptRecord {
   user: { id: string; name: string; email: string }
 }
 
+interface ApprovalPhase {
+  id: string
+  name: string
+  role: string
+  rule: 'any' | 'all'
+  deadlineDays?: number
+  order: number
+}
+
+interface UserOption { id: string; name: string; email: string }
+
+interface ApprovalUser {
+  id: string
+  name: string
+  email: string
+}
+
+interface ApprovalResponse {
+  userId: string
+  decision: 'approved' | 'rejected'
+  comment?: string
+  at: string
+  user: ApprovalUser
+}
+
+interface ApprovalRecord {
+  id: string
+  phase: string
+  status: 'pending' | 'approved' | 'rejected'
+  assignedTo: ApprovalUser[]
+  responses: ApprovalResponse[]
+  startedAt: string
+  completedAt: string | null
+}
+
 interface Props {
   doc: DocData
   versions: VersionRecord[]
@@ -88,111 +127,11 @@ const statusLabel: Record<string, string> = {
   draft: 'Draft', pending: 'Pending', published: 'Published', archived: 'Archived',
 }
 
-// ---- PropertyField renderer ----
-
-interface FieldDef {
-  id: string
-  type: string
-  label: string
-  name: string
-  properties?: { options?: { label: string; value: string }[] }
-}
-
-function PropertyField({
-  field,
-  value,
-  onChange,
-}: {
-  field: FieldDef
-  value: unknown
-  onChange: (v: unknown) => void
-}) {
-  const strValue = String(value ?? '')
-
-  if (field.type === 'select' || field.type === 'radio') {
-    const options = field.properties?.options ?? []
-    return (
-      <div className="space-y-1.5">
-        <Label className="text-xs font-medium">{field.label}</Label>
-        <select
-          value={strValue}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full h-8 px-2.5 text-sm rounded-[2px] focus:outline-none focus:ring-2"
-          style={{ border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)' }}
-        >
-          <option value="">Select…</option>
-          {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
-      </div>
-    )
-  }
-
-  if (field.type === 'checkbox' || field.type === 'toggle') {
-    return (
-      <div className="flex items-center justify-between">
-        <Label className="text-xs font-medium">{field.label}</Label>
-        <input type="checkbox" checked={!!value} onChange={(e) => onChange(e.target.checked)} className="h-4 w-4" />
-      </div>
-    )
-  }
-
-  if (field.type === 'date') {
-    return (
-      <div className="space-y-1.5">
-        <Label className="text-xs font-medium">{field.label}</Label>
-        <input
-          type="date"
-          value={strValue}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full h-8 px-2.5 text-sm rounded-[2px] focus:outline-none focus:ring-2"
-          style={{ border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)' }}
-        />
-      </div>
-    )
-  }
-
-  if (field.type === 'number') {
-    return (
-      <div className="space-y-1.5">
-        <Label className="text-xs font-medium">{field.label}</Label>
-        <Input type="number" value={strValue} onChange={(e) => onChange(e.target.value)} className="h-8 text-sm" />
-      </div>
-    )
-  }
-
-  if (field.type === 'textarea') {
-    return (
-      <div className="space-y-1.5">
-        <Label className="text-xs font-medium">{field.label}</Label>
-        <textarea
-          value={strValue}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full px-2.5 py-1.5 text-sm rounded-[2px] focus:outline-none focus:ring-2 resize-none"
-          style={{ border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)' }}
-          rows={3}
-        />
-      </div>
-    )
-  }
-
-  if (['section', 'heading', 'divider', 'paragraph'].includes(field.type)) {
-    return null
-  }
-
-  // default: text
-  return (
-    <div className="space-y-1.5">
-      <Label className="text-xs font-medium">{field.label}</Label>
-      <Input value={strValue} onChange={(e) => onChange(e.target.value)} className="h-8 text-sm" />
-    </div>
-  )
-}
-
 // ---- Main editor ----
 
 export function DocumentEditor({ doc, versions, receipts, currentUserId, hasReadReceipt: initialReceipt }: Props) {
   const router = useRouter()
-  const [tab, setTab] = useState<'content' | 'properties' | 'history' | 'receipts'>('content')
+  const [tab, setTab] = useState<'content' | 'properties' | 'history' | 'receipts' | 'approval'>('content')
 
   const [title, setTitle] = useState(doc.title)
   const [content, setContent] = useState(doc.content ?? '')
@@ -205,16 +144,53 @@ export function DocumentEditor({ doc, versions, receipts, currentUserId, hasRead
   const [versionList, setVersionList] = useState(versions)
   const isDirty = useRef(false)
 
+  const [approvals, setApprovals] = useState<ApprovalRecord[]>([])
+  const [approvalComment, setApprovalComment] = useState('')
+  const [actioning, setActioning] = useState(false)
+  const [showSubmitModal, setShowSubmitModal] = useState(false)
+  const [submitAssignments, setSubmitAssignments] = useState<Record<number, string[]>>({})
+  const [allUsers, setAllUsers] = useState<UserOption[]>([])
+
+  const hasApprovalFlow = !!doc.documentType?.approvalFlow
+  const currentApproval = approvals.find((a) => a.status === 'pending') ?? null
+  const isApprover = currentApproval?.assignedTo.some((u) => u.id === currentUserId) ?? false
+  const hasResponded = currentApproval?.responses.some((r) => r.userId === currentUserId) ?? false
+
+  const fetchApprovals = useCallback(async () => {
+    if (!hasApprovalFlow) return
+    const res = await fetch(`/api/documents/${doc.id}/approval`)
+    if (res.ok) {
+      const data = await res.json() as { approvals: ApprovalRecord[] }
+      setApprovals(data.approvals)
+    }
+  }, [doc.id, hasApprovalFlow])
+
+  useEffect(() => { fetchApprovals() }, [fetchApprovals])
+
+  useEffect(() => {
+    if (!hasApprovalFlow) return
+    fetch('/api/users').then((r) => r.json()).then((d: { users: UserOption[] }) => setAllUsers(d.users ?? [])).catch(() => {})
+  }, [hasApprovalFlow])
+
+  const [propertyErrors, setPropertyErrors] = useState<Record<string, string>>({})
+
   const requireChangeDesc = doc.documentType?.requireChangeDesc ?? false
   const isFile = doc.documentType?.format === 'file'
-  const propertyFields = (doc.documentType?.propertyPackage ?? []) as FieldDef[]
-  const activeFields = propertyFields.filter((f) => !['section', 'heading', 'divider', 'paragraph'].includes(f.type))
+  const propertyFields = (doc.documentType?.propertyPackage ?? []) as FormField[]
+  const hasPropertyFields = propertyFields.length > 0
 
   const save = useCallback(async (newStatus?: string) => {
     if (requireChangeDesc && !changeDesc.trim() && (title !== doc.title || content !== (doc.content ?? ''))) {
       alert('Please describe what changed before saving.')
       return
     }
+    const errs = validateProperties(propertyFields, properties)
+    if (Object.keys(errs).length > 0) {
+      setPropertyErrors(errs)
+      setTab('properties')
+      return
+    }
+    setPropertyErrors({})
     setSaving(true)
     try {
       await fetch(`/api/documents/${doc.id}`, {
@@ -254,6 +230,77 @@ export function DocumentEditor({ doc, versions, receipts, currentUserId, hasRead
     }
   }, [title, content, properties, status, changeDesc, doc.id, doc.version, doc.content, isFile, requireChangeDesc, router])
 
+  const openSubmitModal = () => {
+    const phases = (doc.documentType?.approvalFlow?.phases ?? []) as ApprovalPhase[]
+    const initial: Record<number, string[]> = {}
+    phases.sort((a, b) => a.order - b.order).forEach((_, i) => { initial[i] = [] })
+    setSubmitAssignments(initial)
+    setShowSubmitModal(true)
+  }
+
+  const submitForApproval = async () => {
+    setSaving(true)
+    try {
+      await fetch(`/api/documents/${doc.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, content: isFile ? undefined : content, properties }),
+      })
+      const res = await fetch(`/api/documents/${doc.id}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roleAssignments: submitAssignments }),
+      })
+      if (res.ok) {
+        setStatus('pending')
+        setShowSubmitModal(false)
+        setTab('approval')
+        await fetchApprovals()
+        router.refresh()
+      }
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const approvePhase = async () => {
+    if (!currentApproval) return
+    setActioning(true)
+    try {
+      const res = await fetch(`/api/documents/${doc.id}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comment: approvalComment }),
+      })
+      const data = await res.json() as { published?: boolean; phaseComplete?: boolean }
+      if (data.published) setStatus('published')
+      setApprovalComment('')
+      await fetchApprovals()
+      router.refresh()
+    } finally {
+      setActioning(false)
+    }
+  }
+
+  const rejectPhase = async () => {
+    if (!currentApproval) return
+    if (!confirm('Reject this document? It will be returned to draft.')) return
+    setActioning(true)
+    try {
+      await fetch(`/api/documents/${doc.id}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comment: approvalComment }),
+      })
+      setStatus('draft')
+      setApprovalComment('')
+      await fetchApprovals()
+      router.refresh()
+    } finally {
+      setActioning(false)
+    }
+  }
+
   const markRead = async () => {
     setSavingReceipt(true)
     try {
@@ -272,10 +319,11 @@ export function DocumentEditor({ doc, versions, receipts, currentUserId, hasRead
 
   const tabs = [
     { id: 'content', label: isFile ? 'File' : 'Content', icon: <FileText size={13} /> },
-    { id: 'properties', label: 'Properties', icon: <CheckCircle size={13} />, hidden: activeFields.length === 0 },
+    { id: 'properties', label: 'Properties', icon: <CheckCircle size={13} />, hidden: !hasPropertyFields },
     { id: 'history', label: `History${versionList.length > 0 ? ` (${versionList.length})` : ''}`, icon: <History size={13} /> },
     { id: 'receipts', label: `Receipts${receipts.length > 0 ? ` (${receipts.length})` : ''}`, icon: <Eye size={13} />, hidden: !doc.requireReadReceipt && !doc.documentType?.requireReadReceipt },
-  ] as const
+    { id: 'approval', label: `Approval${approvals.length > 0 ? ` (${approvals.length})` : ''}`, icon: <ShieldCheck size={13} />, hidden: !hasApprovalFlow },
+  ]
 
   return (
     <div className="flex flex-col h-full -m-6" style={{ height: 'calc(100vh - 56px)' }}>
@@ -330,20 +378,20 @@ export function DocumentEditor({ doc, versions, receipts, currentUserId, hasRead
               size="sm"
               variant="outline"
               className="h-7 text-xs gap-1"
-              onClick={() => save('pending')}
+              onClick={openSubmitModal}
             >
               <Send size={11} /> Submit for approval
             </Button>
           )}
 
-          {status === 'pending' && (
+          {status === 'pending' && isApprover && !hasResponded && (
             <Button
               size="sm"
               className="h-7 text-xs gap-1"
               style={{ background: 'var(--ok)', color: '#fff' }}
-              onClick={() => save('published')}
+              onClick={() => setTab('approval')}
             >
-              <CheckCircle size={11} /> Publish
+              <ShieldCheck size={11} /> Review
             </Button>
           )}
 
@@ -390,7 +438,7 @@ export function DocumentEditor({ doc, versions, receipts, currentUserId, hasRead
 
       {/* Tabs */}
       <div className="flex px-6 shrink-0" style={{ borderBottom: '1px solid var(--rule)', background: 'var(--surface)' }}>
-        {tabs.filter((t) => !('hidden' in t && t.hidden)).map((t) => (
+        {tabs.filter((t) => !t.hidden).map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id as typeof tab)}
@@ -479,19 +527,20 @@ export function DocumentEditor({ doc, versions, receipts, currentUserId, hasRead
               </div>
 
               {/* Type-specific properties */}
-              {activeFields.length > 0 && (
+              {propertyFields.length > 0 && (
                 <div className="space-y-3">
                   <h3 className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--ink-4)' }}>
                     {doc.documentType?.name} Properties
                   </h3>
-                  {activeFields.map((field) => (
-                    <PropertyField
-                      key={field.id}
-                      field={field}
-                      value={properties[field.name]}
-                      onChange={(v) => setProperties((prev) => ({ ...prev, [field.name]: v }))}
-                    />
-                  ))}
+                  <DocumentPropertiesForm
+                    fields={propertyFields}
+                    values={properties}
+                    onChange={(name, val) => {
+                      setProperties((prev) => ({ ...prev, [name]: val }))
+                      isDirty.current = true
+                    }}
+                    errors={propertyErrors}
+                  />
                 </div>
               )}
             </div>
@@ -598,7 +647,172 @@ export function DocumentEditor({ doc, versions, receipts, currentUserId, hasRead
             </div>
           </div>
         )}
+
+        {/* Approval tab */}
+        {tab === 'approval' && (
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="max-w-xl space-y-6">
+
+              {approvals.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
+                  <ShieldCheck size={28} style={{ color: 'var(--ink-4)' }} />
+                  <p className="text-sm" style={{ color: 'var(--ink-4)' }}>
+                    {status === 'draft' ? 'Submit the document to start the approval process.' : 'No approval records yet.'}
+                  </p>
+                  {status === 'draft' && hasApprovalFlow && (
+                    <Button size="sm" className="gap-1" onClick={submitForApproval} disabled={saving}>
+                      {saving ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
+                      Submit for approval
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {/* Phase list */}
+              {approvals.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--ink-4)' }}>Approval phases</h3>
+                  {approvals.map((a, i) => (
+                    <div key={a.id} className="rounded-[2px] overflow-hidden" style={{ border: '1px solid var(--rule)' }}>
+                      {/* Phase header */}
+                      <div className="flex items-center gap-3 px-4 py-3" style={{
+                        background: a.status === 'pending' ? 'var(--accent-tint)' : a.status === 'approved' ? 'oklch(0.97 0.05 145)' : 'oklch(0.97 0.04 20)',
+                        borderBottom: '1px solid var(--rule)',
+                      }}>
+                        {a.status === 'approved' && <CheckCircle size={15} style={{ color: 'var(--ok)', flexShrink: 0 }} />}
+                        {a.status === 'rejected' && <ThumbsDown size={15} style={{ color: 'var(--risk)', flexShrink: 0 }} />}
+                        {a.status === 'pending' && <Clock size={15} style={{ color: 'var(--nw-accent)', flexShrink: 0 }} />}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+                            Phase {i + 1}: {a.phase}
+                          </p>
+                          <p className="text-xs" style={{ color: 'var(--ink-4)' }}>
+                            {a.status === 'pending' ? 'Awaiting responses' : a.status === 'approved' ? `Approved · ${a.completedAt ? format(new Date(a.completedAt), 'MMM d, yyyy') : ''}` : `Rejected · ${a.completedAt ? format(new Date(a.completedAt), 'MMM d, yyyy') : ''}`}
+                          </p>
+                        </div>
+                        <Badge
+                          variant={a.status === 'approved' ? 'ok' : a.status === 'rejected' ? 'risk' : 'warn'}
+                          className="text-[10px] shrink-0"
+                        >
+                          {a.status}
+                        </Badge>
+                      </div>
+
+                      {/* Assignees + responses */}
+                      <div className="p-4 space-y-2">
+                        {a.assignedTo.map((u) => {
+                          const response = a.responses.find((r) => r.userId === u.id)
+                          return (
+                            <div key={u.id} className="flex items-center gap-3">
+                              <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--paper-3)' }}>
+                                <User size={12} style={{ color: 'var(--ink-4)' }} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium" style={{ color: 'var(--ink-3)' }}>
+                                  {u.name}{u.id === currentUserId ? ' (you)' : ''}
+                                </p>
+                                {response?.comment && (
+                                  <p className="text-xs" style={{ color: 'var(--ink-4)' }}>{response.comment}</p>
+                                )}
+                              </div>
+                              {response ? (
+                                <Badge
+                                  variant={response.decision === 'approved' ? 'ok' : 'risk'}
+                                  className="text-[10px] shrink-0"
+                                >
+                                  {response.decision}
+                                </Badge>
+                              ) : (
+                                <span className="text-[10px]" style={{ color: 'var(--ink-4)' }}>Pending</span>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Action panel for current approver */}
+              {isApprover && !hasResponded && currentApproval && (
+                <div className="rounded-[2px] p-4 space-y-3" style={{ border: '1px solid var(--nw-accent)', background: 'var(--accent-tint)' }}>
+                  <p className="text-xs font-semibold" style={{ color: 'var(--nw-accent)' }}>Your response — Phase: {currentApproval.phase}</p>
+                  <div className="space-y-1">
+                    <Label className="text-xs" style={{ color: 'var(--ink-3)' }}>Comment (optional)</Label>
+                    <textarea
+                      value={approvalComment}
+                      onChange={(e) => setApprovalComment(e.target.value)}
+                      className="w-full rounded-[2px] text-sm px-3 py-2 h-16 resize-none focus:outline-none"
+                      style={{ border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)' }}
+                      placeholder="Optional comment…"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" className="gap-1" style={{ background: 'var(--ok)', color: '#fff' }} onClick={approvePhase} disabled={actioning}>
+                      {actioning ? <Loader2 size={12} className="animate-spin" /> : <ThumbsUp size={12} />}
+                      Approve
+                    </Button>
+                    <Button size="sm" variant="outline" className="gap-1" style={{ color: 'var(--risk)', borderColor: 'var(--risk)' }} onClick={rejectPhase} disabled={actioning}>
+                      <ThumbsDown size={12} /> Reject
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {isApprover && hasResponded && (
+                <p className="text-xs" style={{ color: 'var(--ink-4)' }}>You have already responded to the current phase.</p>
+              )}
+
+            </div>
+          </div>
+        )}
+
       </div>
+
+      {/* Submit for approval modal */}
+      <Dialog open={showSubmitModal} onOpenChange={(o) => { if (!o) setShowSubmitModal(false) }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Submit for approval</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <p className="text-xs" style={{ color: 'var(--ink-4)' }}>
+              Assign a person to each approval phase. They will be notified to review this document.
+            </p>
+            {((doc.documentType?.approvalFlow?.phases ?? []) as ApprovalPhase[])
+              .sort((a, b) => a.order - b.order)
+              .map((phase, i) => (
+                <div key={phase.id} className="space-y-1.5">
+                  <Label className="text-xs">
+                    Phase {i + 1}: {phase.name}
+                    {phase.role && (
+                      <span className="ml-1.5 font-normal" style={{ color: 'var(--ink-4)' }}>— {phase.role}</span>
+                    )}
+                  </Label>
+                  <select
+                    value={submitAssignments[i]?.[0] ?? ''}
+                    onChange={(e) => setSubmitAssignments((prev) => ({ ...prev, [i]: e.target.value ? [e.target.value] : [] }))}
+                    className="w-full rounded-[2px] text-sm px-3 h-8 focus:outline-none"
+                    style={{ border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)' }}
+                  >
+                    <option value="">Select person…</option>
+                    {allUsers.map((u) => (
+                      <option key={u.id} value={u.id}>{u.name} — {u.email}</option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            <div className="flex justify-end gap-2 pt-1">
+              <Button variant="outline" size="sm" onClick={() => setShowSubmitModal(false)}>Cancel</Button>
+              <Button size="sm" onClick={submitForApproval} disabled={saving} className="gap-1">
+                {saving ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
+                Submit
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

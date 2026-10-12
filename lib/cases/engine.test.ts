@@ -81,7 +81,7 @@ describe('Deviation — observation is quick-closed in coordination', () => {
     s = inCoordinationWithLeader()
     expect(s.roles.deviationLeader).toEqual(['erik'])
 
-    const values = fill(ctx(s, erik), { initialClassification: 'Observation' })
+    const { observationCorrection: _, ...values } = fill(ctx(s, erik), { initialClassification: 'Observation' })
     const saved = applySave(ctx(s, erik), values)
     s = { ...s, values: saved.values }
 
@@ -167,6 +167,13 @@ describe('field states and permissions', () => {
     const saved = applySave(ctx(s, anna), { reporter: 'mallory', productAffectedBtn: 'x', problem: 'Spill' })
     expect(saved.changed).toEqual(['problem'])
     expect(saved.rejected.sort()).toEqual(['productAffectedBtn', 'reporter'])
+  })
+
+  it('accepts a field unlocked by another field in the same save', () => {
+    const s = created()
+    const saved = applySave(ctx(s, anna), { batchNumber: '24-131', productAffected: 'Yes' })
+    expect(saved.changed.sort()).toEqual(['batchNumber', 'productAffected'])
+    expect(saved.rejected).toEqual([])
   })
 
   it('offers nothing once the case is closed', () => {

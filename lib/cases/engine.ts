@@ -119,8 +119,8 @@ export function actorFieldStates(ctx: CaseContext): Map<string, FieldState> {
   const userRoleEdit = roleIds.some((id) => phase.permissions[id]?.edit && config.roles.find((r) => r.id === id)?.kind !== 'group')
   for (const f of config.fields) {
     const s = states.get(f.id)!
-    if (snapshot.status !== 'open' || !perm.edit) s.readOnly = true
-    else if (!userRoleEdit && !(f.assignsRoleId && phase.responsibleRoleIds.includes(f.assignsRoleId))) s.readOnly = true
+    const assignsResponsible = !!f.assignsRoleId && phase.responsibleRoleIds.includes(f.assignsRoleId)
+    if (snapshot.status !== 'open' || !perm.edit || (!userRoleEdit && !assignsResponsible)) s.readOnly = true
     if (s.readOnly) s.mandatory = false
   }
   return states
@@ -193,32 +193,39 @@ export interface SaveResult {
   assigned: Record<string, string[]>
 }
 
-/** Applies a patch of values, keeping only fields the actor may edit now; assignment fields set roles. */
+/**
+ * Applies a patch of values, keeping only fields the actor may edit; assignment fields set roles.
+ * Field states depend on values (e.g. a field shown only when another = Yes), so fields are
+ * accepted in passes until nothing more becomes editable — order in the patch does not matter.
+ */
 export function applySave(ctx: CaseContext, patch: CaseValues): SaveResult {
-  const states = actorFieldStates(ctx)
   const values = { ...ctx.snapshot.values }
   const roles = { ...ctx.snapshot.roles }
   const changed: string[] = []
-  const rejected: string[] = []
   const assigned: Record<string, string[]> = {}
+  let pending = Object.keys(patch)
 
-  for (const [fieldId, value] of Object.entries(patch)) {
-    const field = ctx.config.fields.find((f) => f.id === fieldId)
-    const s = states.get(fieldId)
-    if (!field || LAYOUT_FIELD_TYPES.includes(field.type) || !s?.visible || s.readOnly) {
-      rejected.push(fieldId)
-      continue
-    }
-    if (JSON.stringify(values[fieldId] ?? null) === JSON.stringify(value)) continue
-    values[fieldId] = value
-    changed.push(fieldId)
-    if (field.assignsRoleId) {
-      const holder = (Array.isArray(value) ? value : [value]).filter(Boolean)
-      roles[field.assignsRoleId] = holder
-      assigned[field.assignsRoleId] = holder
-    }
+  for (let progress = true; progress && pending.length; ) {
+    progress = false
+    const states = actorFieldStates({ ...ctx, snapshot: { ...ctx.snapshot, values } })
+    pending = pending.filter((fieldId) => {
+      const field = ctx.config.fields.find((f) => f.id === fieldId)
+      const s = states.get(fieldId)
+      if (!field || LAYOUT_FIELD_TYPES.includes(field.type) || !s?.visible || s.readOnly) return true
+      progress = true
+      const value = patch[fieldId]
+      if (JSON.stringify(values[fieldId] ?? null) === JSON.stringify(value)) return false
+      values[fieldId] = value
+      changed.push(fieldId)
+      if (field.assignsRoleId) {
+        const holder = (Array.isArray(value) ? value : [value]).filter(Boolean)
+        roles[field.assignsRoleId] = holder
+        assigned[field.assignsRoleId] = holder
+      }
+      return false
+    })
   }
-  return { values, roles, changed, rejected, assigned }
+  return { values, roles, changed, rejected: pending, assigned }
 }
 
 /** Taking the case: fills the assignment field with the actor, which gives them the responsible role. */

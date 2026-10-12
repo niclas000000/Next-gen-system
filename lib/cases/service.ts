@@ -54,14 +54,18 @@ function snapshotOf(row: CaseRow): CaseSnapshot {
   }
 }
 
-async function loadCase(idOrNumber: string): Promise<CaseRow> {
+/** Loads the case; with `revision`, fails fast if someone saved since the caller loaded it. */
+async function loadCase(idOrNumber: string, revision?: number): Promise<CaseRow> {
   const row = await prisma.case.findFirst({
     where: { OR: [{ id: idOrNumber }, { number: idOrNumber.toUpperCase() }] },
     include: { version: true, caseType: true },
   })
   if (!row) throw new CaseError('Case not found', 404)
+  if (revision !== undefined && revision !== row.revision) throw new CaseError(STALE, 409)
   return row
 }
+
+const STALE = 'Someone else has changed the case — reload to see their changes'
 
 function contextOf(row: CaseRow, actor: Actor): CaseContext {
   return { config: parseConfig(row.version.config), bindings: bindingsOf(row.caseType.roleBindings), snapshot: snapshotOf(row), actor }
@@ -80,7 +84,7 @@ async function writeCase(
   data: Prisma.CaseUncheckedUpdateManyInput
 ) {
   const res = await tx.case.updateMany({ where: { id: row.id, revision }, data: { ...data, revision: { increment: 1 } } })
-  if (res.count === 0) throw new CaseError('Someone else has changed the case — reload to see their changes', 409)
+  if (res.count === 0) throw new CaseError(STALE, 409)
 }
 
 async function notify(
@@ -146,7 +150,7 @@ export async function createCase(caseTypeId: string, title: string, userId: stri
 }
 
 export async function saveCase(idOrNumber: string, userId: string, patch: CaseValues, revision: number) {
-  const row = await loadCase(idOrNumber)
+  const row = await loadCase(idOrNumber, revision)
   const ctx = contextOf(row, await actorFor(userId))
   if (!allowedActions(ctx).save.allowed) throw new CaseError('You cannot edit the case in this phase', 403)
   const saved = applySave(ctx, patch)
@@ -170,7 +174,7 @@ export async function saveCase(idOrNumber: string, userId: string, patch: CaseVa
 }
 
 export async function takeCase(idOrNumber: string, userId: string, revision: number) {
-  const row = await loadCase(idOrNumber)
+  const row = await loadCase(idOrNumber, revision)
   const ctx = contextOf(row, await actorFor(userId))
   const state = allowedActions(ctx).take
   if (!state.allowed) throw new CaseError(state.reason ?? 'Not allowed', 403)
@@ -197,7 +201,7 @@ export async function moveCase(
   patch: CaseValues = {},
   signature?: Signature
 ) {
-  const row = await loadCase(idOrNumber)
+  const row = await loadCase(idOrNumber, revision)
   const actor = await actorFor(userId)
   const ctx = contextOf(row, actor)
   const saved = Object.keys(patch).length && allowedActions(ctx).save.allowed ? applySave(ctx, patch) : null
@@ -256,7 +260,7 @@ export async function pressButton(idOrNumber: string, userId: string, revision: 
 }
 
 export async function cancelCase(idOrNumber: string, userId: string, revision: number) {
-  const row = await loadCase(idOrNumber)
+  const row = await loadCase(idOrNumber, revision)
   if (row.status !== 'open') throw new CaseError('The case is closed', 400)
   await prisma.$transaction(async (tx) => {
     await writeCase(tx, row, revision, { status: 'cancelled', closedAt: new Date(), phaseDueAt: null })

@@ -8,6 +8,9 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const interTight = Inter_Tight({ subsets: ['latin'], variable: '--font-display' })
 const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono' })
 
+// Every page reads live data (and the theme default), so nothing is prerendered at build time
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Nexus',
   description: 'Documents, processes and cases in one governance platform',

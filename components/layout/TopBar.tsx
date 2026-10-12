@@ -83,7 +83,7 @@ export function TopBar({ module }: { module: ModuleId }) {
           {items.map((c, i) => {
             const last = i === items.length - 1
             return (
-              <li key={c.href} className="flex min-w-0 items-center gap-1">
+              <li key={i} className="flex min-w-0 items-center gap-1">
                 {i > 0 && <ChevronRight size={12} className="shrink-0 text-ink-4" />}
                 {last ? (
                   <span aria-current="page" className={`truncate font-medium text-ink ${c.mono ? 'font-mono text-[13px]' : ''}`}>

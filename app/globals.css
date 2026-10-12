@@ -26,6 +26,20 @@
     --ok-tint:   oklch(0.96 0.04 145);
     --warn-tint: oklch(0.97 0.04 70);
     --risk-tint: oklch(0.96 0.04 25);
+    /* status pill borders and text */
+    --ok-line:   oklch(0.80 0.08 145);
+    --warn-line: oklch(0.82 0.10 70);
+    --risk-line: oklch(0.80 0.12 25);
+    --ok-ink:    oklch(0.42 0.12 145);
+    --warn-ink:  oklch(0.48 0.14 70);
+    --risk-ink:  oklch(0.42 0.17 25);
+
+    /* text on ink/accent fills, and the dark icon rail */
+    --on-fill:   #FFFFFF;
+    --rail:      #121212;
+    --rail-ink:  rgba(255, 255, 255, 0.55);
+    --rail-hover: rgba(255, 255, 255, 0.08);
+    --rail-active: rgba(255, 255, 255, 0.14);
 
     --rule:      #E8E6DF;
     --rule-soft: #F0EEE8;

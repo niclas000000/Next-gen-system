@@ -99,7 +99,16 @@ async function prepareCaseType(bindings: Record<string, { userIds: string[]; gro
 // ---------------------------------------------------------------------------
 
 class Builder {
-  constructor(private config: CaseTypeConfig, private caseId: string, private users: Record<UserKey, string>) {}
+  /** When each user action started — events after mark k belong to step k */
+  private marks: number[] = []
+
+  constructor(private config: CaseTypeConfig, private caseId: string, private users: Record<UserKey, string>) {
+    this.marks.push(Date.now() - 1000)
+  }
+
+  private mark() {
+    this.marks.push(Date.now())
+  }
 
   private async current() {
     return prisma.case.findUniqueOrThrow({ where: { id: this.caseId } })
@@ -124,22 +133,26 @@ class Builder {
   }
 
   async save(who: UserKey, values: CaseValues) {
+    this.mark()
     const row = await this.current()
     await saveCase(this.caseId, this.users[who], values, row.revision)
   }
 
   async take(who: UserKey) {
+    this.mark()
     const row = await this.current()
     await takeCase(this.caseId, this.users[who], row.revision)
   }
 
   async move(who: UserKey, move: 'forward' | 'backward' | 'preEnd', texts: CaseValues = {}, meaning?: string) {
+    this.mark()
     const row = await this.current()
     const values = move === 'backward' ? texts : await this.filled(texts)
     await moveCase(this.caseId, this.users[who], move, row.revision, values, meaning ? { password: PASSWORD, meaning } : undefined)
   }
 
   async comment(who: UserKey, body: string) {
+    this.mark()
     await addComment(this.caseId, this.users[who], body)
   }
 
@@ -153,11 +166,15 @@ class Builder {
     const now = Date.now()
     const row = await this.current()
     const events = await prisma.caseEvent.findMany({ where: { caseId: this.caseId }, orderBy: { at: 'asc' } })
+    // Events written by one service call (e.g. signed + forward) stay together as one step
+    const stepOf = events.map((e) => this.marks.filter((m) => m <= e.at.getTime()).length - 1)
+    const steps = this.marks.length
     const lastMoveIndex = events.map((e) => e.type).findLastIndex((t) => ['created', 'forward', 'backward', 'preEnd'].includes(t))
-    const timeOf = (i: number) =>
-      enteredDaysAgo !== undefined && i === lastMoveIndex
-        ? new Date(now - enteredDaysAgo * DAY)
-        : new Date(now - span * (1 - i / events.length) + i * 60_000)
+    const stepTime = (step: number) =>
+      enteredDaysAgo !== undefined && step === stepOf[lastMoveIndex]
+        ? now - enteredDaysAgo * DAY
+        : now - span * (1 - step / steps)
+    const timeOf = (i: number) => new Date(stepTime(stepOf[i]) + (i - stepOf.indexOf(stepOf[i])) * 1000)
     for (const [i, e] of events.entries()) await prisma.caseEvent.update({ where: { id: e.id }, data: { at: timeOf(i) } })
 
     const entered = lastMoveIndex >= 0 ? timeOf(lastMoveIndex) : row.phaseEnteredAt

@@ -3,7 +3,6 @@ import { prisma } from '@/lib/db/client'
 import { verifyPassword } from '@/lib/auth/password'
 import { CaseTypeConfigSchema, type CaseTypeConfig, type Phase } from '@/lib/case-config/schema'
 import { visibleLayout, type CaseMove, type CaseValues } from '@/lib/case-config/runtime'
-import { homePhaseIndex } from '@/lib/case-config/layout'
 import {
   actorFieldStates,
   actorRoleIds,
@@ -13,6 +12,7 @@ import {
   currentPhase,
   emailNotices,
   initialCase,
+  permissionIn,
   phaseHolderRoleIds,
   planMove,
   roleHolders,
@@ -299,13 +299,6 @@ export async function getCaseDetail(idOrNumber: string, userId: string) {
     groupMembers(),
   ])
 
-  // Earlier phases: fields introduced there, shown read-only as history
-  const history = config.phases.slice(0, phaseIndex).map((p, i) => ({
-    phaseId: p.id,
-    name: p.name,
-    fieldIds: config.fields.filter((f) => homePhaseIndex(config, f.id) === i && states.get(f.id)?.visible).map((f) => f.id),
-  }))
-
   const holderRoleIds = phaseHolderRoleIds(config, phase)
   return {
     case: {
@@ -327,9 +320,9 @@ export async function getCaseDetail(idOrNumber: string, userId: string) {
     phaseIndex,
     layout: visibleLayout(config, phase, snapshot.values),
     fieldStates: Object.fromEntries(states),
-    history,
     actions: allowedActions(ctx),
     myRoleIds: actorRoleIds(ctx),
+    permission: permissionIn(phase, actorRoleIds(ctx)),
     holders: holderRoleIds.map((roleId) => ({
       roleId,
       name: config.roles.find((r) => r.id === roleId)?.name ?? roleId,
@@ -423,3 +416,5 @@ export async function inbox(userId: string) {
     }]
   })
 }
+
+export type CaseDetail = Awaited<ReturnType<typeof getCaseDetail>>

@@ -8,13 +8,14 @@ const badgeVariants = cva(
     variants: {
       variant: {
         // Northwind status pills
-        default:    "bg-[#F2F1EC] border-[#E8E6DF] text-[#54524D]",                                          // neutral
-        ok:         "bg-[oklch(0.96_0.04_145)] border-[oklch(0.80_0.08_145)] text-[oklch(0.42_0.12_145)]",  // approved/published
-        warn:       "bg-[oklch(0.97_0.04_70)] border-[oklch(0.82_0.10_70)] text-[oklch(0.48_0.14_70)]",     // pending/in-review
-        risk:       "bg-[oklch(0.96_0.04_25)] border-[oklch(0.80_0.12_25)] text-[oklch(0.42_0.17_25)]",     // overdue/rejected
-        secondary:  "bg-[#F2F1EC] border-[#E8E6DF] text-[#54524D]",
-        destructive:"bg-[oklch(0.96_0.04_25)] border-[oklch(0.80_0.12_25)] text-[oklch(0.42_0.17_25)]",
-        outline:    "border-[#E8E6DF] text-[#54524D] bg-transparent",
+        default:    "bg-paper-2 border-rule text-ink-3",            // neutral
+        ok:         "bg-ok-tint border-ok-line text-ok-ink",        // approved/published/closed
+        warn:       "bg-warn-tint border-warn-line text-warn-ink",  // pending/in progress
+        risk:       "bg-risk-tint border-risk-line text-risk-ink",  // overdue/rejected
+        accent:     "bg-accent-tint border-transparent text-nw-accent",
+        secondary:  "bg-paper-2 border-rule text-ink-3",
+        destructive:"bg-risk-tint border-risk-line text-risk-ink",
+        outline:    "border-rule text-ink-3 bg-transparent",
       },
     },
     defaultVariants: {

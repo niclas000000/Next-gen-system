@@ -4,26 +4,26 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nw-accent focus-visible:ring-offset-1 focus-visible:ring-offset-paper disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         // Northwind: ink fill — the primary commit action
         default:
-          "bg-[#111111] text-white hover:bg-[#2d2d2d] rounded-[2px]",
+          "bg-ink text-paper hover:bg-ink-2 rounded-[2px]",
         // Danger: risk tint
         destructive:
-          "bg-[oklch(0.96_0.04_25)] border border-[oklch(0.56_0.17_25)] text-[oklch(0.42_0.17_25)] hover:bg-[oklch(0.93_0.06_25)] rounded-[2px]",
+          "bg-risk-tint border border-risk text-risk-ink hover:border-risk-ink rounded-[2px]",
         // Default/secondary: surface with rule border
         outline:
-          "bg-white border border-[#E8E6DF] text-[#111111] hover:bg-[#F2F1EC] rounded-[2px]",
+          "bg-surface border border-rule text-ink hover:bg-paper-2 rounded-[2px]",
         secondary:
-          "bg-[#F2F1EC] border border-[#E8E6DF] text-[#54524D] hover:bg-[#E8E6DF] rounded-[2px]",
+          "bg-paper-2 border border-rule text-ink-3 hover:bg-paper-3 rounded-[2px]",
         // Ghost: no border
         ghost:
-          "text-[#54524D] hover:bg-[#F2F1EC] hover:text-[#111111] rounded-[2px]",
+          "text-ink-3 hover:bg-paper-2 hover:text-ink rounded-[2px]",
         link:
-          "text-[oklch(0.52_0.08_200)] underline-offset-4 hover:underline",
+          "text-nw-accent underline-offset-4 hover:underline",
       },
       size: {
         default: "h-[34px] px-3.5 py-1.5",

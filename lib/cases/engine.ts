@@ -106,24 +106,34 @@ export function permissionIn(phase: Phase, roleIds: string[]): PhasePermission {
 }
 
 /**
- * Field states for this actor: the configuration's states, plus read-only for everything when
- * the actor cannot edit — and group roles may only edit the assignment field that hands the case on
- * (CANEA ONE: "the group may only edit 'Select deviation leader'").
+ * Read-only for fields the actor may not change: everything when the case is closed or the
+ * actor cannot edit, and for group roles everything except the assignment field that hands the
+ * case on (CANEA ONE: "the group may only edit 'Select deviation leader'"). Mutates `states`.
+ * Pure on config + permission, so the case page can apply it to live states while typing.
  */
-export function actorFieldStates(ctx: CaseContext): Map<string, FieldState> {
-  const { config, snapshot } = ctx
-  const phase = currentPhase(config, snapshot)
-  const states = fieldStates(config, phase, snapshot.values)
-  const roleIds = actorRoleIds(ctx)
-  const perm = permissionIn(phase, roleIds)
+export function restrictForActor(
+  config: CaseTypeConfig,
+  phase: Phase,
+  states: Map<string, FieldState>,
+  perm: PhasePermission,
+  roleIds: string[],
+  status: CaseStatus
+): Map<string, FieldState> {
   const userRoleEdit = roleIds.some((id) => phase.permissions[id]?.edit && config.roles.find((r) => r.id === id)?.kind !== 'group')
   for (const f of config.fields) {
     const s = states.get(f.id)!
     const assignsResponsible = !!f.assignsRoleId && phase.responsibleRoleIds.includes(f.assignsRoleId)
-    if (snapshot.status !== 'open' || !perm.edit || (!userRoleEdit && !assignsResponsible)) s.readOnly = true
+    if (status !== 'open' || !perm.edit || (!userRoleEdit && !assignsResponsible)) s.readOnly = true
     if (s.readOnly) s.mandatory = false
   }
   return states
+}
+
+export function actorFieldStates(ctx: CaseContext): Map<string, FieldState> {
+  const { config, snapshot } = ctx
+  const phase = currentPhase(config, snapshot)
+  const roleIds = actorRoleIds(ctx)
+  return restrictForActor(config, phase, fieldStates(config, phase, snapshot.values), permissionIn(phase, roleIds), roleIds, snapshot.status)
 }
 
 /** The assignment field a group member uses to take the case (sets the phase's responsible role). */
@@ -139,31 +149,42 @@ function names(fields: { name: string }[], max = 3): string {
   return fields.length > max ? `${shown} and ${fields.length - max} more` : shown
 }
 
+/** Whether each move is possible, and why not — pure, so the case page re-evaluates it while typing. */
+export function moveStates(
+  config: CaseTypeConfig,
+  phase: Phase,
+  perm: PhasePermission,
+  status: CaseStatus,
+  values: CaseValues
+): Record<CaseMove, ActionState> {
+  const last = config.phases[config.phases.length - 1]?.id === phase.id
+  const move = (m: CaseMove): ActionState => {
+    if (status !== 'open') return { allowed: false, reason: 'The case is closed' }
+    if (!perm[PERMISSION_FOR[m]]) return { allowed: false, reason: 'You do not have permission for this in the current phase' }
+    if (m === 'backward' && !previousPhaseId(config, phase)) return { allowed: false, reason: 'This is the first phase' }
+    const direction = blockingDirectionRule(config, phase, m, values)
+    if (direction) return { allowed: false, reason: direction.message || 'Not allowed in this situation' }
+    if (m !== 'backward') {
+      const missing = missingMandatory(config, phase, values)
+      if (missing.length) return { allowed: false, reason: `Fill in ${names(missing)}` }
+    }
+    return {
+      allowed: true,
+      signature: requiresSignature(config, phase, m, values),
+      ...(m === 'forward' ? { closes: last || nextPhaseId(config, phase, values) === null } : {}),
+    }
+  }
+  return { forward: move('forward'), backward: move('backward'), preEnd: move('preEnd') }
+}
+
 export function allowedActions(ctx: CaseContext): Record<CaseActionName, ActionState> {
   const { config, snapshot, actor } = ctx
   const phase = currentPhase(config, snapshot)
   const roleIds = actorRoleIds(ctx)
   const perm = permissionIn(phase, roleIds)
   const closedReason = snapshot.status === 'open' ? null : 'The case is closed'
-  const last = config.phases[config.phases.length - 1]?.id === phase.id
 
-  const move = (m: CaseMove): ActionState => {
-    if (closedReason) return { allowed: false, reason: closedReason }
-    if (!perm[PERMISSION_FOR[m]]) return { allowed: false, reason: 'You do not have permission for this in the current phase' }
-    if (m === 'backward' && !previousPhaseId(config, phase)) return { allowed: false, reason: 'This is the first phase' }
-    const direction = blockingDirectionRule(config, phase, m, snapshot.values)
-    if (direction) return { allowed: false, reason: direction.message || 'Not allowed in this situation' }
-    if (m !== 'backward') {
-      const missing = missingMandatory(config, phase, snapshot.values)
-      if (missing.length) return { allowed: false, reason: `Fill in ${names(missing)}` }
-    }
-    return {
-      allowed: true,
-      signature: requiresSignature(config, phase, m, snapshot.values),
-      ...(m === 'forward' ? { closes: last || nextPhaseId(config, phase, snapshot.values) === null } : {}),
-    }
-  }
-
+  const moves = moveStates(config, phase, perm, snapshot.status, snapshot.values)
   const field = takeField(ctx)
   const holders = field?.assignsRoleId ? snapshot.roles[field.assignsRoleId] ?? [] : []
   const take: ActionState = closedReason
@@ -176,9 +197,7 @@ export function allowedActions(ctx: CaseContext): Record<CaseActionName, ActionS
 
   return {
     save: closedReason ? { allowed: false, reason: closedReason } : perm.edit ? { allowed: true } : { allowed: false, reason: 'You cannot edit the case in this phase' },
-    forward: move('forward'),
-    backward: move('backward'),
-    preEnd: move('preEnd'),
+    ...moves,
     take,
   }
 }

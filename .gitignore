@@ -41,3 +41,7 @@ Thumbs.db
 
 # TypeScript
 tsconfig.tsbuildinfo
+
+# Case attachments and database backups
+/uploads/
+/backups/

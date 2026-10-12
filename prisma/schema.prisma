@@ -18,23 +18,25 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  createdWorkflows  Workflow[]         @relation("WorkflowCreator")
-  createdInstances  WorkflowInstance[] @relation("InstanceCreator")
-  assignedSteps     WorkflowStep[]     @relation("StepAssignee")
-  comments          Comment[]
-  uploadedFiles     Attachment[]
-  auditLogs         AuditLog[]
-  documents         Document[]         @relation("DocumentAuthor")
-  processesOwned    Process[]          @relation("ProcessOwner")
-  processesCreated  Process[]          @relation("ProcessCreator")
-  savedViews        SavedView[]
-  forms             Form[]
-  documentVersions  DocumentVersion[]  @relation("VersionAuthor")
-  readReceipts      ReadReceipt[]      @relation("ReadReceiptUser")
-  notifications     Notification[]
-  caseTypes         CaseType[]         @relation("CaseTypeCreator")
-  cases             Case[]             @relation("CaseCreator")
-  caseEvents        CaseEvent[]        @relation("CaseEventActor")
+  createdWorkflows Workflow[]         @relation("WorkflowCreator")
+  createdInstances WorkflowInstance[] @relation("InstanceCreator")
+  assignedSteps    WorkflowStep[]     @relation("StepAssignee")
+  comments         Comment[]
+  uploadedFiles    Attachment[]
+  auditLogs        AuditLog[]
+  documents        Document[]         @relation("DocumentAuthor")
+  processesOwned   Process[]          @relation("ProcessOwner")
+  processesCreated Process[]          @relation("ProcessCreator")
+  savedViews       SavedView[]
+  forms            Form[]
+  documentVersions DocumentVersion[]  @relation("VersionAuthor")
+  readReceipts     ReadReceipt[]      @relation("ReadReceiptUser")
+  notifications    Notification[]
+  caseTypes        CaseType[]         @relation("CaseTypeCreator")
+  cases            Case[]             @relation("CaseCreator")
+  caseEvents       CaseEvent[]        @relation("CaseEventActor")
+  caseComments     CaseComment[]      @relation("CaseCommentAuthor")
+  caseAttachments  CaseAttachment[]   @relation("CaseAttachmentUploader")
 }
 
 model Group {
@@ -51,8 +53,8 @@ model Document {
   description String?
   category    String?
   tags        String[]
-  content     String?  // Rich text / markdown
-  fileUrl     String?  // Optional file attachment
+  content     String? // Rich text / markdown
+  fileUrl     String? // Optional file attachment
   fileName    String?
   fileSize    Int?
   mimeType    String?
@@ -60,22 +62,22 @@ model Document {
   version     String   @default("0.1")
 
   // Document type & metadata
-  documentTypeId     String?
-  documentType       DocumentType? @relation(fields: [documentTypeId], references: [id])
-  properties         Json          @default("{}")  // Type-specific metadata values
-  roles              Json          @default("{}")  // { authorId, reviewerIds, approverIds, ownerId }
-  approvalAssignments Json?                          // { [phaseIndex]: userId[] } captured at submit, consumed as phases advance
-  changeDescription  String?
-  validFrom          DateTime?
-  validTo            DateTime?
-  requireReadReceipt Boolean       @default(false)
+  documentTypeId      String?
+  documentType        DocumentType? @relation(fields: [documentTypeId], references: [id])
+  properties          Json          @default("{}") // Type-specific metadata values
+  roles               Json          @default("{}") // { authorId, reviewerIds, approverIds, ownerId }
+  approvalAssignments Json? // { [phaseIndex]: userId[] } captured at submit, consumed as phases advance
+  changeDescription   String?
+  validFrom           DateTime?
+  validTo             DateTime?
+  requireReadReceipt  Boolean       @default(false)
 
-  createdBy   String
-  author      User     @relation("DocumentAuthor", fields: [createdBy], references: [id])
-  updatedBy   String?
+  createdBy String
+  author    User    @relation("DocumentAuthor", fields: [createdBy], references: [id])
+  updatedBy String?
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   processes    ProcessDocument[]
   approvals    DocumentApproval[]
@@ -160,7 +162,7 @@ model WorkflowInstance {
 
   // Runtime data
   variables Json @default("{}")
-  roles     Json @default("{}")  // { [roleName]: userId } — assigned via user_role form fields
+  roles     Json @default("{}") // { [roleName]: userId } — assigned via user_role form fields
 
   createdBy String
   creator   User   @relation("InstanceCreator", fields: [createdBy], references: [id])
@@ -180,19 +182,19 @@ model WorkflowStep {
   instanceId String
   instance   WorkflowInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
 
-  nodeId    String
-  stepName  String
-  stepType  String // task, decision, automation, notification, etc.
-  status    String @default("pending") // pending, in_progress, completed, skipped, error
+  nodeId   String
+  stepName String
+  stepType String // task, decision, automation, notification, etc.
+  status   String @default("pending") // pending, in_progress, completed, skipped, error
 
   assignedTo   String?
   assignee     User?   @relation("StepAssignee", fields: [assignedTo], references: [id])
   assignedRole String?
 
   // Step data
-  formData Json?   // Form submission data
+  formData Json? // Form submission data
   decision String? // For decision nodes
-  output   Json?   // Output from automation
+  output   Json? // Output from automation
 
   // Timing
   startedAt   DateTime?
@@ -216,9 +218,9 @@ model Comment {
   createdBy String
   author    User   @relation(fields: [createdBy], references: [id])
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  attachments String[]  // File references
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  attachments String[] // File references
 }
 
 model Attachment {
@@ -260,7 +262,7 @@ model SystemSetting {
 
 model RegistryItem {
   id            String   @id @default(cuid())
-  type          String   // "category" | "tag"
+  type          String // "category" | "tag"
   name          String
   color         String?
   description   String?
@@ -294,28 +296,28 @@ model SavedView {
 }
 
 model Process {
-  id          String    @id @default(cuid())
+  id          String            @id @default(cuid())
   name        String
   description String?
   purpose     String?
   scope       String?
   parentId    String?
-  parent      Process?  @relation("ProcessTree", fields: [parentId], references: [id])
-  children    Process[] @relation("ProcessTree")
-  status      String    @default("draft") // draft | active | archived
+  parent      Process?          @relation("ProcessTree", fields: [parentId], references: [id])
+  children    Process[]         @relation("ProcessTree")
+  status      String            @default("draft") // draft | active | archived
   ownerId     String?
-  owner       User?     @relation("ProcessOwner", fields: [ownerId], references: [id])
+  owner       User?             @relation("ProcessOwner", fields: [ownerId], references: [id])
   category    String?
   tags        String[]
-  nodes       Json      @default("[]")
-  edges       Json      @default("[]")
-  kpis        Json      @default("[]")
+  nodes       Json              @default("[]")
+  edges       Json              @default("[]")
+  kpis        Json              @default("[]")
   documents   ProcessDocument[]
   workflows   ProcessWorkflow[]
   createdBy   String
-  creator     User      @relation("ProcessCreator", fields: [createdBy], references: [id])
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  creator     User              @relation("ProcessCreator", fields: [createdBy], references: [id])
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 }
 
 model ProcessDocument {
@@ -341,7 +343,7 @@ model DocumentType {
   name               String
   prefix             String        @unique
   format             String        @default("richtext") // richtext | file
-  propertyPackage    Json          @default("[]")       // FormField[] — reuses form-builder field schema
+  propertyPackage    Json          @default("[]") // FormField[] — reuses form-builder field schema
   approvalFlowId     String?
   approvalFlow       ApprovalFlow? @relation(fields: [approvalFlowId], references: [id])
   requireReadReceipt Boolean       @default(false)
@@ -361,14 +363,14 @@ model ApprovalFlow {
 }
 
 model DocumentApproval {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   documentId  String
-  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  phase       String   // phase name from the flow
-  status      String   @default("pending") // pending | approved | rejected
+  document    Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  phase       String // phase name from the flow
+  status      String    @default("pending") // pending | approved | rejected
   assignedTo  String[] // user IDs
-  responses   Json     @default("[]")      // [{ userId, decision, comment, at }]
-  startedAt   DateTime @default(now())
+  responses   Json      @default("[]") // [{ userId, decision, comment, at }]
+  startedAt   DateTime  @default(now())
   completedAt DateTime?
 }
 
@@ -376,8 +378,8 @@ model DocumentVersion {
   id         String   @id @default(cuid())
   documentId String
   document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  version    String   // "0.1", "1.0", "1.1", "2.0"
-  content    String?  // snapshot of rich text content
+  version    String // "0.1", "1.0", "1.1", "2.0"
+  content    String? // snapshot of rich text content
   properties Json     @default("{}") // snapshot of type-specific metadata
   changeDesc String
   createdBy  String
@@ -425,7 +427,7 @@ model LookupValue {
   value    String
   color    String?
   order    Int         @default(0)
-  parentId String?     // optional one-level grouping
+  parentId String? // optional one-level grouping
   active   Boolean     @default(true)
 
   @@unique([tableId, value])
@@ -443,7 +445,7 @@ model Notification {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      String   // step_assigned, step_due, instance_completed
+  type      String // step_assigned, step_due, instance_completed
   title     String
   body      String?
   link      String?
@@ -454,7 +456,7 @@ model Notification {
 model SystemView {
   id        String   @id @default(cuid())
   name      String
-  section   String   // 'cases' | 'documents'
+  section   String // 'cases' | 'documents'
   icon      String   @default("List")
   filters   Json     @default("{}")
   order     Int      @default(0)
@@ -501,24 +503,28 @@ model CaseTypeVersion {
 }
 
 model Case {
-  id         String          @id @default(cuid())
-  number     String          @unique // prefix + running number, e.g. DEV12
-  title      String
-  caseTypeId String
-  caseType   CaseType        @relation(fields: [caseTypeId], references: [id])
-  versionId  String
-  version    CaseTypeVersion @relation(fields: [versionId], references: [id])
-  phaseId    String
-  status     String          @default("open") // open | closed | preClosed | cancelled
-  values     Json            @default("{}") // { [fieldId]: value }
-  roles      Json            @default("{}") // { [roleId]: userId[] }
-  revision   Int             @default(0) // optimistic locking: bumped on every write
-  createdBy  String
-  creator    User            @relation("CaseCreator", fields: [createdBy], references: [id])
-  createdAt  DateTime        @default(now())
-  updatedAt  DateTime        @updatedAt
-  closedAt   DateTime?
-  events     CaseEvent[]
+  id             String           @id @default(cuid())
+  number         String           @unique // prefix + running number, e.g. DEV12
+  title          String
+  caseTypeId     String
+  caseType       CaseType         @relation(fields: [caseTypeId], references: [id])
+  versionId      String
+  version        CaseTypeVersion  @relation(fields: [versionId], references: [id])
+  phaseId        String
+  phaseEnteredAt DateTime         @default(now())
+  phaseDueAt     DateTime? // from the phase's deadlineDays/Hours
+  status         String           @default("open") // open | closed | preClosed | cancelled
+  values         Json             @default("{}") // { [fieldId]: value }
+  roles          Json             @default("{}") // { [roleId]: userId[] }
+  revision       Int              @default(0) // optimistic locking: bumped on every write
+  createdBy      String
+  creator        User             @relation("CaseCreator", fields: [createdBy], references: [id])
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  closedAt       DateTime?
+  events         CaseEvent[]
+  comments       CaseComment[]
+  attachments    CaseAttachment[]
 
   @@index([caseTypeId, status])
 }
@@ -536,4 +542,31 @@ model CaseEvent {
   at          DateTime @default(now())
 
   @@index([caseId, at])
+}
+
+model CaseComment {
+  id        String   @id @default(cuid())
+  caseId    String
+  case      Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  phaseId   String
+  body      String
+  authorId  String
+  author    User     @relation("CaseCommentAuthor", fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([caseId, createdAt])
+}
+
+// Files are stored on disk under uploads/<caseId>/<id>; the attachments field value lists the ids.
+model CaseAttachment {
+  id         String   @id @default(cuid())
+  caseId     String
+  case       Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  fieldId    String?
+  fileName   String
+  mimeType   String
+  size       Int
+  uploadedBy String
+  uploader   User     @relation("CaseAttachmentUploader", fields: [uploadedBy], references: [id])
+  uploadedAt DateTime @default(now())
 }

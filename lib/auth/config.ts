@@ -1,21 +1,7 @@
 import type { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from '@/lib/db/client'
-import { scrypt, timingSafeEqual } from 'crypto'
-import { promisify } from 'util'
-
-const scryptAsync = promisify(scrypt)
-
-async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  const [hashed, salt] = hash.split('.')
-  if (!hashed || !salt) return false
-  try {
-    const buf = await scryptAsync(password, salt, 64) as Buffer
-    return timingSafeEqual(Buffer.from(hashed, 'hex'), buf)
-  } catch {
-    return false
-  }
-}
+import { verifyPassword } from './password'
 
 export const authOptions: NextAuthOptions = {
   providers: [

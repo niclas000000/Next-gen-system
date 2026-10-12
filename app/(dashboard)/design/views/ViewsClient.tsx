@@ -172,7 +172,7 @@ function ViewDialog({
                   className="px-2 py-0.5 text-xs rounded-[2px] transition-colors"
                   style={{
                     background: icon === ic ? 'var(--nw-accent)' : 'var(--surface)',
-                    color: icon === ic ? '#fff' : 'var(--ink-3)',
+                    color: icon === ic ? 'var(--on-fill)' : 'var(--ink-3)',
                     border: `1px solid ${icon === ic ? 'var(--nw-accent)' : 'var(--rule)'}`,
                   }}
                 >

@@ -49,7 +49,7 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (c: string)
         ))}
       </div>
       <div className="flex items-center gap-2">
-        <div className="w-6 h-6 rounded-full border border-slate-200 shrink-0" style={{ backgroundColor: value }} />
+        <div className="w-6 h-6 rounded-full border border-rule shrink-0" style={{ backgroundColor: value }} />
         <Input value={value} onChange={(e) => onChange(e.target.value)} className="text-xs h-8 font-mono" placeholder="#3b82f6" />
       </div>
     </div>

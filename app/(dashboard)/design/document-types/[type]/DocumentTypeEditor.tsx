@@ -114,7 +114,7 @@ export function DocumentTypeEditor({ docType, flows }: Props) {
                 className="px-3 py-1.5 font-medium transition-colors"
                 style={{
                   background: tab === t ? 'var(--ink)' : 'var(--surface)',
-                  color: tab === t ? '#fff' : 'var(--ink-3)',
+                  color: tab === t ? 'var(--paper)' : 'var(--ink-3)',
                 }}
               >
                 {t === 'settings' ? 'Settings' : 'Property Fields'}
@@ -200,7 +200,7 @@ export function DocumentTypeEditor({ docType, flows }: Props) {
                 ))}
               </select>
               {flows.length === 0 && (
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-ink-4">
                   No flows yet.{' '}
                   <Link href="/design/approval-flows" className="hover:underline" style={{ color: 'var(--nw-accent)' }}>
                     Create one

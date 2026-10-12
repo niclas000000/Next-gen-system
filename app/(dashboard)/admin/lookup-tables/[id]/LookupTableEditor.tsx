@@ -409,7 +409,7 @@ function ValueRow({
         style={{ background: v.active ? 'var(--ok)' : 'var(--paper-3)' }}
       >
         <span
-          className="block w-3 h-3 rounded-full bg-white shadow transition-transform mx-0.5"
+          className="block w-3 h-3 rounded-full bg-surface shadow transition-transform mx-0.5"
           style={{ transform: v.active ? 'translateX(16px)' : 'translateX(0)' }}
         />
       </button>

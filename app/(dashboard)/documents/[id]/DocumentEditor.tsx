@@ -389,7 +389,7 @@ export function DocumentEditor({ doc, versions, receipts, currentUserId, hasRead
             <Button
               size="sm"
               className="h-7 text-xs gap-1"
-              style={{ background: 'var(--ok)', color: '#fff' }}
+              style={{ background: 'var(--ok)', color: 'var(--on-fill)' }}
               onClick={() => setTab('approval')}
             >
               <ShieldCheck size={11} /> Review
@@ -415,12 +415,12 @@ export function DocumentEditor({ doc, versions, receipts, currentUserId, hasRead
             <DropdownMenuContent align="end">
               {status !== 'published' && (
                 <DropdownMenuItem onClick={() => save('published')}>
-                  <CheckCircle size={13} className="mr-2 text-green-600" /> Publish
+                  <CheckCircle size={13} className="mr-2 text-ok-ink" /> Publish
                 </DropdownMenuItem>
               )}
               {status === 'published' && (
                 <DropdownMenuItem onClick={() => save('archived')}>
-                  <Clock size={13} className="mr-2 text-orange-500" /> Archive
+                  <Clock size={13} className="mr-2 text-warn-ink" /> Archive
                 </DropdownMenuItem>
               )}
               {status === 'archived' && (
@@ -429,7 +429,7 @@ export function DocumentEditor({ doc, versions, receipts, currentUserId, hasRead
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-600" onClick={handleDelete}>
+              <DropdownMenuItem className="text-risk-ink" onClick={handleDelete}>
                 <Trash2 size={13} className="mr-2" /> Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -609,12 +609,12 @@ export function DocumentEditor({ doc, versions, receipts, currentUserId, hasRead
               </div>
 
               {!hasReceipt && status === 'published' && (
-                <div className="mb-4 p-3 rounded-[2px] flex items-center justify-between gap-3" style={{ background: 'oklch(0.97 0.04 70)', border: '1px solid var(--warn)' }}>
+                <div className="mb-4 p-3 rounded-[2px] flex items-center justify-between gap-3" style={{ background: 'var(--warn-tint)', border: '1px solid var(--warn)' }}>
                   <p className="text-xs" style={{ color: 'var(--warn)' }}>You have not yet confirmed reading this document.</p>
                   <Button
                     size="sm"
                     className="h-7 text-xs gap-1 shrink-0"
-                    style={{ background: 'var(--ok)', color: '#fff' }}
+                    style={{ background: 'var(--ok)', color: 'var(--on-fill)' }}
                     onClick={markRead}
                     disabled={savingReceipt}
                   >
@@ -677,7 +677,7 @@ export function DocumentEditor({ doc, versions, receipts, currentUserId, hasRead
                     <div key={a.id} className="rounded-[2px] overflow-hidden" style={{ border: '1px solid var(--rule)' }}>
                       {/* Phase header */}
                       <div className="flex items-center gap-3 px-4 py-3" style={{
-                        background: a.status === 'pending' ? 'var(--accent-tint)' : a.status === 'approved' ? 'oklch(0.97 0.05 145)' : 'oklch(0.97 0.04 20)',
+                        background: a.status === 'pending' ? 'var(--accent-tint)' : a.status === 'approved' ? 'var(--ok-tint)' : 'var(--risk-tint)',
                         borderBottom: '1px solid var(--rule)',
                       }}>
                         {a.status === 'approved' && <CheckCircle size={15} style={{ color: 'var(--ok)', flexShrink: 0 }} />}
@@ -750,7 +750,7 @@ export function DocumentEditor({ doc, versions, receipts, currentUserId, hasRead
                     />
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" className="gap-1" style={{ background: 'var(--ok)', color: '#fff' }} onClick={approvePhase} disabled={actioning}>
+                    <Button size="sm" className="gap-1" style={{ background: 'var(--ok)', color: 'var(--on-fill)' }} onClick={approvePhase} disabled={actioning}>
                       {actioning ? <Loader2 size={12} className="animate-spin" /> : <ThumbsUp size={12} />}
                       Approve
                     </Button>

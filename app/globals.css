@@ -14,7 +14,7 @@
     --ink:   #111111;
     --ink-2: #2D2D2D;
     --ink-3: #54524D;
-    --ink-4: #8A877F;
+    --ink-4: #706D66; /* AA (≥4.5:1) on paper, paper-2 and surface */
 
     --nw-accent:  oklch(0.52 0.08 200);
     --accent-tint: oklch(0.96 0.02 200);
@@ -68,6 +68,62 @@
     --input:  40 12% 88%;
     --ring:   195 40% 32%;
     --radius: 2px;
+  }
+
+  /* ── Dark theme: same roles, own steps (contrast checked: ink-4 ≥ 5.7:1 on surface) ── */
+  [data-theme="dark"] {
+    --paper:   #141413;
+    --paper-2: #1A1A18;
+    --paper-3: #262522;
+    --surface: #1C1C1A;
+    --surface-ink: #0C0C0B;
+
+    --ink:   #EEECE6;
+    --ink-2: #D8D5CE;
+    --ink-3: #B2AEA5;
+    --ink-4: #9A968C;
+
+    --nw-accent:   #5DBCC1;
+    --accent-tint: #113436;
+
+    --ok:   #67B36A;
+    --warn: #E4A339;
+    --risk: #E3645E;
+    --ok-tint:   #1C2E1C;
+    --warn-tint: #3C2A0E;
+    --risk-tint: #3E1E1C;
+    --ok-line:   #3B603D;
+    --warn-line: #7E5C2A;
+    --risk-line: #864541;
+    --ok-ink:    #8BD28D;
+    --warn-ink:  #F2B966;
+    --risk-ink:  #F98F87;
+
+    --on-fill: #121211;
+    --rail:    #0C0C0B;
+
+    --rule:      #33322E;
+    --rule-soft: #282724;
+
+    --background: 60 3% 8%;
+    --foreground: 45 14% 92%;
+    --card: 60 3% 11%;
+    --card-foreground: 45 14% 92%;
+    --popover: 60 3% 11%;
+    --popover-foreground: 45 14% 92%;
+    --primary: 183 44% 56%;
+    --primary-foreground: 60 3% 7%;
+    --secondary: 60 3% 15%;
+    --secondary-foreground: 45 14% 92%;
+    --muted: 60 3% 15%;
+    --muted-foreground: 40 5% 60%;
+    --accent: 60 3% 15%;
+    --accent-foreground: 45 14% 92%;
+    --destructive: 4 70% 62%;
+    --destructive-foreground: 60 3% 7%;
+    --border: 50 4% 19%;
+    --input: 50 4% 19%;
+    --ring: 183 44% 56%;
   }
 }
 

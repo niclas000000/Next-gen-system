@@ -7,12 +7,12 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
 const typeColors: Record<string, string> = {
-  text: 'bg-blue-50 text-blue-600', textarea: 'bg-blue-50 text-blue-600',
-  number: 'bg-purple-50 text-purple-600', date: 'bg-green-50 text-green-600',
-  select: 'bg-orange-50 text-orange-600', multiselect: 'bg-orange-50 text-orange-600',
-  radio: 'bg-orange-50 text-orange-600', checkbox: 'bg-teal-50 text-teal-600',
-  toggle: 'bg-teal-50 text-teal-600', file: 'bg-red-50 text-red-600',
-  user: 'bg-indigo-50 text-indigo-600', table: '',
+  text: 'bg-paper-3 text-ink-3', textarea: 'bg-paper-3 text-ink-3',
+  number: 'bg-paper-3 text-ink-3', date: 'bg-paper-3 text-ink-3',
+  select: 'bg-paper-3 text-ink-3', multiselect: 'bg-paper-3 text-ink-3',
+  radio: 'bg-paper-3 text-ink-3', checkbox: 'bg-paper-3 text-ink-3',
+  toggle: 'bg-paper-3 text-ink-3', file: 'bg-paper-3 text-ink-3',
+  user: 'bg-paper-3 text-ink-3', table: '',
   section: '', heading: '', divider: '',
 }
 
@@ -59,7 +59,7 @@ export function FieldList() {
 
           {/* Required indicator */}
           {field.validation.some((v) => v.type === 'required') && (
-            <span className="text-red-400 text-xs shrink-0">*</span>
+            <span className="text-risk text-xs shrink-0">*</span>
           )}
 
           {/* Conditional visibility indicator */}

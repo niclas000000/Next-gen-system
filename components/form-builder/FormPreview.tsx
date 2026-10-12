@@ -32,7 +32,7 @@ function PreviewField({ field }: { field: FormField }) {
       <div className="flex items-center gap-2">
         <Label className="text-sm font-medium flex-1" style={{ color: 'var(--ink)' }}>
           {field.label}
-          {isRequired && <span className="text-red-500 ml-0.5">*</span>}
+          {isRequired && <span className="text-risk-ink ml-0.5">*</span>}
         </Label>
         {field.conditional && (
           <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: 'var(--accent-tint)', color: 'var(--nw-accent)', border: '1px solid var(--nw-accent)' }}>

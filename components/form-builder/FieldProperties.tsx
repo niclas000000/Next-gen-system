@@ -407,7 +407,7 @@ function DataSourceEditor({
             className="flex-1 py-1.5 font-medium transition-colors"
             style={{
               background: sourceType === 'static' ? 'var(--ink)' : 'var(--surface)',
-              color: sourceType === 'static' ? '#fff' : 'var(--ink-3)',
+              color: sourceType === 'static' ? 'var(--paper)' : 'var(--ink-3)',
             }}
           >
             Static list
@@ -418,7 +418,7 @@ function DataSourceEditor({
             className="flex-1 py-1.5 font-medium transition-colors"
             style={{
               background: sourceType === 'lookup' ? 'var(--ink)' : 'var(--surface)',
-              color: sourceType === 'lookup' ? '#fff' : 'var(--ink-3)',
+              color: sourceType === 'lookup' ? 'var(--paper)' : 'var(--ink-3)',
             }}
           >
             Lookup table

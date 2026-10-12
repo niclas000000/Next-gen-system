@@ -2,13 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Check, Eye, FilePlus2, FolderPlus, LogOut, Plus } from 'lucide-react'
+import { Check, Eye, FilePlus2, FolderPlus, LogOut, Monitor, Moon, Plus, Sun } from 'lucide-react'
 import { signOut } from 'next-auth/react'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { initials } from '@/components/cases/format'
+import { useSettings, type ThemeChoice } from '@/lib/settings-context'
 import { LogoMark } from './Logo'
 import { useShell } from './AppShell'
 import { CONFIG_MODULES, WORK_MODULES, moduleFor, type ModuleDef } from './nav'
@@ -89,8 +90,15 @@ function NewMenu() {
   )
 }
 
+const THEMES: { id: ThemeChoice; label: string; icon: React.ReactNode }[] = [
+  { id: 'light', label: 'Light', icon: <Sun size={13} /> },
+  { id: 'dark', label: 'Dark', icon: <Moon size={13} /> },
+  { id: 'system', label: 'System', icon: <Monitor size={13} /> },
+]
+
 function UserMenu() {
   const { me } = useShell()
+  const { userTheme, setUserTheme, settings } = useSettings()
   if (!me) return <span className="mt-2 h-8 w-8 rounded-full bg-white/10" />
   const { user } = me
   const canSwitch = me.demo && (user.role === 'admin' || !!user.viewAsBy)
@@ -139,6 +147,27 @@ function UserMenu() {
             </div>
           </>
         )}
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel className="text-[11px] font-normal uppercase tracking-wide text-ink-4">Theme</DropdownMenuLabel>
+        <div className="flex gap-1 px-2 pb-1.5" role="radiogroup" aria-label="Theme">
+          {THEMES.map((t) => {
+            const on = (userTheme ?? settings.theme) === t.id
+            return (
+              <button
+                key={t.id}
+                role="radio"
+                aria-checked={on}
+                onClick={() => setUserTheme(t.id === settings.theme ? null : t.id)}
+                className={cn(
+                  'flex flex-1 items-center justify-center gap-1 rounded-[2px] border px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nw-accent',
+                  on ? 'border-nw-accent bg-accent-tint text-nw-accent' : 'border-rule text-ink-3 hover:bg-paper-2'
+                )}
+              >
+                {t.icon} {t.label}
+              </button>
+            )
+          })}
+        </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => signOut({ callbackUrl: '/login' })} className="gap-2">
           <LogOut size={14} /> Sign out

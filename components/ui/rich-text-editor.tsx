@@ -26,8 +26,8 @@ function ToolbarButton({ onClick, active, disabled, title, children }: ToolbarBu
       className={cn(
         'p-1.5 rounded transition-colors',
         active
-          ? 'bg-slate-200 text-slate-900'
-          : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800',
+          ? 'bg-paper-3 text-ink'
+          : 'text-ink-4 hover:bg-paper-3 hover:text-ink',
         disabled && 'opacity-30 cursor-not-allowed'
       )}
     >
@@ -37,7 +37,7 @@ function ToolbarButton({ onClick, active, disabled, title, children }: ToolbarBu
 }
 
 function Divider() {
-  return <div className="w-px h-5 bg-slate-200 mx-1 self-center" />
+  return <div className="w-px h-5 bg-paper-3 mx-1 self-center" />
 }
 
 interface Props {
@@ -67,9 +67,9 @@ export function RichTextEditor({ content = '', onChange, editable = true, classN
   if (!editor) return null
 
   return (
-    <div className={cn('border border-slate-200 rounded-lg overflow-hidden bg-white', className)}>
+    <div className={cn('border border-rule rounded-lg overflow-hidden bg-surface', className)}>
       {editable && (
-        <div className="flex items-center flex-wrap gap-0.5 px-2 py-1.5 border-b border-slate-200 bg-slate-50">
+        <div className="flex items-center flex-wrap gap-0.5 px-2 py-1.5 border-b border-rule bg-paper-2">
           {/* Undo/Redo */}
           <ToolbarButton onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()} title="Undo">
             <Undo size={14} />

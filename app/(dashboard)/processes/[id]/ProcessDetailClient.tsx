@@ -24,21 +24,21 @@ import { formatDistanceToNow } from 'date-fns'
 // ── Process node types for canvas ──────────────────────────────────────────
 function StartNode({ data }: { data: { label: string } }) {
   return (
-    <div className="w-12 h-12 rounded-full bg-green-500 border-2 border-green-600 flex items-center justify-center text-white text-xs font-semibold shadow-sm">
+    <div className="w-12 h-12 rounded-full bg-ok border-2 border-ok flex items-center justify-center text-on-fill text-xs font-semibold shadow-sm">
       {data.label}
     </div>
   )
 }
 function EndNode({ data }: { data: { label: string } }) {
   return (
-    <div className="w-12 h-12 rounded-full bg-red-500 border-2 border-red-600 flex items-center justify-center text-white text-xs font-semibold shadow-sm">
+    <div className="w-12 h-12 rounded-full bg-risk border-2 border-risk flex items-center justify-center text-on-fill text-xs font-semibold shadow-sm">
       {data.label}
     </div>
   )
 }
 function ActivityNode({ data }: { data: { label: string } }) {
   return (
-    <div className="px-4 py-2.5 rounded-lg bg-blue-500 border-2 border-blue-600 text-white text-xs font-medium shadow-sm min-w-[100px] text-center">
+    <div className="px-4 py-2.5 rounded-lg bg-nw-accent border-2 border-nw-accent text-on-fill text-xs font-medium shadow-sm min-w-[100px] text-center">
       {data.label}
     </div>
   )
@@ -46,7 +46,7 @@ function ActivityNode({ data }: { data: { label: string } }) {
 function DecisionNode({ data }: { data: { label: string } }) {
   return (
     <div
-      className="w-16 h-16 bg-orange-500 border-2 border-orange-600 text-white text-[10px] font-medium shadow-sm flex items-center justify-center text-center px-1"
+      className="w-16 h-16 bg-warn border-2 border-warn text-on-fill text-[10px] font-medium shadow-sm flex items-center justify-center text-center px-1"
       style={{ transform: 'rotate(45deg)' }}
     >
       <span style={{ transform: 'rotate(-45deg)' }}>{data.label}</span>
@@ -87,12 +87,12 @@ interface ProcessDetail {
 interface KPI { id: string; name: string; description: string; value: string; unit: string; target: string }
 
 const statusConfig: Record<string, { label: string; class: string }> = {
-  draft:    { label: 'Draft',    class: 'bg-slate-100 text-slate-600 border-slate-200' },
-  active:   { label: 'Active',   class: 'bg-green-100 text-green-700 border-green-200' },
-  archived: { label: 'Archived', class: 'bg-orange-100 text-orange-700 border-orange-200' },
+  draft:    { label: 'Draft',    class: 'bg-paper-3 text-ink-3 border-rule' },
+  active:   { label: 'Active',   class: 'bg-ok-tint text-ok-ink border-ok-line' },
+  archived: { label: 'Archived', class: 'bg-warn-tint text-warn-ink border-warn-line' },
 }
 const docStatus: Record<string, string> = {
-  draft: 'bg-slate-100 text-slate-600', published: 'bg-green-100 text-green-700', archived: 'bg-orange-100 text-orange-700',
+  draft: 'bg-paper-3 text-ink-3', published: 'bg-ok-tint text-ok-ink', archived: 'bg-warn-tint text-warn-ink',
 }
 
 let nodeIdCounter = 100
@@ -244,31 +244,31 @@ export function ProcessDetailClient({
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-1 text-sm text-slate-500">
-        <Link href="/processes" className="hover:text-blue-600 transition-colors">Processes</Link>
+      <nav className="flex items-center gap-1 text-sm text-ink-4">
+        <Link href="/processes" className="hover:text-nw-accent transition-colors">Processes</Link>
         {process.parent && (
           <>
             <ChevronRight size={14} />
-            <Link href={`/processes/${process.parent.id}`} className="hover:text-blue-600 transition-colors">{process.parent.name}</Link>
+            <Link href={`/processes/${process.parent.id}`} className="hover:text-nw-accent transition-colors">{process.parent.name}</Link>
           </>
         )}
         <ChevronRight size={14} />
-        <span className="text-slate-800 font-medium">{process.name}</span>
+        <span className="text-ink font-medium">{process.name}</span>
       </nav>
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-3 rounded-xl bg-blue-50">
-            <GitBranch size={20} className="text-blue-600" />
+          <div className="p-3 rounded-xl bg-accent-tint">
+            <GitBranch size={20} className="text-nw-accent" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-semibold text-slate-900">{process.name}</h1>
+              <h1 className="text-2xl font-semibold text-ink">{process.name}</h1>
               <Badge variant="outline" className={`text-xs ${cfg.class}`}>{cfg.label}</Badge>
             </div>
             {process.owner && (
-              <p className="text-sm text-slate-500 flex items-center gap-1 mt-0.5">
+              <p className="text-sm text-ink-4 flex items-center gap-1 mt-0.5">
                 <Users size={12} /> {process.owner.name}
               </p>
             )}
@@ -276,7 +276,7 @@ export function ProcessDetailClient({
         </div>
         <div className="flex gap-2">
           {tab === 'canvas' && canvasDirty && (
-            <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={saveCanvas} disabled={saving}>
+            <Button size="sm" className="bg-nw-accent hover:bg-nw-accent" onClick={saveCanvas} disabled={saving}>
               {saving ? 'Saving...' : 'Save canvas'}
             </Button>
           )}
@@ -289,7 +289,7 @@ export function ProcessDetailClient({
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-slate-200">
+      <div className="border-b border-rule">
         <div className="flex gap-0">
           {tabs.map((t) => (
             <button
@@ -297,8 +297,8 @@ export function ProcessDetailClient({
               onClick={() => setTab(t.key)}
               className={`flex items-center gap-1.5 px-4 py-2.5 text-sm border-b-2 transition-colors ${
                 tab === t.key
-                  ? 'border-blue-600 text-blue-600 font-medium'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                  ? 'border-nw-accent text-nw-accent font-medium'
+                  : 'border-transparent text-ink-4 hover:text-ink'
               }`}
             >
               {t.icon}{t.label}
@@ -323,17 +323,17 @@ export function ProcessDetailClient({
                     <Textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={2} />
                   </div>
                   <div className="col-span-2 space-y-1">
-                    <Label className="text-xs">Purpose <span className="text-slate-400 font-normal">(Syfte)</span></Label>
+                    <Label className="text-xs">Purpose <span className="text-ink-4 font-normal">(Syfte)</span></Label>
                     <Textarea value={form.purpose} onChange={(e) => setForm((f) => ({ ...f, purpose: e.target.value }))} rows={3} placeholder="Why does this process exist?" />
                   </div>
                   <div className="col-span-2 space-y-1">
-                    <Label className="text-xs">Scope <span className="text-slate-400 font-normal">(Omfång)</span></Label>
+                    <Label className="text-xs">Scope <span className="text-ink-4 font-normal">(Omfång)</span></Label>
                     <Textarea value={form.scope} onChange={(e) => setForm((f) => ({ ...f, scope: e.target.value }))} rows={2} placeholder="What is included and excluded?" />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Status</Label>
                     <select value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
-                      className="w-full rounded-md border border-slate-200 text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      className="w-full rounded-md border border-rule text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-nw-accent">
                       <option value="draft">Draft</option>
                       <option value="active">Active</option>
                       <option value="archived">Archived</option>
@@ -342,7 +342,7 @@ export function ProcessDetailClient({
                   <div className="space-y-1">
                     <Label className="text-xs">Owner</Label>
                     <select value={form.ownerId} onChange={(e) => setForm((f) => ({ ...f, ownerId: e.target.value }))}
-                      className="w-full rounded-md border border-slate-200 text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      className="w-full rounded-md border border-rule text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-nw-accent">
                       <option value="">No owner</option>
                       {allUsers.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
                     </select>
@@ -350,7 +350,7 @@ export function ProcessDetailClient({
                 </div>
                 <div className="flex gap-2 justify-end pt-2">
                   <Button variant="outline" size="sm" onClick={() => setEditing(false)}><X size={13} className="mr-1" />Cancel</Button>
-                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={saveOverview} disabled={saving || !form.name}>
+                  <Button size="sm" className="bg-nw-accent hover:bg-nw-accent" onClick={saveOverview} disabled={saving || !form.name}>
                     <Check size={13} className="mr-1" />{saving ? 'Saving...' : 'Save'}
                   </Button>
                 </div>
@@ -362,24 +362,24 @@ export function ProcessDetailClient({
                 <CardContent className="p-6 space-y-4">
                   {process.description && (
                     <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Description</p>
-                      <p className="text-sm text-slate-700">{process.description}</p>
+                      <p className="text-xs font-medium text-ink-4 uppercase tracking-wide mb-1">Description</p>
+                      <p className="text-sm text-ink-3">{process.description}</p>
                     </div>
                   )}
                   {process.purpose && (
                     <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Purpose</p>
-                      <p className="text-sm text-slate-700">{process.purpose}</p>
+                      <p className="text-xs font-medium text-ink-4 uppercase tracking-wide mb-1">Purpose</p>
+                      <p className="text-sm text-ink-3">{process.purpose}</p>
                     </div>
                   )}
                   {process.scope && (
                     <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Scope</p>
-                      <p className="text-sm text-slate-700">{process.scope}</p>
+                      <p className="text-xs font-medium text-ink-4 uppercase tracking-wide mb-1">Scope</p>
+                      <p className="text-sm text-ink-3">{process.scope}</p>
                     </div>
                   )}
                   {!process.description && !process.purpose && !process.scope && (
-                    <p className="text-sm text-slate-400 italic">No description yet. Click Edit to add details.</p>
+                    <p className="text-sm text-ink-4 italic">No description yet. Click Edit to add details.</p>
                   )}
                 </CardContent>
               </Card>
@@ -387,49 +387,49 @@ export function ProcessDetailClient({
                 <Card className="shadow-sm">
                   <CardContent className="p-4 space-y-3">
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">Status</span>
+                      <span className="text-ink-4">Status</span>
                       <Badge variant="outline" className={`text-xs ${cfg.class}`}>{cfg.label}</Badge>
                     </div>
                     {process.owner && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-slate-500">Owner</span>
-                        <span className="text-slate-800 font-medium">{process.owner.name}</span>
+                        <span className="text-ink-4">Owner</span>
+                        <span className="text-ink font-medium">{process.owner.name}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">Documents</span>
+                      <span className="text-ink-4">Documents</span>
                       <span className="font-medium">{linkedDocs.length}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">Case types</span>
+                      <span className="text-ink-4">Case types</span>
                       <span className="font-medium">{linkedCaseTypes.length}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">KPIs</span>
+                      <span className="text-ink-4">KPIs</span>
                       <span className="font-medium">{kpis.length}</span>
                     </div>
                     {process.children.length > 0 && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-slate-500">Sub-processes</span>
+                        <span className="text-ink-4">Sub-processes</span>
                         <span className="font-medium">{process.children.length}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">Updated</span>
-                      <span className="text-slate-400 text-xs">{formatDistanceToNow(new Date(process.updatedAt), { addSuffix: true })}</span>
+                      <span className="text-ink-4">Updated</span>
+                      <span className="text-ink-4 text-xs">{formatDistanceToNow(new Date(process.updatedAt), { addSuffix: true })}</span>
                     </div>
                   </CardContent>
                 </Card>
                 {process.children.length > 0 && (
                   <Card className="shadow-sm">
                     <CardHeader className="pb-2 pt-4 px-4">
-                      <CardTitle className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Sub-processes</CardTitle>
+                      <CardTitle className="text-xs font-semibold text-ink-4 uppercase tracking-wide">Sub-processes</CardTitle>
                     </CardHeader>
                     <CardContent className="px-4 pb-4 space-y-1">
                       {process.children.map((c) => (
                         <Link key={c.id} href={`/processes/${c.id}`}
-                          className="flex items-center gap-2 text-sm text-slate-700 hover:text-blue-600 transition-colors py-0.5">
-                          <GitBranch size={12} className="text-slate-400" />{c.name}
+                          className="flex items-center gap-2 text-sm text-ink-3 hover:text-nw-accent transition-colors py-0.5">
+                          <GitBranch size={12} className="text-ink-4" />{c.name}
                         </Link>
                       ))}
                     </CardContent>
@@ -445,12 +445,12 @@ export function ProcessDetailClient({
       {tab === 'canvas' && (
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500">Add node:</span>
+            <span className="text-xs text-ink-4">Add node:</span>
             {[
-              { type: 'start', label: 'Start', color: 'bg-green-100 text-green-700 border-green-200' },
-              { type: 'activity', label: 'Activity', color: 'bg-blue-100 text-blue-700 border-blue-200' },
-              { type: 'decision', label: 'Decision', color: 'bg-orange-100 text-orange-700 border-orange-200' },
-              { type: 'end', label: 'End', color: 'bg-red-100 text-red-700 border-red-200' },
+              { type: 'start', label: 'Start', color: 'bg-ok-tint text-ok-ink border-ok-line' },
+              { type: 'activity', label: 'Activity', color: 'bg-accent-tint text-nw-accent border-rule' },
+              { type: 'decision', label: 'Decision', color: 'bg-warn-tint text-warn-ink border-warn-line' },
+              { type: 'end', label: 'End', color: 'bg-risk-tint text-risk-ink border-risk-line' },
             ].map((n) => (
               <button key={n.type} onClick={() => addNode(n.type, n.label)}
                 className={`px-3 py-1 rounded border text-xs font-medium transition-colors hover:opacity-80 ${n.color}`}>
@@ -458,7 +458,7 @@ export function ProcessDetailClient({
               </button>
             ))}
           </div>
-          <div className="border border-slate-200 rounded-lg overflow-hidden" style={{ height: '500px' }}>
+          <div className="border border-rule rounded-lg overflow-hidden" style={{ height: '500px' }}>
             <ReactFlow
               nodes={rfNodes} edges={rfEdges}
               onNodesChange={(changes) => { onNodesChange(changes); setCanvasDirty(true) }}
@@ -473,7 +473,7 @@ export function ProcessDetailClient({
             </ReactFlow>
           </div>
           {canvasDirty && (
-            <p className="text-xs text-orange-600">Unsaved changes — click &quot;Save canvas&quot; in the header.</p>
+            <p className="text-xs text-warn-ink">Unsaved changes — click &quot;Save canvas&quot; in the header.</p>
           )}
         </div>
       )}
@@ -482,25 +482,25 @@ export function ProcessDetailClient({
       {tab === 'documents' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <p className="text-sm text-slate-500">{linkedDocs.length} linked document{linkedDocs.length !== 1 ? 's' : ''}</p>
+            <p className="text-sm text-ink-4">{linkedDocs.length} linked document{linkedDocs.length !== 1 ? 's' : ''}</p>
             <Button size="sm" variant="outline" onClick={() => { setPickerSearch(''); setShowDocPicker(true) }}>
               <Link2 size={13} className="mr-1.5" /> Link document
             </Button>
           </div>
           {linkedDocs.length === 0 ? (
-            <Card className="shadow-sm"><CardContent className="py-12 text-center text-sm text-slate-400">No documents linked yet.</CardContent></Card>
+            <Card className="shadow-sm"><CardContent className="py-12 text-center text-sm text-ink-4">No documents linked yet.</CardContent></Card>
           ) : (
             <div className="space-y-2">
               {linkedDocs.map((doc) => (
                 <Card key={doc.id} className="shadow-sm">
                   <CardContent className="p-4 flex items-center gap-3">
-                    <FileText size={16} className="text-slate-400 shrink-0" />
+                    <FileText size={16} className="text-ink-4 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-800 truncate">{doc.title}</p>
-                      <p className="text-xs text-slate-400">Updated {formatDistanceToNow(new Date(doc.updatedAt), { addSuffix: true })}</p>
+                      <p className="text-sm font-medium text-ink truncate">{doc.title}</p>
+                      <p className="text-xs text-ink-4">Updated {formatDistanceToNow(new Date(doc.updatedAt), { addSuffix: true })}</p>
                     </div>
                     <span className={`text-xs px-2 py-0.5 rounded font-medium ${docStatus[doc.status] ?? docStatus.draft}`}>{doc.status}</span>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-red-500" onClick={() => unlinkDocument(doc.id)} title="Unlink">
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-ink-4 hover:text-risk-ink" onClick={() => unlinkDocument(doc.id)} title="Unlink">
                       <Unlink size={13} />
                     </Button>
                   </CardContent>
@@ -515,25 +515,25 @@ export function ProcessDetailClient({
       {tab === 'caseTypes' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <p className="text-sm text-slate-500">{linkedCaseTypes.length} linked case type{linkedCaseTypes.length !== 1 ? 's' : ''}</p>
+            <p className="text-sm text-ink-4">{linkedCaseTypes.length} linked case type{linkedCaseTypes.length !== 1 ? 's' : ''}</p>
             <Button size="sm" variant="outline" onClick={() => { setPickerSearch(''); setShowTypePicker(true) }}>
               <Link2 size={13} className="mr-1.5" /> Link case type
             </Button>
           </div>
           {linkedCaseTypes.length === 0 ? (
-            <Card className="shadow-sm"><CardContent className="py-12 text-center text-sm text-slate-400">No case types linked yet.</CardContent></Card>
+            <Card className="shadow-sm"><CardContent className="py-12 text-center text-sm text-ink-4">No case types linked yet.</CardContent></Card>
           ) : (
             <div className="space-y-2">
               {linkedCaseTypes.map((wf) => (
                 <Card key={wf.id} className="shadow-sm">
                   <CardContent className="p-4 flex items-center gap-3">
-                    <ClipboardList size={16} className="text-slate-400 shrink-0" />
+                    <ClipboardList size={16} className="text-ink-4 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-800 truncate">{wf.name}</p>
-                      <p className="text-xs text-slate-400">Updated {formatDistanceToNow(new Date(wf.updatedAt), { addSuffix: true })}</p>
+                      <p className="text-sm font-medium text-ink truncate">{wf.name}</p>
+                      <p className="text-xs text-ink-4">Updated {formatDistanceToNow(new Date(wf.updatedAt), { addSuffix: true })}</p>
                     </div>
                     <span className={`text-xs px-2 py-0.5 rounded font-medium ${docStatus[wf.status] ?? docStatus.draft}`}>{wf.status}</span>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-red-500" onClick={() => unlinkCaseType(wf.id)} title="Unlink">
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-ink-4 hover:text-risk-ink" onClick={() => unlinkCaseType(wf.id)} title="Unlink">
                       <Unlink size={13} />
                     </Button>
                   </CardContent>
@@ -548,39 +548,39 @@ export function ProcessDetailClient({
       {tab === 'kpis' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <p className="text-sm text-slate-500">{kpis.length} KPI{kpis.length !== 1 ? 's' : ''} defined</p>
+            <p className="text-sm text-ink-4">{kpis.length} KPI{kpis.length !== 1 ? 's' : ''} defined</p>
             <Button size="sm" variant="outline" onClick={openAddKpi}>
               <Plus size={13} className="mr-1.5" /> Add KPI
             </Button>
           </div>
           {kpis.length === 0 ? (
-            <Card className="shadow-sm"><CardContent className="py-12 text-center text-sm text-slate-400">No KPIs defined yet.</CardContent></Card>
+            <Card className="shadow-sm"><CardContent className="py-12 text-center text-sm text-ink-4">No KPIs defined yet.</CardContent></Card>
           ) : (
             <div className="space-y-2">
               {kpis.map((k) => (
                 <Card key={k.id} className="shadow-sm">
                   <CardContent className="p-4 flex items-center gap-4">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-slate-800">{k.name}</p>
-                      {k.description && <p className="text-xs text-slate-500 mt-0.5">{k.description}</p>}
+                      <p className="text-sm font-semibold text-ink">{k.name}</p>
+                      {k.description && <p className="text-xs text-ink-4 mt-0.5">{k.description}</p>}
                     </div>
                     <div className="flex items-center gap-4 text-sm shrink-0">
                       {k.value && (
                         <div className="text-center">
-                          <p className="text-xs text-slate-400">Value</p>
-                          <p className="font-semibold text-slate-800">{k.value}{k.unit && ` ${k.unit}`}</p>
+                          <p className="text-xs text-ink-4">Value</p>
+                          <p className="font-semibold text-ink">{k.value}{k.unit && ` ${k.unit}`}</p>
                         </div>
                       )}
                       {k.target && (
                         <div className="text-center">
-                          <p className="text-xs text-slate-400">Target</p>
-                          <p className="font-semibold text-green-600">{k.target}{k.unit && ` ${k.unit}`}</p>
+                          <p className="text-xs text-ink-4">Target</p>
+                          <p className="font-semibold text-ok-ink">{k.target}{k.unit && ` ${k.unit}`}</p>
                         </div>
                       )}
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-blue-600" onClick={() => openEditKpi(k)}><Pencil size={13} /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-red-500" onClick={() => deleteKpi(k.id)}><Trash2 size={13} /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-ink-4 hover:text-nw-accent" onClick={() => openEditKpi(k)}><Pencil size={13} /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-ink-4 hover:text-risk-ink" onClick={() => deleteKpi(k.id)}><Trash2 size={13} /></Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -597,12 +597,12 @@ export function ProcessDetailClient({
           <Input value={pickerSearch} onChange={(e) => setPickerSearch(e.target.value)} placeholder="Search documents..." className="mb-3" />
           <div className="space-y-1 max-h-72 overflow-y-auto">
             {unlinkedDocs.length === 0
-              ? <p className="text-sm text-slate-400 text-center py-6">No documents to link.</p>
+              ? <p className="text-sm text-ink-4 text-center py-6">No documents to link.</p>
               : unlinkedDocs.map((d) => (
                 <button key={d.id} onClick={() => linkDocument(d.id)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-left transition-colors">
-                  <FileText size={14} className="text-slate-400 shrink-0" />
-                  <span className="text-sm text-slate-700 flex-1 truncate">{d.title}</span>
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-paper-2 text-left transition-colors">
+                  <FileText size={14} className="text-ink-4 shrink-0" />
+                  <span className="text-sm text-ink-3 flex-1 truncate">{d.title}</span>
                   <span className={`text-xs px-1.5 py-0.5 rounded ${docStatus[d.status]}`}>{d.status}</span>
                 </button>
               ))}
@@ -617,12 +617,12 @@ export function ProcessDetailClient({
           <Input value={pickerSearch} onChange={(e) => setPickerSearch(e.target.value)} placeholder="Search case types..." className="mb-3" />
           <div className="space-y-1 max-h-72 overflow-y-auto">
             {unlinkedCaseTypes.length === 0
-              ? <p className="text-sm text-slate-400 text-center py-6">No case types to link.</p>
+              ? <p className="text-sm text-ink-4 text-center py-6">No case types to link.</p>
               : unlinkedCaseTypes.map((w) => (
                 <button key={w.id} onClick={() => linkCaseType(w.id)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-left transition-colors">
-                  <ClipboardList size={14} className="text-slate-400 shrink-0" />
-                  <span className="text-sm text-slate-700 flex-1 truncate">{w.name}</span>
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-paper-2 text-left transition-colors">
+                  <ClipboardList size={14} className="text-ink-4 shrink-0" />
+                  <span className="text-sm text-ink-3 flex-1 truncate">{w.name}</span>
                   <span className={`text-xs px-1.5 py-0.5 rounded ${docStatus[w.status]}`}>{w.status}</span>
                 </button>
               ))}
@@ -655,7 +655,7 @@ export function ProcessDetailClient({
           </div>
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setShowKpiForm(false)}>Cancel</Button>
-            <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={handleSaveKpi} disabled={!kpiForm.name}>Save</Button>
+            <Button size="sm" className="bg-nw-accent hover:bg-nw-accent" onClick={handleSaveKpi} disabled={!kpiForm.name}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -24,17 +24,17 @@ import { confirmDialog } from '@/components/ui/confirm'
 
 // ── Canvas node types ──────────────────────────────────────────────────────
 function StartNode({ data }: { data: { label: string } }) {
-  return <div className="w-12 h-12 rounded-full bg-green-500 border-2 border-green-600 flex items-center justify-center text-white text-xs font-semibold">{data.label}</div>
+  return <div className="w-12 h-12 rounded-full bg-ok border-2 border-ok flex items-center justify-center text-on-fill text-xs font-semibold">{data.label}</div>
 }
 function EndNode({ data }: { data: { label: string } }) {
-  return <div className="w-12 h-12 rounded-full bg-red-500 border-2 border-red-600 flex items-center justify-center text-white text-xs font-semibold">{data.label}</div>
+  return <div className="w-12 h-12 rounded-full bg-risk border-2 border-risk flex items-center justify-center text-on-fill text-xs font-semibold">{data.label}</div>
 }
 function ActivityNode({ data }: { data: { label: string } }) {
-  return <div className="px-4 py-2.5 rounded-[2px] bg-blue-500 border-2 border-blue-600 text-white text-xs font-medium min-w-[100px] text-center">{data.label}</div>
+  return <div className="px-4 py-2.5 rounded-[2px] bg-nw-accent border-2 border-nw-accent text-on-fill text-xs font-medium min-w-[100px] text-center">{data.label}</div>
 }
 function DecisionNode({ data }: { data: { label: string } }) {
   return (
-    <div className="w-16 h-16 bg-orange-500 border-2 border-orange-600 text-white text-[10px] font-medium flex items-center justify-center text-center px-1" style={{ transform: 'rotate(45deg)' }}>
+    <div className="w-16 h-16 bg-warn border-2 border-warn text-on-fill text-[10px] font-medium flex items-center justify-center text-center px-1" style={{ transform: 'rotate(45deg)' }}>
       <span style={{ transform: 'rotate(-45deg)' }}>{data.label}</span>
     </div>
   )
@@ -174,10 +174,10 @@ function CanvasPanel({ processId, initialNodes, initialEdges }: { processId: str
         <div className="flex items-center gap-2">
           <span className="text-xs" style={{ color: 'var(--ink-4)' }}>Add:</span>
           {[
-            { type: 'start', label: 'Start', color: 'border-green-300 text-green-700 hover:bg-green-50' },
-            { type: 'activity', label: 'Activity', color: 'border-blue-300 text-blue-700 hover:bg-blue-50' },
-            { type: 'decision', label: 'Decision', color: 'border-orange-300 text-orange-700 hover:bg-orange-50' },
-            { type: 'end', label: 'End', color: 'border-red-300 text-red-700 hover:bg-red-50' },
+            { type: 'start', label: 'Start', color: 'border-ok-line text-ok-ink hover:bg-ok-tint' },
+            { type: 'activity', label: 'Activity', color: 'border-rule text-nw-accent hover:bg-accent-tint' },
+            { type: 'decision', label: 'Decision', color: 'border-warn-line text-warn-ink hover:bg-warn-tint' },
+            { type: 'end', label: 'End', color: 'border-risk-line text-risk-ink hover:bg-risk-tint' },
           ].map((n) => (
             <button key={n.type} onClick={() => addNode(n.type, n.label)}
               className={`px-3 py-1 rounded border text-xs font-medium hover:opacity-80 transition-opacity ${n.color}`}>
@@ -639,7 +639,7 @@ export function ProcessesClient({ initialProcesses, allDocuments, allCaseTypes, 
               <FolderPlus size={13} style={{ color: 'var(--ink-4)' }} /> Add sub-process
             </button>
             <div className="mt-1 pt-1" style={{ borderTop: '1px solid var(--rule)' }}>
-              <button onClick={() => handleDelete(contextMenu.process)} className="w-full flex items-center gap-2 px-3 py-1.5 text-red-600 hover:bg-red-50 transition-colors">
+              <button onClick={() => handleDelete(contextMenu.process)} className="w-full flex items-center gap-2 px-3 py-1.5 text-risk-ink hover:bg-risk-tint transition-colors">
                 <Trash2 size={13} /> Delete
               </button>
             </div>
@@ -660,7 +660,7 @@ export function ProcessesClient({ initialProcesses, allDocuments, allCaseTypes, 
           </div>
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setShowCreate(false)}>Cancel</Button>
-            <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={handleCreate} disabled={creating || !newName.trim()}>{creating ? 'Creating…' : 'Create'}</Button>
+            <Button size="sm" className="bg-nw-accent hover:bg-nw-accent" onClick={handleCreate} disabled={creating || !newName.trim()}>{creating ? 'Creating…' : 'Create'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -716,7 +716,7 @@ export function ProcessesClient({ initialProcesses, allDocuments, allCaseTypes, 
           </div>
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setShowKpiForm(false)}>Cancel</Button>
-            <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={handleSaveKpi} disabled={!kpiForm.name}>Save</Button>
+            <Button size="sm" className="bg-nw-accent hover:bg-nw-accent" onClick={handleSaveKpi} disabled={!kpiForm.name}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

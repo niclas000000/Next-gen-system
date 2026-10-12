@@ -274,7 +274,7 @@ function FieldInput({
             <span
               className="pointer-events-none inline-block h-4 w-4 rounded-full shadow-sm transition-transform mt-0.5"
               style={{
-                background: '#fff',
+                background: 'var(--surface)',
                 transform: checked ? 'translateX(18px)' : 'translateX(2px)',
               }}
             />

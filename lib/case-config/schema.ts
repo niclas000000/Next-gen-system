@@ -97,6 +97,10 @@ export const FieldSchema = z.object({
   comments: z.string().default(''),
   /** Assignment field: the chosen user gets this role on the case. */
   assignsRoleId: z.string().nullable().default(null),
+  /** Sub case field (Nexus extension): the case type it creates, by name. null = a type named like the field. */
+  subcaseTypeName: z.string().nullable().default(null),
+  /** Sub case field (Nexus extension): the case cannot move on from a phase showing the field while sub cases are open. */
+  subcasesMustBeClosed: z.boolean().default(false),
 })
 export type Field = z.infer<typeof FieldSchema>
 

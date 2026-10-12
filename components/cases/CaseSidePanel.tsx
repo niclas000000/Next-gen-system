@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowRight, Check, CornerUpLeft, FilePlus2, Hand, MessageSquare, PenLine, Save, XCircle } from 'lucide-react'
+import { ArrowRight, Check, CornerUpLeft, FilePlus2, Hand, Layers, MessageSquare, PenLine, Save, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/toast'
@@ -91,15 +91,21 @@ const EVENT_ICON: Record<string, React.ReactNode> = {
   backward: <CornerUpLeft size={12} />,
   preEnd: <XCircle size={12} />,
   signed: <PenLine size={12} />,
+  subcaseCreated: <Layers size={12} />,
+  subcaseClosed: <Layers size={12} />,
   cancelled: <XCircle size={12} />,
 }
 
 function describe(e: Event, detail: CaseDetail): React.ReactNode {
   const phaseName = (id: string | null) => detail.config.phases.find((p) => p.id === id)?.name ?? id ?? ''
-  const data = (e.data ?? {}) as { fields?: string[]; meaning?: string }
+  const data = (e.data ?? {}) as { fields?: string[]; meaning?: string; parent?: string; number?: string }
   switch (e.type) {
     case 'created':
-      return 'created the case'
+      return data.parent ? <>created the case as a sub case of <strong className="font-mono font-medium text-nw-accent">{data.parent}</strong></> : 'created the case'
+    case 'subcaseCreated':
+      return <>created the sub case <strong className="font-mono font-medium text-nw-accent">{data.number}</strong></>
+    case 'subcaseClosed':
+      return <>closed the sub case <strong className="font-mono font-medium text-nw-accent">{data.number}</strong></>
     case 'saved': {
       const names = (data.fields ?? []).map((id) => detail.config.fields.find((f) => f.id === id)?.name ?? id)
       return `updated ${names.slice(0, 2).join(', ')}${names.length > 2 ? ` and ${names.length - 2} more` : ''}`

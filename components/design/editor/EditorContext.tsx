@@ -16,6 +16,8 @@ export interface EditorApi {
   issues: ValidationIssue[]
   groups: { id: string; name: string; members: string[] }[]
   users: { id: string; name: string; email: string }[]
+  /** Names of all case types — sub case fields create one of them */
+  caseTypeNames: string[]
   goTo: (tab: EditorTab, targetId?: string) => void
   focusId: string | null
 }

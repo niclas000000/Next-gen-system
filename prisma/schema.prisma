@@ -18,18 +18,18 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  documents        Document[]         @relation("DocumentAuthor")
-  processesOwned   Process[]          @relation("ProcessOwner")
-  processesCreated Process[]          @relation("ProcessCreator")
+  documents        Document[]        @relation("DocumentAuthor")
+  processesOwned   Process[]         @relation("ProcessOwner")
+  processesCreated Process[]         @relation("ProcessCreator")
   savedViews       SavedView[]
-  documentVersions DocumentVersion[]  @relation("VersionAuthor")
-  readReceipts     ReadReceipt[]      @relation("ReadReceiptUser")
+  documentVersions DocumentVersion[] @relation("VersionAuthor")
+  readReceipts     ReadReceipt[]     @relation("ReadReceiptUser")
   notifications    Notification[]
-  caseTypes        CaseType[]         @relation("CaseTypeCreator")
-  cases            Case[]             @relation("CaseCreator")
-  caseEvents       CaseEvent[]        @relation("CaseEventActor")
-  caseComments     CaseComment[]      @relation("CaseCommentAuthor")
-  caseAttachments  CaseAttachment[]   @relation("CaseAttachmentUploader")
+  caseTypes        CaseType[]        @relation("CaseTypeCreator")
+  cases            Case[]            @relation("CaseCreator")
+  caseEvents       CaseEvent[]       @relation("CaseEventActor")
+  caseComments     CaseComment[]     @relation("CaseCommentAuthor")
+  caseAttachments  CaseAttachment[]  @relation("CaseAttachmentUploader")
 }
 
 model Group {
@@ -314,6 +314,11 @@ model Case {
   caseType       CaseType         @relation(fields: [caseTypeId], references: [id])
   versionId      String
   version        CaseTypeVersion  @relation(fields: [versionId], references: [id])
+  // Sub case: created from a sub case field on the parent case
+  parentId       String?
+  parent         Case?            @relation("SubCases", fields: [parentId], references: [id])
+  parentFieldId  String?
+  subCases       Case[]           @relation("SubCases")
   phaseId        String
   phaseEnteredAt DateTime         @default(now())
   phaseDueAt     DateTime? // from the phase's deadlineDays/Hours
@@ -330,6 +335,7 @@ model Case {
   comments       CaseComment[]
   attachments    CaseAttachment[]
 
+  @@index([parentId])
   @@index([caseTypeId, status])
 }
 

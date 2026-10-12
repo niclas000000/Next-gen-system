@@ -9,6 +9,7 @@ import {
   allowedActions,
   applySave,
   applyTake,
+  canCreateSubcase,
   currentPhase,
   emailNotices,
   initialCase,
@@ -16,6 +17,7 @@ import {
   phaseHolderRoleIds,
   planMove,
   roleHolders,
+  subcaseTypeName,
   type Actor,
   type CaseContext,
   type CaseSnapshot,
@@ -30,7 +32,13 @@ export class CaseError extends Error {
   }
 }
 
-type CaseRow = Prisma.CaseGetPayload<{ include: { version: true; caseType: true } }>
+const CASE_INCLUDE = {
+  version: true,
+  caseType: true,
+  subCases: { select: { status: true, parentFieldId: true } },
+} satisfies Prisma.CaseInclude
+
+type CaseRow = Prisma.CaseGetPayload<{ include: typeof CASE_INCLUDE }>
 
 const parseConfig = (json: unknown): CaseTypeConfig => CaseTypeConfigSchema.parse(json)
 const bindingsOf = (json: unknown) => (json ?? {}) as RoleBindings
@@ -51,6 +59,10 @@ function snapshotOf(row: CaseRow): CaseSnapshot {
     status: row.status as CaseStatus,
     values: row.values as CaseValues,
     roles: row.roles as Record<string, string[]>,
+    openSubcases: row.subCases.reduce<Record<string, number>>((acc, c) => {
+      if (c.status === 'open' && c.parentFieldId) acc[c.parentFieldId] = (acc[c.parentFieldId] ?? 0) + 1
+      return acc
+    }, {}),
   }
 }
 
@@ -58,7 +70,7 @@ function snapshotOf(row: CaseRow): CaseSnapshot {
 async function loadCase(idOrNumber: string, revision?: number): Promise<CaseRow> {
   const row = await prisma.case.findFirst({
     where: { OR: [{ id: idOrNumber }, { number: idOrNumber.toUpperCase() }] },
-    include: { version: true, caseType: true },
+    include: CASE_INCLUDE,
   })
   if (!row) throw new CaseError('Case not found', 404)
   if (revision !== undefined && revision !== row.revision) throw new CaseError(STALE, 409)
@@ -112,7 +124,25 @@ async function notify(
 // Commands
 // ---------------------------------------------------------------------------
 
-export async function createCase(caseTypeId: string, title: string, userId: string) {
+export interface ParentLink {
+  caseId: string
+  fieldId: string
+}
+
+/**
+ * Creates a case. With `parent`, it becomes a sub case created from that sub case field: the actor must be
+ * able to edit the field now, the case type must be the one the field creates, and the field's list
+ * of sub cases on the parent is updated in the same transaction.
+ */
+export async function createCase(caseTypeId: string, title: string, userId: string, parent?: ParentLink) {
+  const parentRow = parent ? await loadCase(parent.caseId) : null
+  if (parentRow && parent) {
+    const ctx = contextOf(parentRow, await actorFor(userId))
+    const field = ctx.config.fields.find((f) => f.id === parent.fieldId)
+    if (!field || !canCreateSubcase(ctx, parent.fieldId)) throw new CaseError('You cannot add sub cases here in this phase', 403)
+    const target = await prisma.caseType.findUnique({ where: { id: caseTypeId }, select: { name: true } })
+    if (target?.name.toLowerCase() !== subcaseTypeName(field).toLowerCase()) throw new CaseError(`This field creates ${subcaseTypeName(field)} sub cases`, 400)
+  }
   const caseType = await prisma.caseType.findUnique({
     where: { id: caseTypeId },
     include: { versions: { orderBy: { version: 'desc' }, take: 1 } },
@@ -123,6 +153,8 @@ export async function createCase(caseTypeId: string, title: string, userId: stri
   const config = parseConfig(version.config)
   const now = new Date()
   const initial = initialCase(config, bindingsOf(caseType.roleBindings), userId, now)
+  const titleField = config.fields.find((f) => f.type === 'text' && f.name.toLowerCase() === 'title')
+  if (titleField && title.trim()) initial.values[titleField.id] = title.trim()
 
   return prisma.$transaction(async (tx) => {
     const { nextNumber } = await tx.caseType.update({
@@ -142,9 +174,25 @@ export async function createCase(caseTypeId: string, title: string, userId: stri
         values: initial.values as never,
         roles: initial.roles as never,
         createdBy: userId,
+        ...(parentRow && parent ? { parentId: parentRow.id, parentFieldId: parent.fieldId } : {}),
       },
     })
-    await tx.caseEvent.create({ data: { caseId: created.id, type: 'created', toPhaseId: initial.phaseId, actorId: userId } })
+    await tx.caseEvent.create({
+      data: { caseId: created.id, type: 'created', toPhaseId: initial.phaseId, actorId: userId, data: parentRow ? ({ parent: parentRow.number } as never) : undefined },
+    })
+    if (parentRow && parent) {
+      // The parent's sub case field lists its sub cases (counts for mandatory checks)
+      const fresh = await tx.case.findUniqueOrThrow({ where: { id: parentRow.id }, select: { values: true } })
+      const values = fresh.values as CaseValues
+      const list = Array.isArray(values[parent.fieldId]) ? (values[parent.fieldId] as string[]) : []
+      await tx.case.update({
+        where: { id: parentRow.id },
+        data: { values: { ...values, [parent.fieldId]: [...list, created.id] } as never, revision: { increment: 1 } },
+      })
+      await tx.caseEvent.create({
+        data: { caseId: parentRow.id, type: 'subcaseCreated', fromPhaseId: parentRow.phaseId, actorId: userId, data: { number: created.number, fieldId: parent.fieldId } as never },
+      })
+    }
     return created
   })
 }
@@ -246,8 +294,21 @@ export async function moveCase(
       notices.push({ roleIds, subject: `${row.number} is now in ${target.name}`, message: row.title })
     }
     await notify(tx, row, after, notices, userId)
+    if (plan.status !== 'open' && row.parentId) await notifyParent(tx, row, userId)
   })
   return plan
+}
+
+/** A sub case closed: whoever has the parent case now is told, and the parent's history notes it. */
+async function notifyParent(tx: Prisma.TransactionClient, child: CaseRow, actorId: string) {
+  const parent = await tx.case.findUnique({ where: { id: child.parentId! }, include: CASE_INCLUDE })
+  if (!parent) return
+  const ctx = contextOf(parent, { id: actorId, groupIds: [] })
+  const phase = currentPhase(ctx.config, ctx.snapshot)
+  await tx.caseEvent.create({
+    data: { caseId: parent.id, type: 'subcaseClosed', fromPhaseId: parent.phaseId, actorId, data: { number: child.number } as never },
+  })
+  await notify(tx, parent, ctx, [{ roleIds: phaseHolderRoleIds(ctx.config, phase), subject: `${child.number} is closed — sub case of ${parent.number}`, message: child.title }], actorId)
 }
 
 /** A button field: saves the patch and fires the phase's "on button click" rules (e-mails). */
@@ -291,13 +352,32 @@ export async function getCaseDetail(idOrNumber: string, userId: string) {
   const states = actorFieldStates(ctx)
   const phaseIndex = config.phases.findIndex((p) => p.id === phase.id)
 
-  const [events, comments, attachments, users, members] = await Promise.all([
+  const [events, comments, attachments, users, members, parent, subCases, caseTypes] = await Promise.all([
     prisma.caseEvent.findMany({ where: { caseId: row.id }, orderBy: { at: 'asc' }, include: { actor: { select: { id: true, name: true } } } }),
     prisma.caseComment.findMany({ where: { caseId: row.id }, orderBy: { createdAt: 'asc' }, include: { author: { select: { id: true, name: true } } } }),
     prisma.caseAttachment.findMany({ where: { caseId: row.id }, orderBy: { uploadedAt: 'asc' }, include: { uploader: { select: { name: true } } } }),
     prisma.user.findMany({ where: { active: true, id: { not: 'system-placeholder-user' } }, select: { id: true, name: true, email: true }, orderBy: { name: 'asc' } }),
     groupMembers(),
+    row.parentId
+      ? prisma.case.findUnique({ where: { id: row.parentId }, select: { number: true, title: true, caseType: { select: { name: true } } } })
+      : null,
+    prisma.case.findMany({
+      where: { parentId: row.id },
+      orderBy: { createdAt: 'asc' },
+      include: { version: { select: { config: true } }, caseType: { select: { name: true } } },
+    }),
+    prisma.caseType.findMany({ where: { status: 'published' }, select: { id: true, name: true, prefix: true } }),
   ])
+
+  // Sub case fields: which published case type each creates, and whether this user may add one now
+  const subcaseFields = Object.fromEntries(
+    config.fields
+      .filter((f) => f.type === 'subcase')
+      .map((f) => {
+        const target = caseTypes.find((t) => t.name.toLowerCase() === subcaseTypeName(f).toLowerCase()) ?? null
+        return [f.id, { target, typeName: subcaseTypeName(f), canCreate: !!target && canCreateSubcase(ctx, f.id) }]
+      })
+  )
 
   const holderRoleIds = phaseHolderRoleIds(config, phase)
   return {
@@ -333,6 +413,22 @@ export async function getCaseDetail(idOrNumber: string, userId: string) {
     comments,
     attachments,
     users,
+    parent,
+    subCases: subCases.map((c) => {
+      const cfg = parseConfig(c.version.config)
+      return {
+        id: c.id,
+        number: c.number,
+        title: c.title,
+        status: c.status,
+        fieldId: c.parentFieldId,
+        caseTypeName: c.caseType.name,
+        phaseName: cfg.phases.find((p) => p.id === c.phaseId)?.name ?? c.phaseId,
+        phaseDueAt: c.phaseDueAt,
+      }
+    }),
+    subcaseFields,
+    openSubcases: snapshot.openSubcases ?? {},
   }
 }
 
@@ -350,7 +446,11 @@ export async function listCases(filter: CaseListFilter, userId: string) {
   const page = Math.max(filter.page ?? 1, 1)
   const where: Prisma.CaseWhereInput = {
     ...(filter.caseTypeId ? { caseTypeId: filter.caseTypeId } : {}),
-    ...(filter.status === 'closed' ? { status: { in: ['closed', 'preClosed'] } } : filter.status ? { status: filter.status } : {}),
+    ...(filter.status === 'closed'
+      ? { status: { in: ['closed', 'preClosed'] } }
+      : filter.status && filter.status !== 'all'
+        ? { status: filter.status }
+        : {}),
     ...(filter.mine ? { createdBy: userId } : {}),
     ...(filter.q
       ? { OR: [{ number: { contains: filter.q, mode: 'insensitive' } }, { title: { contains: filter.q, mode: 'insensitive' } }] }
@@ -363,7 +463,12 @@ export async function listCases(filter: CaseListFilter, userId: string) {
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * pageSize,
       take: pageSize,
-      include: { version: { select: { config: true } }, caseType: { select: { name: true, prefix: true } }, creator: { select: { name: true } } },
+      include: {
+        version: { select: { config: true } },
+        caseType: { select: { name: true, prefix: true } },
+        creator: { select: { name: true } },
+        parent: { select: { number: true } },
+      },
     }),
   ])
   return {
@@ -384,6 +489,7 @@ export async function listCases(filter: CaseListFilter, userId: string) {
         phaseDueAt: r.phaseDueAt,
         createdAt: r.createdAt,
         creatorName: r.creator.name,
+        parentNumber: r.parent?.number ?? null,
       }
     }),
   }
@@ -395,7 +501,7 @@ export async function inbox(userId: string) {
   const rows = await prisma.case.findMany({
     where: { status: 'open' },
     orderBy: [{ phaseDueAt: { sort: 'asc', nulls: 'last' } }, { createdAt: 'desc' }],
-    include: { version: true, caseType: true },
+    include: CASE_INCLUDE,
   })
   return rows.flatMap((row) => {
     const ctx = contextOf(row, actor)

@@ -145,7 +145,10 @@ function CaseRow({ c }: { c: Row }) {
       </td>
       <td className="px-4 py-2.5 max-w-[360px]">
         <Link href={`/cases/${c.number}`} className="block truncate text-ink group-hover:text-ink">{c.title}</Link>
-        <span className="text-xs text-ink-4">{c.caseTypeName}</span>
+        <span className="text-xs text-ink-4">
+          {c.caseTypeName}
+          {c.parentNumber && <> · sub case of <span className="font-mono text-nw-accent">{c.parentNumber}</span></>}
+        </span>
       </td>
       <td className="px-4 py-2.5 whitespace-nowrap">
         <div className="flex items-center gap-2">

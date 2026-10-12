@@ -10,7 +10,7 @@ import { AddButton, RowActions, Select, TextInput, makeId, move } from './contro
 const REGISTRY_TYPES: FieldType[] = ['registryDropdown', 'registrySearch']
 
 export function FieldsTab() {
-  const { config, update, focusId, goTo } = useEditor()
+  const { config, update, focusId, goTo, caseTypeNames } = useEditor()
   const [q, setQ] = useState('')
   const refs = useRef<Record<string, HTMLTableRowElement | null>>({})
 
@@ -97,6 +97,26 @@ export function FieldsTab() {
                           />
                         )}
                       </div>
+                    ) : f.type === 'subcase' ? (
+                      <div className="space-y-1.5">
+                        <Select
+                          value={f.subcaseTypeName ?? ''}
+                          placeholder={`Type named “${f.name}”`}
+                          aria-label="Creates sub cases of"
+                          className="h-8 w-48"
+                          onChange={(v) => update((d) => void (d.fields[index].subcaseTypeName = v || null))}
+                          options={caseTypeNames.map((n) => ({ value: n, label: `Creates: ${n}` }))}
+                        />
+                        <label className="flex items-center gap-1.5 text-xs text-ink-3">
+                          <input
+                            type="checkbox"
+                            checked={f.subcasesMustBeClosed}
+                            onChange={(e) => update((d) => void (d.fields[index].subcasesMustBeClosed = e.target.checked))}
+                            className="accent-[var(--nw-accent)]"
+                          />
+                          Must be closed before moving on
+                        </label>
+                      </div>
                     ) : (
                       <span className="text-xs text-ink-4">—</span>
                     )}
@@ -141,7 +161,7 @@ export function FieldsTab() {
         onClick={() =>
           update((d) => {
             const id = makeId('New field', d.fields.map((f) => f.id))
-            d.fields.push({ id, name: 'New field', type: 'text', section: sections[sections.length - 1] ?? '', mandatory: false, registryId: null, multi: false, comments: '', assignsRoleId: null })
+            d.fields.push({ id, name: 'New field', type: 'text', section: sections[sections.length - 1] ?? '', mandatory: false, registryId: null, multi: false, comments: '', assignsRoleId: null, subcaseTypeName: null, subcasesMustBeClosed: false })
             // Editable in the first phase so it shows up right away; adjust in the matrix
             if (d.phases[0]) d.phases[0].fields[id] = { access: 'edit', mandatory: null, title: null }
           })

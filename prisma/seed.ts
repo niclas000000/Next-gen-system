@@ -1,9 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import { scrypt, randomBytes } from 'crypto'
 import { promisify } from 'util'
-import { readFileSync } from 'fs'
-import { join } from 'path'
-import { CaseTypeConfigSchema } from '../lib/case-config/schema'
+import { BUILT_IN_CASE_TYPES, builtInConfig } from '../lib/case-config/fixtures'
 
 const prisma = new PrismaClient()
 const scryptAsync = promisify(scrypt)
@@ -91,27 +89,26 @@ async function main() {
   }
   console.log('Default system views seeded.')
 
-  // Demo case type: CANEA reference configuration EX-26714 (Deviation, Life Science/Pharma),
-  // exported from Workshop-tool. Published as v1 if no case type uses the prefix yet.
-  const deviation = CaseTypeConfigSchema.parse(
-    JSON.parse(readFileSync(join(__dirname, '../lib/case-config/fixtures/deviation-pharma.json'), 'utf8'))
-  )
+  // Built-in case types: CANEA reference configurations (Deviation EX-26714, CAPA EX-26738, Action)
+  // exported from Workshop-tool. Each is published as v1 if no case type uses its prefix yet.
   const owner = await prisma.user.findFirst({
     where: { role: 'admin', active: true, id: { not: 'system-placeholder-user' } },
     orderBy: { createdAt: 'asc' },
   })
-  if (owner && !(await prisma.caseType.findUnique({ where: { prefix: deviation.prefix } }))) {
+  for (const { prefix } of BUILT_IN_CASE_TYPES) {
+    if (!owner || (await prisma.caseType.findUnique({ where: { prefix } }))) continue
+    const config = builtInConfig(prefix)
     await prisma.caseType.create({
       data: {
-        name: deviation.caseTypeName,
-        prefix: deviation.prefix,
+        name: config.caseTypeName,
+        prefix,
         status: 'published',
-        draft: deviation as never,
+        draft: config as never,
         createdBy: owner.id,
-        versions: { create: { version: 1, config: deviation as never, publishedBy: owner.id } },
+        versions: { create: { version: 1, config: config as never, publishedBy: owner.id } },
       },
     })
-    console.log(`Case type "${deviation.caseTypeName}" (${deviation.prefix}) seeded and published.`)
+    console.log(`Case type "${config.caseTypeName}" (${prefix}) seeded and published.`)
   }
 }
 

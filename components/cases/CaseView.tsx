@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
-  AlertTriangle, ArrowLeft, ArrowRight, CalendarClock, Check, ChevronDown, CircleSlash, Inbox, Lock, PenLine,
+  AlertTriangle, ArrowLeft, ArrowRight, CalendarClock, Check, ChevronDown, CircleSlash, CornerLeftUp, Inbox, Lock, PenLine,
   RotateCcw, Save, XCircle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -72,7 +72,10 @@ export function CaseView({ detail }: { detail: CaseDetail }) {
     () => restrictForActor(config, phase, fieldStates(config, phase, values), detail.permission, detail.myRoleIds, status),
     [config, phase, values, detail.permission, detail.myRoleIds, status]
   )
-  const moves = useMemo(() => moveStates(config, phase, detail.permission, status, values), [config, phase, detail.permission, status, values])
+  const moves = useMemo(
+    () => moveStates(config, phase, detail.permission, status, values, detail.openSubcases),
+    [config, phase, detail.permission, status, values, detail.openSubcases]
+  )
 
   const fieldById = useMemo(() => new Map(config.fields.map((f) => [f.id, f])), [config.fields])
   const home = useMemo(() => new Map(config.fields.map((f) => [f.id, homePhaseIndex(config, f.id)])), [config])
@@ -80,7 +83,8 @@ export function CaseView({ detail }: { detail: CaseDetail }) {
   // History shows what was recorded; empty read-only fields are noise there
   const hasValue = (fieldId: string) => {
     const f = fieldById.get(fieldId)
-    if (!f || f.type === 'button' || f.type === 'subcase' || f.type === 'collapsiblePanel') return false
+    if (!f || f.type === 'button' || f.type === 'collapsiblePanel') return false
+    if (f.type === 'subcase') return detail.subCases.some((c) => c.fieldId === fieldId)
     if (f.type === 'staticText' || f.type === 'delimiter') return true
     const v = values[fieldId]
     return Array.isArray(v) ? v.length > 0 : !!v
@@ -192,6 +196,31 @@ export function CaseView({ detail }: { detail: CaseDetail }) {
       `${fieldById.get(fieldId)?.name ?? 'Done'} — saved`
     )
 
+  /** Creates a sub case from a sub case field; stays on this case and offers to open the new one. */
+  async function createSubcase(fieldId: string, title: string): Promise<boolean> {
+    const info = detail.subcaseFields[fieldId]
+    if (!info?.target) return false
+    setBusy(true)
+    try {
+      const res = await fetch('/api/cases', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ caseTypeId: info.target.id, title, parent: { caseId: c.id, fieldId } }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        toast.error(json.error ?? 'The sub case could not be created')
+        return false
+      }
+      const number = json.case.number as string
+      toast.show(`${number} created as ${info.typeName} for ${c.number}`, { kind: 'ok', action: { label: 'Open', onClick: () => router.push(`/cases/${number}`) } })
+      router.refresh()
+      return true
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function upload(fieldId: string, file: File) {
     const form = new FormData()
     form.append('file', file)
@@ -237,6 +266,17 @@ export function CaseView({ detail }: { detail: CaseDetail }) {
                     onChange={(v) => change(field.id, v)}
                     onButton={pressButton}
                     onUpload={upload}
+                    subcase={
+                      field.type === 'subcase' && detail.subcaseFields[field.id]
+                        ? {
+                            ...detail.subcaseFields[field.id],
+                            canCreate: detail.subcaseFields[field.id].canCreate && !state.readOnly && ph.id === phase.id,
+                            mustBeClosed: field.subcasesMustBeClosed,
+                            items: detail.subCases.filter((s) => s.fieldId === field.id),
+                            onCreate: (title) => createSubcase(field.id, title),
+                          }
+                        : undefined
+                    }
                   />
                 </div>
               )
@@ -264,6 +304,12 @@ export function CaseView({ detail }: { detail: CaseDetail }) {
             <p className="mono-meta">
               <span className="text-nw-accent">{c.number}</span> · {c.caseType.name} · v{c.version}
             </p>
+            {detail.parent && (
+              <Link href={`/cases/${detail.parent.number}`} className="mt-1 inline-flex items-center gap-1.5 rounded-[2px] text-xs text-ink-3 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nw-accent">
+                <CornerLeftUp size={12} className="text-nw-accent" /> Sub case of <span className="font-mono text-nw-accent">{detail.parent.number}</span>
+                <span className="max-w-[360px] truncate">{detail.parent.title}</span> · {detail.parent.caseType.name}
+              </Link>
+            )}
             <h1 className="mt-1 text-2xl font-semibold text-ink font-display leading-tight">{c.title}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-ink-4">
               <Badge variant={STATUS[status]?.variant ?? 'default'}>{STATUS[status]?.label ?? status}</Badge>

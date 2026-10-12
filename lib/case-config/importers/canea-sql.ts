@@ -119,6 +119,7 @@ interface ParsedWorkflow {
   permissions: { roleItemId: number; casePhaseId: number; edit: boolean; end: boolean; forward: boolean; backward: boolean }[]
   categories: Map<number, string>
   registryRoots: Map<number, string>
+  subFlows: Map<number, string>
   items: Item[]
 }
 
@@ -183,7 +184,8 @@ function parseWorkflow(sql: string): ParsedWorkflow {
     const it = byId.get(Number(m[4]))
     if (it) it.pos = { y: Number(m[1]), x: Number(m[2]), span: Number(m[3]) }
   }
-  return { name, prefix, phases, roleTypes, roleItems, permissions, categories, registryRoots, items }
+  const subFlows = new Map([...s.matchAll(/INSERT @SubFlowMap VALUES \((\d+), '((?:[^']|'')*)',/g)].map((m) => [Number(m[1]), unq(m[2]).trim()]))
+  return { name, prefix, phases, roleTypes, roleItems, permissions, categories, registryRoots, subFlows, items }
 }
 
 // ---------------------------------------------------------------------------
@@ -399,6 +401,8 @@ export function convertCaneaExport(workflowSql: string, rulesSql: string | null,
       multi: it.render === 'UserChoice' ? num(it.values.IsSingleChoice) === 0 : false,
       comments: category ? `CANEA ONE property category: ${wf.categories.get(category)}` : '',
       assignsRoleId: type === 'registrySearch' && roleToSet ? roleIdOf.get(roleToSet) ?? null : null,
+      subcaseTypeName: it.render === 'SubCase' ? wf.subFlows.get(ref(it.values.SubCaseTypeID, 'SubFlowMap') ?? -1) ?? null : null,
+      subcasesMustBeClosed: false,
     }
     fields.push(field)
     fieldByKey.set(key, field)

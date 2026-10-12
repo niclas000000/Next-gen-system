@@ -13,6 +13,7 @@ import { hashPassword } from '@/lib/auth/password'
 import { CaseTypeConfigSchema, type CaseTypeConfig } from '@/lib/case-config/schema'
 import { missingMandatory, type CaseValues } from '@/lib/case-config/runtime'
 import { publishCaseType } from '@/lib/case-config/publish'
+import { adjustBuiltIn, BUILT_IN_CASE_TYPES } from '@/lib/case-config/fixtures'
 import { createCase, moveCase, saveCase, takeCase, addComment } from '@/lib/cases/service'
 
 const PASSWORD = 'demo'
@@ -29,9 +30,15 @@ const USERS = [
 type UserKey = (typeof USERS)[number]['key']
 
 const GROUPS = [
-  { name: 'Deviation leaders', description: 'Inbox for new deviations — appoints the deviation leader', members: ['erik', 'johan'] as UserKey[], roleId: 'deviationLeaderGroup' },
-  { name: 'QA assessors', description: 'Inbox for deviations ready for QA assessment', members: ['sara', 'lina'] as UserKey[], roleId: 'qaAssessorGroup' },
+  { name: 'Deviation leaders', description: 'Inbox for new deviations — appoints the deviation leader', members: ['erik', 'johan'] as UserKey[], prefix: 'DEV', roleId: 'deviationLeaderGroup' },
+  { name: 'QA assessors', description: 'Inbox for deviations ready for QA assessment', members: ['sara', 'lina'] as UserKey[], prefix: 'DEV', roleId: 'qaAssessorGroup' },
+  { name: 'CAPA leaders', description: 'Inbox for approved CAPAs waiting for a CAPA leader', members: ['erik', 'johan'] as UserKey[], prefix: 'CAPA', roleId: 'capaLeaderGroup' },
 ]
+
+type Bindings = Record<string, { userIds: string[]; groupIds: string[] }>
+
+/** Case types used by the demo, filled in by main(): prefix → id and the published config */
+const TYPES: Record<string, { id: string; config: CaseTypeConfig }> = {}
 
 /** Customer-specific lists that are empty in the reference configuration. */
 const REGISTRY_VALUES: Record<string, string[]> = {
@@ -56,7 +63,7 @@ async function ensureUsers(): Promise<Record<UserKey, string>> {
 }
 
 async function ensureGroups(users: Record<UserKey, string>) {
-  const bindings: Record<string, { userIds: string[]; groupIds: string[] }> = {}
+  const bindings: Record<string, Bindings> = {}
   for (const g of GROUPS) {
     const members = g.members.map((k) => users[k])
     const group = await prisma.group.upsert({
@@ -68,30 +75,30 @@ async function ensureGroups(users: Record<UserKey, string>) {
       const u = await prisma.user.findUnique({ where: { id: userId }, select: { groups: true } })
       if (u && !u.groups.includes(group.id)) await prisma.user.update({ where: { id: userId }, data: { groups: [...u.groups, group.id] } })
     }
-    bindings[g.roleId] = { userIds: [], groupIds: [group.id] }
+    ;(bindings[g.prefix] ??= {})[g.roleId] = { userIds: [], groupIds: [group.id] }
   }
   return bindings
 }
 
-/** Fills empty registries, binds group roles and publishes a new version if the config changed. */
-async function prepareCaseType(bindings: Record<string, { userIds: string[]; groupIds: string[] }>, adminId: string) {
-  const caseType = await prisma.caseType.findUnique({ where: { prefix: 'DEV' } })
-  if (!caseType) throw new Error('Case type DEV not found — run `npx prisma db seed` first')
-  const draft = CaseTypeConfigSchema.parse(caseType.draft)
-  let changed = false
-  for (const r of draft.registries) {
-    if (REGISTRY_VALUES[r.id] && r.values.length === 0) {
-      r.values = REGISTRY_VALUES[r.id]
-      changed = true
+/**
+ * Brings the built-in case types up to date: Nexus adjustments (sub case targets etc.), demo registry
+ * values and group role bindings. Publishes a new version when the draft differs from the live one.
+ */
+async function prepareCaseTypes(bindings: Record<string, Bindings>, adminId: string) {
+  for (const { prefix } of BUILT_IN_CASE_TYPES) {
+    const caseType = await prisma.caseType.findUnique({ where: { prefix }, include: { versions: { orderBy: { version: 'desc' }, take: 1 } } })
+    if (!caseType) throw new Error(`Case type ${prefix} not found — run "npx prisma db seed" first`)
+    const draft = adjustBuiltIn(prefix, CaseTypeConfigSchema.parse(caseType.draft))
+    for (const r of draft.registries) if (REGISTRY_VALUES[r.id] && r.values.length === 0) r.values = REGISTRY_VALUES[r.id]
+    await prisma.caseType.update({ where: { id: caseType.id }, data: { draft: draft as never, roleBindings: (bindings[prefix] ?? {}) as never } })
+    const live = caseType.versions[0] ? CaseTypeConfigSchema.parse(caseType.versions[0].config) : null
+    if (!live || JSON.stringify(live) !== JSON.stringify(draft)) {
+      const res = await publishCaseType(caseType.id, adminId)
+      if ('issues' in res) throw new Error(`Publishing ${prefix} failed: ${res.issues.map((i) => i.message).join('; ')}`)
+      console.log(`Published ${prefix} v${res.version}`)
     }
+    TYPES[prefix] = { id: caseType.id, config: draft }
   }
-  await prisma.caseType.update({ where: { id: caseType.id }, data: { draft: draft as never, roleBindings: bindings as never } })
-  if (changed) {
-    const res = await publishCaseType(caseType.id, adminId)
-    if ('issues' in res) throw new Error(`Publishing failed: ${res.issues.map((i) => i.message).join('; ')}`)
-    console.log(`Published DEV v${res.version} with demo registry values`)
-  }
-  return { caseTypeId: caseType.id, config: draft }
 }
 
 // ---------------------------------------------------------------------------
@@ -121,6 +128,7 @@ class Builder {
     const phase = this.config.phases.find((p) => p.id === row.phaseId)!
     const patch: CaseValues = { ...texts }
     for (const f of missingMandatory(this.config, phase, values)) {
+      if (f.type === 'subcase') continue
       const reg = this.config.registries.find((r) => r.id === f.registryId)
       let v: string
       if (f.type === 'date') v = new Date(Date.now() + 14 * DAY).toISOString().slice(0, 10)
@@ -149,6 +157,13 @@ class Builder {
     const row = await this.current()
     const values = move === 'backward' ? texts : await this.filled(texts)
     await moveCase(this.caseId, this.users[who], move, row.revision, values, meaning ? { password: PASSWORD, meaning } : undefined)
+  }
+
+  /** Creates a sub case from a sub case field on this case and returns a builder for it. */
+  async subcase(who: UserKey, fieldId: string, prefix: string, title: string): Promise<Builder> {
+    this.mark()
+    const child = await createCase(TYPES[prefix].id, title, this.users[who], { caseId: this.caseId, fieldId })
+    return new Builder(TYPES[prefix].config, child.id, this.users)
   }
 
   async comment(who: UserKey, body: string) {
@@ -204,9 +219,26 @@ const registration = (problem: string, discovery: string, action: string, extra:
   ...extra,
 })
 
-async function buildCases(caseTypeId: string, config: CaseTypeConfig, users: Record<UserKey, string>) {
+/** CAPA from a deviation: registration → manager approval → QA approval, now waiting in implementation. */
+async function approvedCapa(parent: Builder, users: Record<UserKey, string>, title: string, rootCause: string) {
+  const capa = await parent.subcase('erik', 'capa', 'CAPA', title)
+  await capa.move('erik', 'forward', {
+    rootCauseProposal: rootCause,
+    expectedEffect: 'No recurrence within 12 months; trend reviewed at the quarterly quality meeting.',
+    riskAssessment: 'Low risk: the change is limited to the method/maintenance plan and is verified before release.',
+    managerApprover: users.johan,
+    qaApprover: users.sara,
+    capaLeader: users.erik,
+  })
+  await capa.move('johan', 'forward', { managerDecision: 'Yes', managerJustification: 'Root cause is plausible and the action is proportionate.' }, 'I approve the CAPA proposal')
+  await capa.move('sara', 'forward', { qaDecision: 'Yes', qaJustification: 'Approved — implementation can start.' }, 'I approve the CAPA for implementation')
+  return capa
+}
+
+async function buildCases(users: Record<UserKey, string>) {
+  const config = TYPES.DEV.config
   const make = async (title: string, by: UserKey = 'anna') => {
-    const c = await createCase(caseTypeId, title, users[by])
+    const c = await createCase(TYPES.DEV.id, title, users[by])
     return new Builder(config, c.id, users)
   }
 
@@ -265,6 +297,17 @@ async function buildCases(caseTypeId: string, config: CaseTypeConfig, users: Rec
   await d5.move('erik', 'forward', { initialClassification: 'Major deviation', initialJustification: 'Confirmed OOS on a release test; product quality may be affected.' })
   await d5.save('erik', { classification: 'Major deviation', rootCauseInvestigation: 'Phase 1 lab investigation found no analytical error. Manufacturing investigation ongoing.' })
   await d5.comment('erik', 'Interviews with the granulation team booked for Thursday.')
+  const capa1 = await approvedCapa(d5, users, 'Make the assay method robust to column ageing', 'Column performance drifts after ~800 injections; the method has no system suitability limit for it.')
+  const act1 = await capa1.subcase('erik', 'activities', 'ACT', 'Revalidate HPLC-03 assay with aged columns')
+  await act1.move('erik', 'forward', {
+    actionType: 'Corrective',
+    description: 'Run the robustness study with columns at 600, 800 and 1000 injections and update the method SOP.',
+    actionOwner: users.lina,
+    dueDate: new Date(Date.now() + 10 * DAY).toISOString().slice(0, 10),
+    priority: 'High',
+  })
+  await act1.age(2)
+  await capa1.age(6)
   await d5.age(9)
 
   // DEV6 — waiting in the QA inbox, overdue
@@ -297,6 +340,27 @@ async function buildCases(caseTypeId: string, config: CaseTypeConfig, users: Rec
   ))
   await d7.take('erik')
   await d7.move('erik', 'forward', { initialClassification: 'Major deviation', initialJustification: 'Foreign particles in product.' })
+  const capa2 = await approvedCapa(d7, users, 'Shorten the maintenance interval for punch seals', 'Punch seals wear faster than the 12-week PM interval assumes.')
+  const act2 = await capa2.subcase('erik', 'activities', 'ACT', 'Replace punch seals on TAB-005 and update the PM plan')
+  await act2.move('erik', 'forward', {
+    actionType: 'Corrective',
+    description: 'Replace all punch seals and change the PM interval from 12 to 8 weeks in the maintenance system.',
+    actionOwner: users.johan,
+    dueDate: new Date(Date.now() + 7 * DAY).toISOString().slice(0, 10),
+  })
+  await act2.move('johan', 'forward', { progress: 'Seals replaced 3 Oct, PM plan updated (WO-7731).', completedDate: new Date(Date.now() - 2 * DAY).toISOString().slice(0, 10) })
+  await capa2.move('erik', 'forward', {
+    changeLeader: users.erik,
+    createCc: 'No',
+    implementationSummary: 'Seals replaced and PM interval shortened to 8 weeks (ACT2).',
+  })
+  await capa2.move('johan', 'forward', {
+    activitiesDone: 'Yes',
+    effectAchieved: 'Yes',
+    effectDescription: 'No particle findings in the 6 batches compressed since the change.',
+  }, 'I confirm the CAPA was effective')
+  await act2.age(24)
+  await capa2.age(28)
   await d7.move('erik', 'forward', {
     classification: 'Major deviation',
     rootCauseInvestigation: 'Worn punch seal released rubber particles. Maintenance interval exceeded by 3 weeks.',
@@ -338,19 +402,20 @@ async function buildCases(caseTypeId: string, config: CaseTypeConfig, users: Rec
 async function main() {
   const users = await ensureUsers()
   const bindings = await ensureGroups(users)
-  const { caseTypeId } = await prepareCaseType(bindings, users.admin)
+  await prepareCaseTypes(bindings, users.admin)
 
-  // Reset: only the DEV case type's cases and their notifications
-  const old = await prisma.case.findMany({ where: { caseTypeId }, select: { number: true } })
+  // Reset: only the built-in case types' cases (sub cases first) and their notifications
+  const caseTypeIds = Object.values(TYPES).map((t) => t.id)
+  const old = await prisma.case.findMany({ where: { caseTypeId: { in: caseTypeIds } }, select: { number: true } })
   await prisma.notification.deleteMany({ where: { link: { in: old.map((c) => `/cases/${c.number}`) } } })
-  await prisma.case.deleteMany({ where: { caseTypeId } })
-  await prisma.caseType.update({ where: { id: caseTypeId }, data: { nextNumber: 1 } })
+  await prisma.case.deleteMany({ where: { caseTypeId: { in: caseTypeIds }, parentId: { not: null } } })
+  await prisma.case.deleteMany({ where: { caseTypeId: { in: caseTypeIds } } })
+  await prisma.caseType.updateMany({ where: { id: { in: caseTypeIds } }, data: { nextNumber: 1 } })
 
-  const latest = await prisma.caseTypeVersion.findFirstOrThrow({ where: { caseTypeId }, orderBy: { version: 'desc' } })
-  await buildCases(caseTypeId, CaseTypeConfigSchema.parse(latest.config), users)
+  await buildCases(users)
 
-  const count = await prisma.case.count({ where: { caseTypeId } })
-  console.log(`Demo ready: ${count} DEV cases. Log in as e.g. anna.berg@nexus.demo / ${PASSWORD} (admin: admin@nexus.demo).`)
+  const counts = await Promise.all(Object.entries(TYPES).map(async ([p, t]) => `${await prisma.case.count({ where: { caseTypeId: t.id } })} ${p}`))
+  console.log(`Demo ready: ${counts.join(', ')} cases. Log in as e.g. anna.berg@nexus.demo / ${PASSWORD} (admin: admin@nexus.demo).`)
 }
 
 main()

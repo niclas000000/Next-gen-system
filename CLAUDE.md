@@ -89,7 +89,15 @@ prisma/  schema.prisma, seed.ts (admin, system views, DEV case type), demo.ts (d
   e-signature (password + meaning → `CaseEvent signed`), notifications for e-mail rules and phase entry
   (e-mail itself is a console stub), comments, attachments (files under `uploads/`, gitignored), inbox, list.
 - Prisma: `CaseType` (draft JSON, unique prefix, `roleBindings`, `nextNumber`), immutable `CaseTypeVersion`
-  (running cases keep their version), `Case`, `CaseEvent`, `CaseComment`, `CaseAttachment`, `ProcessCaseType`.
+  (running cases keep their version), `Case` (with `parentId`/`parentFieldId` for sub cases), `CaseEvent`,
+  `CaseComment`, `CaseAttachment`, `ProcessCaseType`.
+- **Sub cases**: a `subcase` field creates cases of the type named by `subcaseTypeName` (else a type named like the
+  field). The field's value is the list of child case ids — written only by `createCase(…, parent)`, never by a save,
+  so mandatory checks count sub cases. `subcasesMustBeClosed` blocks forward/quick close while children are open
+  (`CaseSnapshot.openSubcases`). A child closing notifies whoever has the parent and logs `subcaseClosed` there.
+- Built-in case types live in `lib/case-config/fixtures`: CANEA reference JSON exported unchanged from Workshop-tool
+  (Deviation EX-26714, CAPA EX-26738, Action) + idempotent Nexus adjustments in `fixtures/index.ts` (sub case targets,
+  structured CAPA QA rules, hidden "Comments" sub cases). Seed creates them; `demo:reset` re-applies the adjustments.
 - Other models: `User`, `Group` (members[] used for role bindings), `Document*`, `ApprovalFlow`, `DocumentType`,
   `Process*`, `ProcessRole`, `LookupTable/Value`, `RegistryItem`, `SystemView`, `SavedView`, `ViewFolder`,
   `Notification`, `SystemSetting`. JSON writes use `as never` casts (repo convention).
@@ -145,7 +153,8 @@ Never use raw Tailwind palette colours (blue/green/slate …) or hex in componen
 - Case type designer with Blueprint JSON import, autosave, undo/redo, validation, publish to versions, Try it.
 - Documents (library, editor, versions, read receipts, approval flows), processes (tree, canvas, links to
   documents and case types), admin pages.
-- Demo: `npm run demo:reset` → demo users (password `demo`), inbox groups, 8 DEV cases in every state.
+- Demo: `npm run demo:reset` → demo users (password `demo`), inbox groups, 8 DEV cases in every state, CAPA1 (from DEV5,
+  in implementation, blocked by open ACT1) and CAPA2 + ACT2 (from DEV7, closed).
 - CANEA ONE import: `npm run import:canea -- --workflow wf_dev.txt --rules wf_dev_rules.txt --registry wf_reg.xlsx [--out x.json] [--create]`
   (`lib/case-config/importers/canea-sql.ts`, pure + tested). Property categories merge per-phase items into one field;
   ConstraintType 0/4 = eq/neq; ProtectedFieldRule Value1 False/True = hidden/read-only, IDType 1 = fields, 7 = roles it
@@ -154,7 +163,7 @@ Never use raw Tailwind palette colours (blue/green/slate …) or hex in componen
 
 ### Not yet / ideas
 - Group roles set from a chosen org unit (CANEA "role from registry") need manual group bindings after import.
-- Sub cases (CAPA, Action) are placeholders; e-mail is a console stub; SMS/web service/computed/alarm rules are
+- Change control (CC) sub cases have no case type yet; e-mail is a console stub; SMS/web service/computed/alarm rules are
   kept from imports but not executed; no per-case security levels; property categories for cross-case reporting.
 
 ---

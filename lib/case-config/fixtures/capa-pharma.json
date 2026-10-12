@@ -1,0 +1,1677 @@
+{
+  "caseTypeName": "CAPA",
+  "prefix": "CAPA",
+  "securityLevel": 1,
+  "description": "CAPA for a GMP-regulated Life Science company: Registration → Manager approval → QA approval → Implementation → Follow-up. Two-step approval with e-signature, activities as sub cases, optional change control from implementation, and manager follow-up of effect.",
+  "roles": [
+    {
+      "id": "initiator",
+      "name": "Initiator",
+      "description": "Registers the CAPA (orig. Initierare)",
+      "kind": "user"
+    },
+    {
+      "id": "reporter",
+      "name": "Reporter",
+      "description": "Auto: logged-in user (orig. Inrapportör)",
+      "kind": "user"
+    },
+    {
+      "id": "capaLeader",
+      "name": "CAPA leader",
+      "description": "Drives implementation (orig. CAPA-ledare)",
+      "kind": "user"
+    },
+    {
+      "id": "capaLeaderGroup",
+      "name": "CAPA leader group",
+      "description": "Hidden group role for inbox (orig. CAPA-ledare grupp)",
+      "kind": "group"
+    },
+    {
+      "id": "managerApprover",
+      "name": "Manager approver",
+      "description": "Manager within the area of responsibility who approves the CAPA and performs the follow-up (orig. Chef-godkännare)",
+      "kind": "user"
+    },
+    {
+      "id": "qaApprover",
+      "name": "QA approver",
+      "description": "QA within the area of responsibility (orig. QA-godkännare)",
+      "kind": "user"
+    }
+  ],
+  "registries": [
+    {
+      "id": "r-ownership",
+      "name": "Ownership of CAPA",
+      "values": [
+        "Production",
+        "QC",
+        "QA",
+        "Engineering",
+        "Supply chain"
+      ],
+      "comments": "Customer-specific list",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-site",
+      "name": "Affected site",
+      "values": [
+        "Site A",
+        "Site B"
+      ],
+      "comments": "Customer-specific list",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-yesNo",
+      "name": "Yes/No",
+      "values": [
+        "Yes",
+        "No"
+      ],
+      "comments": "",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-origin",
+      "name": "Origin",
+      "values": [
+        "CAPA",
+        "DEV",
+        "CC",
+        "Audit"
+      ],
+      "comments": "Hidden, default CAPA",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-users",
+      "name": "Users",
+      "values": [],
+      "comments": "The system's user register",
+      "parentRegistryId": null,
+      "parents": {}
+    }
+  ],
+  "fields": [
+    {
+      "id": "caseCreated",
+      "name": "Case created",
+      "type": "date",
+      "section": "Registration",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Auto, read-only (orig. Ärende skapat)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "reporter",
+      "name": "Reporter",
+      "type": "registrySearch",
+      "section": "Registration",
+      "mandatory": false,
+      "registryId": "r-users",
+      "multi": false,
+      "comments": "Auto: logged-in user, read-only",
+      "assignsRoleId": null
+    },
+    {
+      "id": "guidance",
+      "name": "Guidance",
+      "type": "url",
+      "section": "Registration",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Hyperlink to instruction in the Document module",
+      "assignsRoleId": null
+    },
+    {
+      "id": "ownership",
+      "name": "Ownership of CAPA",
+      "type": "registryDropdown",
+      "section": "Registration",
+      "mandatory": true,
+      "registryId": "r-ownership",
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "site",
+      "name": "Affected site",
+      "type": "registryDropdown",
+      "section": "Registration",
+      "mandatory": true,
+      "registryId": "r-site",
+      "multi": true,
+      "comments": "Orig. Ort som berörs",
+      "assignsRoleId": null
+    },
+    {
+      "id": "rootCauseProposal",
+      "name": "Why / root cause / proposed solution",
+      "type": "textMultiline",
+      "section": "Registration",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "Describe the root cause found. Propose preventive and/or corrective actions (orig. Varför/grundorsak/lösningsförslag)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "expectedEffect",
+      "name": "Expected effect of the change and how it will be measured",
+      "type": "textMultiline",
+      "section": "Registration",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "riskAssessment",
+      "name": "Risk assessment",
+      "type": "textMultiline",
+      "section": "Registration",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "Assess the risks of the proposed actions",
+      "assignsRoleId": null
+    },
+    {
+      "id": "plannedDate",
+      "name": "Planned completion date",
+      "type": "date",
+      "section": "Registration",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "Date when the CAPA is expected to be implemented",
+      "assignsRoleId": null
+    },
+    {
+      "id": "plannedFollowUpDate",
+      "name": "Planned follow-up date",
+      "type": "date",
+      "section": "Registration",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "Date when the follow-up of the CAPA is planned to be done",
+      "assignsRoleId": null
+    },
+    {
+      "id": "managerApprover",
+      "name": "Manager approver",
+      "type": "registrySearch",
+      "section": "Role assignment",
+      "mandatory": true,
+      "registryId": "r-users",
+      "multi": false,
+      "comments": "Select the manager within the area of responsibility who will approve the CAPA",
+      "assignsRoleId": "managerApprover"
+    },
+    {
+      "id": "qaApprover",
+      "name": "QA approver",
+      "type": "registrySearch",
+      "section": "Role assignment",
+      "mandatory": true,
+      "registryId": "r-users",
+      "multi": false,
+      "comments": "Select QA within the area of responsibility",
+      "assignsRoleId": "qaApprover"
+    },
+    {
+      "id": "capaLeader",
+      "name": "CAPA leader",
+      "type": "registrySearch",
+      "section": "Role assignment",
+      "mandatory": true,
+      "registryId": "r-users",
+      "multi": false,
+      "comments": "Select the individual who gets the right to handle the CAPA",
+      "assignsRoleId": "capaLeader"
+    },
+    {
+      "id": "activities",
+      "name": "Activities",
+      "type": "subcase",
+      "section": "Activities",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Sub case: Activity (AKT). A saved activity can be opened to complete/adjust and attach files",
+      "assignsRoleId": null
+    },
+    {
+      "id": "comments",
+      "name": "Comments",
+      "type": "subcase",
+      "section": "Activities",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Sub case: Comment",
+      "assignsRoleId": null
+    },
+    {
+      "id": "attachments",
+      "name": "Attached files and documents",
+      "type": "attachments",
+      "section": "Activities",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "origin",
+      "name": "Origin",
+      "type": "registryDropdown",
+      "section": "Activities",
+      "mandatory": false,
+      "registryId": "r-origin",
+      "multi": false,
+      "comments": "Hidden, default CAPA",
+      "assignsRoleId": null
+    },
+    {
+      "id": "prevReg",
+      "name": "Registration",
+      "type": "collapsiblePanel",
+      "section": "Information from previous phases",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Contains all fields from Registration",
+      "assignsRoleId": null
+    },
+    {
+      "id": "managerDecision",
+      "name": "Shall the CAPA and its activities be carried out?",
+      "type": "registryDropdown",
+      "section": "Manager approval",
+      "mandatory": true,
+      "registryId": "r-yesNo",
+      "multi": false,
+      "comments": "Rules: Yes → must be sent forward; No → sent forward to QA; more information needed → backward. E-signature on forward",
+      "assignsRoleId": null
+    },
+    {
+      "id": "managerJustification",
+      "name": "Justification",
+      "type": "textMultiline",
+      "section": "Manager approval",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "Orig. Motivera",
+      "assignsRoleId": null
+    },
+    {
+      "id": "prevManager",
+      "name": "Manager approval",
+      "type": "collapsiblePanel",
+      "section": "Information from previous phases",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Contains all fields from Manager approval",
+      "assignsRoleId": null
+    },
+    {
+      "id": "qaDecision",
+      "name": "Shall the CAPA and its activities be carried out?",
+      "type": "registryDropdown",
+      "section": "QA approval",
+      "mandatory": true,
+      "registryId": "r-yesNo",
+      "multi": false,
+      "comments": "Rules: Yes → forward; No → quick close (P); more information → backward to phase 1. E-signature on forward & quick close",
+      "assignsRoleId": null
+    },
+    {
+      "id": "qaJustification",
+      "name": "Justification",
+      "type": "textMultiline",
+      "section": "QA approval",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "prevQa",
+      "name": "QA approval",
+      "type": "collapsiblePanel",
+      "section": "Information from previous phases",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Contains all fields from QA approval",
+      "assignsRoleId": null
+    },
+    {
+      "id": "changeLeader",
+      "name": "Change CAPA leader",
+      "type": "registrySearch",
+      "section": "Implementation",
+      "mandatory": true,
+      "registryId": "r-users",
+      "multi": false,
+      "comments": "When changing the CAPA leader a comment must be given (orig. Ändra CAPA-ledare)",
+      "assignsRoleId": "capaLeader"
+    },
+    {
+      "id": "changeLeaderBtn",
+      "name": "Confirm CAPA leader",
+      "type": "button",
+      "section": "Implementation",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Saves/checks in and e-mails the new CAPA leader",
+      "assignsRoleId": null
+    },
+    {
+      "id": "createCc",
+      "name": "Create change control (CC)?",
+      "type": "registryDropdown",
+      "section": "Implementation",
+      "mandatory": true,
+      "registryId": "r-yesNo",
+      "multi": false,
+      "comments": "Rule: the CC sub case is hidden unless = Yes",
+      "assignsRoleId": null
+    },
+    {
+      "id": "createCcBtn",
+      "name": "Confirm",
+      "type": "button",
+      "section": "Implementation",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "changeControl",
+      "name": "Change control (CC)",
+      "type": "subcase",
+      "section": "Implementation",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Sub case: Change request (CC)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "capaDone",
+      "name": "CAPA implemented",
+      "type": "date",
+      "section": "Implementation",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "Orig. CAPA genomförd",
+      "assignsRoleId": null
+    },
+    {
+      "id": "implementationSummary",
+      "name": "Summary of implementation",
+      "type": "textMultiline",
+      "section": "Implementation",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "Summary of the activities performed, used as basis for the follow-up",
+      "assignsRoleId": null
+    },
+    {
+      "id": "implementationDate",
+      "name": "Implementation date",
+      "type": "date",
+      "section": "Implementation",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "The date the change is introduced in the operation",
+      "assignsRoleId": null
+    },
+    {
+      "id": "prevImpl",
+      "name": "Implementation",
+      "type": "collapsiblePanel",
+      "section": "Information from previous phases",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Contains all fields from Implementation",
+      "assignsRoleId": null
+    },
+    {
+      "id": "activitiesDone",
+      "name": "Have the activities been carried out as decided?",
+      "type": "registryDropdown",
+      "section": "Follow-up",
+      "mandatory": true,
+      "registryId": "r-yesNo",
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "deviationFromDecision",
+      "name": "Describe any deviation from the decision",
+      "type": "textMultiline",
+      "section": "Follow-up",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "effectAchieved",
+      "name": "Is the desired effect achieved?",
+      "type": "registryDropdown",
+      "section": "Follow-up",
+      "mandatory": true,
+      "registryId": "r-yesNo",
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "effectDescription",
+      "name": "Describe the achieved / missing effect",
+      "type": "textMultiline",
+      "section": "Follow-up",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "Has the change had the desired effect? Make sure no unintended consequences have occurred",
+      "assignsRoleId": null
+    },
+    {
+      "id": "followUpDone",
+      "name": "Follow-up performed",
+      "type": "date",
+      "section": "Follow-up",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    }
+  ],
+  "phases": [
+    {
+      "id": "registration",
+      "name": "Registration",
+      "description": "The initiator describes root cause, proposed actions, expected effect and risk, plans dates and assigns manager approver, QA approver and CAPA leader. Activities are created as sub cases. On forward: e-mail to the manager approver.",
+      "responsibleRoleIds": [
+        "initiator"
+      ],
+      "permissions": {
+        "initiator": {
+          "edit": true,
+          "forward": true,
+          "backward": false,
+          "preEnd": false
+        }
+      },
+      "fields": {
+        "caseCreated": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "reporter": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "guidance": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "ownership": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "site": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "rootCauseProposal": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "expectedEffect": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "riskAssessment": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "plannedDate": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "plannedFollowUpDate": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "managerApprover": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "qaApprover": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "capaLeader": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "activities": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "comments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "attachments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "origin": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        }
+      },
+      "layout": [],
+      "rules": [
+        {
+          "id": "m-1",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "email",
+          "recipientRoleIds": [
+            "managerApprover"
+          ],
+          "recipientText": "",
+          "subject": "CAPA [ID] – [Title] for your approval",
+          "message": ""
+        }
+      ],
+      "deadlineDays": 5,
+      "deadlineHours": null
+    },
+    {
+      "id": "managerApproval",
+      "name": "Manager approval",
+      "description": "The manager decides whether the CAPA and its activities shall be carried out. Approved or rejected → forward to QA; more information needed → backward. E-signature on forward.",
+      "responsibleRoleIds": [
+        "managerApprover"
+      ],
+      "permissions": {
+        "managerApprover": {
+          "edit": true,
+          "forward": true,
+          "backward": true,
+          "preEnd": false
+        }
+      },
+      "fields": {
+        "caseCreated": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "reporter": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "guidance": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "ownership": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "site": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "rootCauseProposal": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "expectedEffect": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "riskAssessment": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "plannedDate": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "plannedFollowUpDate": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "managerApprover": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "qaApprover": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "capaLeader": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevReg": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "managerDecision": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "managerJustification": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "activities": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "comments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "attachments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "origin": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        }
+      },
+      "layout": [],
+      "rules": [
+        {
+          "id": "pr-capa-mgr",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "eSignature"
+        },
+        {
+          "id": "pr-capa-mgr-dir",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "Decision given (Yes/No)",
+          "comments": "",
+          "type": "direction",
+          "allowed": "forward",
+          "message": "The CAPA must be sent forward to QA when a decision is given."
+        },
+        {
+          "id": "m-2",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "email",
+          "recipientRoleIds": [
+            "qaApprover"
+          ],
+          "recipientText": "",
+          "subject": "CAPA [ID] – [Title] for QA approval",
+          "message": ""
+        },
+        {
+          "id": "m-3",
+          "name": "",
+          "triggers": [
+            "onBackward"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "email",
+          "recipientRoleIds": [
+            "capaLeader"
+          ],
+          "recipientText": "",
+          "subject": "CAPA [ID] sent back for completion",
+          "message": ""
+        }
+      ],
+      "deadlineDays": 5,
+      "deadlineHours": null
+    },
+    {
+      "id": "qaApproval",
+      "name": "QA approval",
+      "description": "QA approves (forward), rejects (quick close) or sends back to Registration for completion. E-signature on forward and quick close.",
+      "responsibleRoleIds": [
+        "qaApprover"
+      ],
+      "permissions": {
+        "qaApprover": {
+          "edit": true,
+          "forward": true,
+          "backward": true,
+          "preEnd": true
+        }
+      },
+      "fields": {
+        "caseCreated": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "reporter": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "guidance": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "ownership": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "site": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "rootCauseProposal": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "expectedEffect": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "riskAssessment": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "plannedDate": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "plannedFollowUpDate": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "managerApprover": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "qaApprover": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "capaLeader": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "managerDecision": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "managerJustification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevReg": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevManager": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "qaDecision": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "qaJustification": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "activities": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "comments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "attachments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "origin": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        }
+      },
+      "layout": [],
+      "rules": [
+        {
+          "id": "pr-capa-qa",
+          "name": "",
+          "triggers": [
+            "onForward",
+            "onPreEnd"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "eSignature"
+        },
+        {
+          "id": "pr-capa-qa-yes",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "Shall the CAPA be carried out? = Yes",
+          "comments": "",
+          "type": "direction",
+          "allowed": "forward",
+          "message": "Approved CAPAs are sent forward to implementation."
+        },
+        {
+          "id": "pr-capa-qa-no",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "Shall the CAPA be carried out? = No",
+          "comments": "",
+          "type": "direction",
+          "allowed": "preEnd",
+          "message": "Rejected CAPAs are quick-closed."
+        },
+        {
+          "id": "fr-1",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "More information needed (backward)",
+          "comments": "",
+          "type": "flowChange",
+          "toPhaseId": "registration"
+        },
+        {
+          "id": "m-4",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "email",
+          "recipientRoleIds": [
+            "capaLeader"
+          ],
+          "recipientText": "",
+          "subject": "CAPA [ID] approved – implementation can start",
+          "message": ""
+        },
+        {
+          "id": "m-5",
+          "name": "",
+          "triggers": [
+            "onBackward"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "email",
+          "recipientRoleIds": [
+            "capaLeader"
+          ],
+          "recipientText": "",
+          "subject": "CAPA [ID] sent back by QA",
+          "message": ""
+        }
+      ],
+      "deadlineDays": 5,
+      "deadlineHours": null
+    },
+    {
+      "id": "implementation",
+      "name": "Implementation",
+      "description": "The CAPA leader carries out the activities, optionally creates a change control (CC) sub case, and documents implementation and implementation date. On forward: e-mail to the manager approver.",
+      "responsibleRoleIds": [
+        "capaLeader"
+      ],
+      "permissions": {
+        "capaLeader": {
+          "edit": true,
+          "forward": true,
+          "backward": true,
+          "preEnd": false
+        },
+        "capaLeaderGroup": {
+          "edit": true,
+          "forward": false,
+          "backward": false,
+          "preEnd": false
+        }
+      },
+      "fields": {
+        "caseCreated": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "reporter": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "guidance": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "ownership": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "site": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "rootCauseProposal": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "expectedEffect": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "riskAssessment": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "plannedDate": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "plannedFollowUpDate": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "managerApprover": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "qaApprover": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "capaLeader": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "managerDecision": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "managerJustification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "qaDecision": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "qaJustification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevReg": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevManager": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevQa": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeLeader": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "changeLeaderBtn": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "activities": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "createCc": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "createCcBtn": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "changeControl": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "capaDone": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "implementationSummary": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "implementationDate": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "comments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "attachments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "origin": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        }
+      },
+      "layout": [],
+      "rules": [
+        {
+          "id": "fr-2",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "Backward",
+          "comments": "",
+          "type": "flowChange",
+          "toPhaseId": "registration"
+        },
+        {
+          "id": "r-cc-implementation",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "createCc",
+            "operator": "neq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "changeControl"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "m-6",
+          "name": "",
+          "triggers": [
+            "onButtonClick"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "email",
+          "recipientRoleIds": [
+            "capaLeader"
+          ],
+          "recipientText": "",
+          "subject": "You have been assigned CAPA [ID]",
+          "message": ""
+        },
+        {
+          "id": "m-7",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "email",
+          "recipientRoleIds": [
+            "managerApprover"
+          ],
+          "recipientText": "",
+          "subject": "CAPA [ID] implemented – follow-up",
+          "message": ""
+        }
+      ],
+      "deadlineDays": 60,
+      "deadlineHours": null
+    },
+    {
+      "id": "followUp",
+      "name": "Follow-up",
+      "description": "The manager verifies that activities were carried out as decided and that the desired effect is achieved. E-signature on forward (closure).",
+      "responsibleRoleIds": [
+        "managerApprover"
+      ],
+      "permissions": {
+        "managerApprover": {
+          "edit": true,
+          "forward": true,
+          "backward": true,
+          "preEnd": false
+        }
+      },
+      "fields": {
+        "caseCreated": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "reporter": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "guidance": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "ownership": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "site": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "rootCauseProposal": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "expectedEffect": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "riskAssessment": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "plannedDate": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "plannedFollowUpDate": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "managerApprover": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "qaApprover": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "capaLeader": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "managerDecision": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "managerJustification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "qaDecision": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "qaJustification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "capaDone": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "implementationSummary": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "implementationDate": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevReg": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevManager": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevQa": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevImpl": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "activitiesDone": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "deviationFromDecision": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "effectAchieved": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "effectDescription": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "followUpDone": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "activities": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeControl": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "comments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "attachments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "origin": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        }
+      },
+      "layout": [],
+      "rules": [
+        {
+          "id": "pr-capa-fu",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "eSignature"
+        },
+        {
+          "id": "r-cc-followUp",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "createCc",
+            "operator": "neq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "changeControl"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-devdec",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": {
+            "fieldId": "activitiesDone",
+            "operator": "eq",
+            "value": "No"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "mandatory",
+          "fieldIds": [
+            "deviationFromDecision"
+          ]
+        },
+        {
+          "id": "m-8",
+          "name": "",
+          "triggers": [
+            "onBackward"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "email",
+          "recipientRoleIds": [
+            "capaLeader"
+          ],
+          "recipientText": "",
+          "subject": "CAPA [ID] sent back from follow-up",
+          "message": ""
+        }
+      ],
+      "deadlineDays": 90,
+      "deadlineHours": null
+    }
+  ],
+  "views": [
+    {
+      "id": "v-1",
+      "name": "Open CAPAs",
+      "columns": [
+        "ID",
+        "Title",
+        "Created date",
+        "Phase overview",
+        "Role column"
+      ],
+      "filters": "Workflow = CAPA, Closed = False",
+      "comments": ""
+    }
+  ],
+  "systemRoles": [
+    {
+      "id": "sys-admin",
+      "name": "Admin",
+      "isDefault": false,
+      "securityLevel": 10,
+      "permissions": [
+        "Use the module",
+        "Create cases",
+        "Manage cases",
+        "See views",
+        "See diagrams",
+        "Create case views",
+        "Create diagram",
+        "Create templates",
+        "Manage all cases",
+        "Conf. Module",
+        "Admin"
+      ]
+    },
+    {
+      "id": "sys-reporter",
+      "name": "Reporter",
+      "isDefault": true,
+      "securityLevel": 1,
+      "permissions": [
+        "Use the module",
+        "Create cases",
+        "See views"
+      ]
+    },
+    {
+      "id": "sys-handler",
+      "name": "Case handler",
+      "isDefault": false,
+      "securityLevel": 1,
+      "permissions": [
+        "Use the module",
+        "Create cases",
+        "Manage cases",
+        "See views",
+        "See diagrams",
+        "Create case views",
+        "Manage all cases"
+      ]
+    }
+  ],
+  "relatedCaseTypes": [
+    {
+      "id": "rel-1",
+      "name": "Deviation (DEV)",
+      "relation": "parent",
+      "description": "CAPA is usually created from a deviation"
+    },
+    {
+      "id": "rel-2",
+      "name": "Comment",
+      "relation": "sub",
+      "description": "Comments"
+    },
+    {
+      "id": "rel-3",
+      "name": "Activity (AKT)",
+      "relation": "sub",
+      "description": "Activities"
+    },
+    {
+      "id": "rel-4",
+      "name": "Change request (CC)",
+      "relation": "sub",
+      "description": "Created from Implementation when needed"
+    },
+    {
+      "id": "rel-5",
+      "name": "Change request (CR)",
+      "relation": "related",
+      "description": "Change request"
+    }
+  ],
+  "requirements": [
+    {
+      "standard": "GMP",
+      "clause": "EU GMP Ch. 1.8",
+      "title": "CAPA"
+    },
+    {
+      "standard": "GMP",
+      "clause": "ICH Q10 3.2.2",
+      "title": "CAPA system"
+    },
+    {
+      "standard": "GMP",
+      "clause": "EU GMP Annex 11",
+      "title": "Computerised systems – electronic signatures"
+    }
+  ],
+  "notes": "Reference configuration EX-26738 (Workflow – CAPA – Life Science, Pharma), translated to English.\n\nRules in the original: mandatory fields on forward/backward; hidden mandatory checkboxes force the correct direction (approved → forward, rejected → forward to QA / quick close at QA, more information → backward); QA backward goes to phase 1 (flow change); e-signature on forward from Manager approval, QA approval (also quick close) and Follow-up; CC sub case hidden unless 'Create CC' = Yes; 'Describe any deviation from the decision' mandatory if 'Activities carried out as decided' = No."
+}

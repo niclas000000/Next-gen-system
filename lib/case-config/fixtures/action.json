@@ -1,0 +1,402 @@
+{
+  "caseTypeName": "Action",
+  "prefix": "ACT",
+  "securityLevel": 1,
+  "description": "Simple action as sub case: Register → Execute.",
+  "roles": [
+    {
+      "id": "assigner",
+      "name": "Case owner",
+      "description": "Creates the action from the parent case",
+      "kind": "user"
+    },
+    {
+      "id": "actionOwner",
+      "name": "Action owner",
+      "description": "Carries out the action",
+      "kind": "user"
+    },
+    {
+      "id": "verifier",
+      "name": "Verifier",
+      "description": "Verifies effectiveness",
+      "kind": "user"
+    }
+  ],
+  "registries": [
+    {
+      "id": "r-actionType",
+      "name": "Action type",
+      "values": [
+        "Immediate",
+        "Corrective",
+        "Preventive",
+        "Improvement"
+      ],
+      "comments": "",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-priority",
+      "name": "Priority",
+      "values": [
+        "Low",
+        "Medium",
+        "High"
+      ],
+      "comments": "",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-users",
+      "name": "Users",
+      "values": [],
+      "comments": "",
+      "parentRegistryId": null,
+      "parents": {}
+    }
+  ],
+  "fields": [
+    {
+      "id": "title",
+      "name": "Title",
+      "type": "text",
+      "section": "Header",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "actionType",
+      "name": "Action type",
+      "type": "registryDropdown",
+      "section": "Action",
+      "mandatory": true,
+      "registryId": "r-actionType",
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "description",
+      "name": "Description of action",
+      "type": "textMultiline",
+      "section": "Action",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "actionOwner",
+      "name": "Action owner",
+      "type": "registrySearch",
+      "section": "Action",
+      "mandatory": true,
+      "registryId": "r-users",
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "dueDate",
+      "name": "Due date",
+      "type": "date",
+      "section": "Action",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "priority",
+      "name": "Priority",
+      "type": "registryDropdown",
+      "section": "Action",
+      "mandatory": false,
+      "registryId": "r-priority",
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "progress",
+      "name": "Progress / comments",
+      "type": "textMultiline",
+      "section": "Execution",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "completedDate",
+      "name": "Completed date",
+      "type": "date",
+      "section": "Execution",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "evidence",
+      "name": "Evidence",
+      "type": "attachments",
+      "section": "Execution",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    }
+  ],
+  "phases": [
+    {
+      "id": "register",
+      "name": "Register",
+      "description": "",
+      "responsibleRoleIds": [
+        "assigner"
+      ],
+      "permissions": {
+        "assigner": {
+          "edit": true,
+          "forward": true,
+          "backward": false,
+          "preEnd": true
+        },
+        "actionOwner": {
+          "edit": true,
+          "forward": false,
+          "backward": false,
+          "preEnd": false
+        }
+      },
+      "fields": {
+        "title": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "actionType": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "description": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "actionOwner": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "dueDate": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "priority": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        }
+      },
+      "layout": [],
+      "rules": [
+        {
+          "id": "m-1",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "email",
+          "recipientRoleIds": [
+            "actionOwner"
+          ],
+          "recipientText": "",
+          "subject": "Action [ID] assigned to you – due [Due date]",
+          "message": ""
+        },
+        {
+          "id": "m-2",
+          "name": "",
+          "triggers": [
+            "onSave"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "When due date is passed (No phase in the original configuration)",
+          "type": "email",
+          "recipientRoleIds": [
+            "assigner"
+          ],
+          "recipientText": "",
+          "subject": "Action [ID] overdue",
+          "message": ""
+        }
+      ],
+      "deadlineDays": 2,
+      "deadlineHours": null
+    },
+    {
+      "id": "execute",
+      "name": "Execute",
+      "description": "",
+      "responsibleRoleIds": [
+        "actionOwner"
+      ],
+      "permissions": {
+        "actionOwner": {
+          "edit": true,
+          "forward": true,
+          "backward": true,
+          "preEnd": false
+        },
+        "assigner": {
+          "edit": true,
+          "forward": true,
+          "backward": true,
+          "preEnd": true
+        }
+      },
+      "fields": {
+        "title": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "actionType": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "description": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "actionOwner": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "dueDate": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "priority": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "progress": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "completedDate": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "evidence": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        }
+      },
+      "layout": [],
+      "rules": [],
+      "deadlineDays": 30,
+      "deadlineHours": null
+    }
+  ],
+  "views": [
+    {
+      "id": "v-1",
+      "name": "My actions",
+      "columns": [
+        "ID",
+        "Title",
+        "Created date",
+        "Phase overview",
+        "Superior case"
+      ],
+      "filters": "Role column = current user, Closed = False",
+      "comments": ""
+    }
+  ],
+  "systemRoles": [
+    {
+      "id": "sys-admin",
+      "name": "Admin",
+      "isDefault": false,
+      "securityLevel": 10,
+      "permissions": [
+        "Use the module",
+        "Create cases",
+        "Manage cases",
+        "See views",
+        "See diagrams",
+        "Create case views",
+        "Create diagram",
+        "Create templates",
+        "Manage all cases",
+        "Conf. Module",
+        "Admin"
+      ]
+    },
+    {
+      "id": "sys-reporter",
+      "name": "Reporter",
+      "isDefault": true,
+      "securityLevel": 1,
+      "permissions": [
+        "Use the module",
+        "Create cases",
+        "See views"
+      ]
+    },
+    {
+      "id": "sys-handler",
+      "name": "Case handler",
+      "isDefault": false,
+      "securityLevel": 1,
+      "permissions": [
+        "Use the module",
+        "Create cases",
+        "Manage cases",
+        "See views",
+        "See diagrams",
+        "Create case views",
+        "Manage all cases"
+      ]
+    }
+  ],
+  "relatedCaseTypes": [
+    {
+      "id": "rel-parent",
+      "name": "Main case (any)",
+      "relation": "parent",
+      "description": "Created as sub case from a parent case"
+    }
+  ],
+  "requirements": [],
+  "notes": ""
+}

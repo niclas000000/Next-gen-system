@@ -29,6 +29,7 @@ export interface EditorProps {
   published: { version: number; publishedAt: string | Date; config: CaseTypeConfig } | null
   groups: EditorApi['groups']
   users: EditorApi['users']
+  caseTypeNames: string[]
 }
 
 const TABS: { id: EditorTab; label: string; section?: ValidationIssue['section'][] }[] = [
@@ -52,7 +53,7 @@ const SECTION_TAB: Record<ValidationIssue['section'], EditorTab> = {
 
 type SaveState = 'saved' | 'pending' | 'saving' | 'error'
 
-export function CaseTypeEditor({ caseType, draft, bindings: initialBindings, published, groups, users }: EditorProps) {
+export function CaseTypeEditor({ caseType, draft, bindings: initialBindings, published, groups, users, caseTypeNames }: EditorProps) {
   const router = useRouter()
   const toast = useToast()
   const [config, setConfig] = useState(draft)
@@ -190,6 +191,7 @@ export function CaseTypeEditor({ caseType, draft, bindings: initialBindings, pub
     issues,
     groups,
     users,
+    caseTypeNames,
     goTo: (t, id) => {
       setTab(t)
       setFocusId(id ?? null)

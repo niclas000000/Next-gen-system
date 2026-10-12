@@ -25,7 +25,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const user = await requireUser()
   if (user instanceof NextResponse) return user
-  const body = (await req.json()) as { caseTypeId?: string; title?: string }
+  const body = (await req.json()) as { caseTypeId?: string; title?: string; parent?: { caseId: string; fieldId: string } }
   if (!body.caseTypeId) return NextResponse.json({ error: 'caseTypeId required' }, { status: 400 })
-  return handle(async () => ({ case: await createCase(body.caseTypeId!, body.title ?? '', user.id) }))
+  return handle(async () => ({ case: await createCase(body.caseTypeId!, body.title ?? '', user.id, body.parent) }))
 }

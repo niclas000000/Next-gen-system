@@ -34,6 +34,8 @@ export interface CaseSnapshot {
   values: CaseValues
   /** roleId → user ids holding it on this case */
   roles: Record<string, string[]>
+  /** Sub case field → how many of its sub cases are still open */
+  openSubcases?: Record<string, number>
 }
 
 export interface Actor {
@@ -155,7 +157,8 @@ export function moveStates(
   phase: Phase,
   perm: PhasePermission,
   status: CaseStatus,
-  values: CaseValues
+  values: CaseValues,
+  openSubcases: Record<string, number> = {}
 ): Record<CaseMove, ActionState> {
   const last = config.phases[config.phases.length - 1]?.id === phase.id
   const move = (m: CaseMove): ActionState => {
@@ -167,6 +170,9 @@ export function moveStates(
     if (m !== 'backward') {
       const missing = missingMandatory(config, phase, values)
       if (missing.length) return { allowed: false, reason: `Fill in ${names(missing)}` }
+      const states = fieldStates(config, phase, values)
+      const blocking = config.fields.find((f) => f.subcasesMustBeClosed && (openSubcases[f.id] ?? 0) > 0 && states.get(f.id)?.visible)
+      if (blocking) return { allowed: false, reason: `Close the open ${blocking.name} sub case${openSubcases[blocking.id] > 1 ? 's' : ''} first` }
     }
     return {
       allowed: true,
@@ -184,7 +190,7 @@ export function allowedActions(ctx: CaseContext): Record<CaseActionName, ActionS
   const perm = permissionIn(phase, roleIds)
   const closedReason = snapshot.status === 'open' ? null : 'The case is closed'
 
-  const moves = moveStates(config, phase, perm, snapshot.status, snapshot.values)
+  const moves = moveStates(config, phase, perm, snapshot.status, snapshot.values, snapshot.openSubcases)
   const field = takeField(ctx)
   const holders = field?.assignsRoleId ? snapshot.roles[field.assignsRoleId] ?? [] : []
   const take: ActionState = closedReason
@@ -230,7 +236,8 @@ export function applySave(ctx: CaseContext, patch: CaseValues): SaveResult {
     pending = pending.filter((fieldId) => {
       const field = ctx.config.fields.find((f) => f.id === fieldId)
       const s = states.get(fieldId)
-      if (!field || LAYOUT_FIELD_TYPES.includes(field.type) || !s?.visible || s.readOnly) return true
+      // Sub case lists are kept by the server when sub cases are created
+      if (!field || LAYOUT_FIELD_TYPES.includes(field.type) || field.type === 'subcase' || !s?.visible || s.readOnly) return true
       progress = true
       const value = patch[fieldId]
       if (JSON.stringify(values[fieldId] ?? null) === JSON.stringify(value)) return false
@@ -290,6 +297,18 @@ export function emailNotices(ctx: CaseContext, phase: Phase, trigger: Parameters
 export function phaseHolderRoleIds(config: CaseTypeConfig, phase: Phase): string[] {
   const fwd = config.roles.filter((r) => phase.permissions[r.id]?.forward).map((r) => r.id)
   return fwd.length ? fwd : phase.responsibleRoleIds
+}
+
+/** Whether the actor may create a sub case from this field now (editable sub case field in the current phase). */
+export function canCreateSubcase(ctx: CaseContext, fieldId: string): boolean {
+  const field = ctx.config.fields.find((f) => f.id === fieldId)
+  const state = actorFieldStates(ctx).get(fieldId)
+  return !!field && field.type === 'subcase' && ctx.snapshot.status === 'open' && !!state?.visible && !state.readOnly
+}
+
+/** The case type a sub case field creates: its configured name, else a type named like the field. */
+export function subcaseTypeName(field: { name: string; subcaseTypeName: string | null }): string {
+  return field.subcaseTypeName ?? field.name
 }
 
 /** Initial roles and values when a case is created: the creator gets the user roles that work the first phase. */

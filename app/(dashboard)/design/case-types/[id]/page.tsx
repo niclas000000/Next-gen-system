@@ -11,7 +11,7 @@ export default async function CaseTypeEditorPage({ params }: { params: Promise<{
   if (user.role !== 'admin') redirect('/')
   const { id } = await params
 
-  const [caseType, groups, users] = await Promise.all([
+  const [caseType, groups, users, caseTypes] = await Promise.all([
     prisma.caseType.findUnique({
       where: { id },
       include: { versions: { orderBy: { version: 'desc' }, take: 1 }, _count: { select: { cases: true } } },
@@ -22,6 +22,7 @@ export default async function CaseTypeEditorPage({ params }: { params: Promise<{
       select: { id: true, name: true, email: true },
       orderBy: { name: 'asc' },
     }),
+    prisma.caseType.findMany({ select: { name: true }, orderBy: { name: 'asc' } }),
   ])
   if (!caseType) notFound()
   const live = caseType.versions[0]
@@ -35,6 +36,7 @@ export default async function CaseTypeEditorPage({ params }: { params: Promise<{
       published={live ? { version: live.version, publishedAt: live.publishedAt, config: CaseTypeConfigSchema.parse(live.config) } : null}
       groups={groups}
       users={users}
+      caseTypeNames={caseTypes.map((t) => t.name)}
     />
   )
 }

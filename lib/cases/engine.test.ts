@@ -176,6 +176,29 @@ describe('field states and permissions', () => {
     expect(saved.rejected).toEqual([])
   })
 
+  it('keeps the sub case list out of reach of a save', () => {
+    let s = inCoordinationWithLeader()
+    s = step(s, erik, 'forward', { initialClassification: 'Major deviation' }).snapshot
+    const saved = applySave(ctx(s, erik), { capa: ['forged-id'] })
+    expect(saved.rejected).toEqual(['capa'])
+  })
+
+  it('blocks moving on while sub cases that must be closed are open', () => {
+    const strict = CaseTypeConfigSchema.parse({
+      ...config,
+      fields: config.fields.map((f) => (f.id === 'capa' ? { ...f, subcasesMustBeClosed: true } : f)),
+    })
+    let s = inCoordinationWithLeader()
+    s = step(s, erik, 'forward', { initialClassification: 'Major deviation' }).snapshot
+    const values = fill(ctx(s, erik), { classification: 'Major deviation', errorCode: 'E-12' })
+    s = { ...s, values: applySave(ctx(s, erik), values).values, openSubcases: { capa: 1 } }
+    const c = { config: strict, bindings, snapshot: s, actor: erik }
+    expect(allowedActions(c).forward).toEqual({ allowed: false, reason: 'Close the open CAPA sub case first' })
+    expect(allowedActions({ ...c, snapshot: { ...s, openSubcases: { capa: 0 } } }).forward.allowed).toBe(true)
+    // The plain fixture does not require it
+    expect(allowedActions({ ...c, config }).forward.allowed).toBe(true)
+  })
+
   it('offers nothing once the case is closed', () => {
     const s = { ...created(), status: 'closed' as const }
     expect(Object.values(allowedActions(ctx(s, anna))).every((a) => !a.allowed)).toBe(true)

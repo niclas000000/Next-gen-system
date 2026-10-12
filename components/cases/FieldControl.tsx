@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils'
 import type { CaseTypeConfig, Field } from '@/lib/case-config/schema'
 import type { CaseValues, FieldState } from '@/lib/case-config/runtime'
 import { asList, displayValue, formatDate, type UserRef } from './format'
+import { SubcaseField, type SubcaseInfo } from './SubcaseField'
 
 export interface AttachmentRef {
   id: string
@@ -33,9 +34,11 @@ interface Props {
   onChange: (value: string | string[]) => void
   onButton: (fieldId: string) => void
   onUpload: (fieldId: string, file: File) => Promise<void>
+  /** Sub case fields: the linked sub cases and whether a new one can be created */
+  subcase?: SubcaseInfo
 }
 
-const NO_LABEL = new Set(['staticText', 'delimiter', 'collapsiblePanel', 'button', 'image'])
+const NO_LABEL = new Set(['staticText', 'delimiter', 'collapsiblePanel', 'button', 'image', 'subcase'])
 
 /** Registry values, filtered by the parent registry's chosen value when the registry is hierarchical. */
 function registryOptions(field: Field, config: CaseTypeConfig, values: CaseValues): string[] {
@@ -73,10 +76,11 @@ export function FieldControl(props: Props) {
   )
 }
 
-function ReadOnlyValue({ field, values, users, attachments, caseId }: Props) {
+function ReadOnlyValue(props: Props) {
+  const { field, values, users, attachments, caseId } = props
   const v = values[field.id]
   if (field.type === 'attachments') return <AttachmentList ids={asList(v)} attachments={attachments} caseId={caseId} />
-  if (field.type === 'subcase') return <SubcasePlaceholder field={field} readOnly />
+  if (field.type === 'subcase') return <SubcaseField name={fieldTitle(field, props)} info={props.subcase} />
   if (field.type === 'button') return null
   if (field.type === 'url' && typeof v === 'string' && v)
     return (
@@ -146,7 +150,7 @@ function Editor(props: Props) {
     case 'attachments':
       return <AttachmentEditor {...props} />
     case 'subcase':
-      return <SubcasePlaceholder field={field} />
+      return <SubcaseField name={fieldTitle(field, props)} info={props.subcase} />
     case 'button':
       return (
         <div className="pt-6">
@@ -385,19 +389,4 @@ function AttachmentEditor({ field, values, attachments, caseId, onChange, onUplo
   )
 }
 
-function SubcasePlaceholder({ field, readOnly }: { field: Field; readOnly?: boolean }) {
-  return (
-    <div className="flex items-center gap-3 rounded-[2px] border border-dashed border-rule px-3 py-2.5">
-      <Layers size={15} className="text-ink-4 shrink-0" />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm text-ink">{field.name}</p>
-        <p className="text-xs text-ink-4">No linked sub cases{readOnly ? '' : ' · sub cases are not part of this demo yet'}</p>
-      </div>
-      {!readOnly && (
-        <Button type="button" variant="ghost" size="sm" disabled title="Sub cases are not part of this demo yet">
-          + New
-        </Button>
-      )}
-    </div>
-  )
-}
+const fieldTitle = (field: Field, props: Props) => props.title || field.name

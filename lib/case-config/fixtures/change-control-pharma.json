@@ -1,0 +1,4765 @@
+{
+  "caseTypeName": "Change control",
+  "prefix": "CC",
+  "securityLevel": 1,
+  "description": "Change control for a GMP-regulated Life Science company in 8 phases: Registration → Coordination → Planning (quick or extended analysis) → Manager approval → QA approval → Implementation → Follow-up → Closure. Product/supplier fields hidden unless relevant, GxP/EHS assessment, activities as sub cases, e-signatures at every approval and at closure.",
+  "roles": [
+    {
+      "id": "initiator",
+      "name": "Initiator",
+      "description": "Registers the change (orig. Initierare)",
+      "kind": "user"
+    },
+    {
+      "id": "reporter",
+      "name": "Reporter",
+      "description": "Auto: logged-in user (orig. Inrapportör)",
+      "kind": "user"
+    },
+    {
+      "id": "changeLeader",
+      "name": "Change leader",
+      "description": "Drives coordination, planning, implementation and follow-up (orig. Ändringsledare)",
+      "kind": "user"
+    },
+    {
+      "id": "managerApprover",
+      "name": "Manager approver",
+      "description": "Approves the change and closes the case (orig. Chef-godkännare)",
+      "kind": "user"
+    },
+    {
+      "id": "qaApprover",
+      "name": "QA approver",
+      "description": "QA approval with quick-close right (orig. QA-godkännare)",
+      "kind": "user"
+    }
+  ],
+  "registries": [
+    {
+      "id": "r-reference",
+      "name": "Reference – where the case comes from",
+      "values": [
+        "Deviation",
+        "CAPA",
+        "Audit",
+        "Own initiative",
+        "Customer",
+        "Authority"
+      ],
+      "comments": "Orig. Referens var ärendet kommer ifrån",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-changeArea",
+      "name": "Change area",
+      "values": [
+        "Product",
+        "Process",
+        "Equipment",
+        "Premises",
+        "IT system",
+        "Document",
+        "Supplier"
+      ],
+      "comments": "Orig. Ändringsområde",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-trigger",
+      "name": "What triggers the change",
+      "values": [
+        "Deviation",
+        "Improvement",
+        "Regulatory requirement",
+        "Customer requirement",
+        "Cost",
+        "Safety"
+      ],
+      "comments": "Orig. Vad triggar ändringen",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-priority",
+      "name": "Priority",
+      "values": [
+        "Low",
+        "Medium",
+        "High",
+        "Urgent"
+      ],
+      "comments": "",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-yesNo",
+      "name": "Yes/No",
+      "values": [
+        "Yes",
+        "No"
+      ],
+      "comments": "",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-itSystem",
+      "name": "IT system",
+      "values": [],
+      "comments": "Customer-specific list",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-geoLocation",
+      "name": "Geographic location",
+      "values": [],
+      "comments": "Customer-specific list",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-room",
+      "name": "Room number",
+      "values": [],
+      "comments": "Customer-specific list",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-area",
+      "name": "Area",
+      "values": [],
+      "comments": "Customer-specific list",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-equipment",
+      "name": "Equipment (category + ID)",
+      "values": [],
+      "comments": "Customer-specific list",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-origin",
+      "name": "Origin",
+      "values": [
+        "CC",
+        "DEV",
+        "CAPA"
+      ],
+      "comments": "Hidden, default CC",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-affected",
+      "name": "Who is affected in the organisation",
+      "values": [
+        "Production",
+        "QC",
+        "QA",
+        "Engineering",
+        "Supply chain",
+        "IT",
+        "HR"
+      ],
+      "comments": "Orig. Vilka påverkas i organisationen",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-changeClass",
+      "name": "Classification of change",
+      "values": [
+        "Minor",
+        "Major",
+        "Critical"
+      ],
+      "comments": "Orig. Klassificering av ändring",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-site",
+      "name": "Affected site",
+      "values": [],
+      "comments": "Customer-specific list",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-analysisLevel",
+      "name": "Analysis level",
+      "values": [
+        "Quick analysis",
+        "Extended analysis"
+      ],
+      "comments": "Orig. Snabbanalys / Utökad analys – decides which fields are shown",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-participants",
+      "name": "Participants",
+      "values": [],
+      "comments": "Users/functions",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-users",
+      "name": "Users",
+      "values": [],
+      "comments": "The system's user register",
+      "parentRegistryId": null,
+      "parents": {}
+    }
+  ],
+  "fields": [
+    {
+      "id": "caseCreated",
+      "name": "Case created",
+      "type": "date",
+      "section": "Registration",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Auto, read-only",
+      "assignsRoleId": null
+    },
+    {
+      "id": "reporter",
+      "name": "Reporter",
+      "type": "registrySearch",
+      "section": "Registration",
+      "mandatory": false,
+      "registryId": "r-users",
+      "multi": false,
+      "comments": "Role assignment (default reporter), read-only",
+      "assignsRoleId": null
+    },
+    {
+      "id": "reference",
+      "name": "Reference – where the case comes from",
+      "type": "registryDropdown",
+      "section": "Registration",
+      "mandatory": true,
+      "registryId": "r-reference",
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "changeLeader",
+      "name": "Change leader",
+      "type": "registrySearch",
+      "section": "Role assignment",
+      "mandatory": true,
+      "registryId": "r-users",
+      "multi": false,
+      "comments": "Select the individual who gets the right to handle the change",
+      "assignsRoleId": "changeLeader"
+    },
+    {
+      "id": "informLeaderBtn",
+      "name": "Inform change leader",
+      "type": "button",
+      "section": "Role assignment",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "E-mail to the change leader",
+      "assignsRoleId": null
+    },
+    {
+      "id": "changeArea",
+      "name": "Change area",
+      "type": "registryDropdown",
+      "section": "Change",
+      "mandatory": true,
+      "registryId": "r-changeArea",
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "trigger",
+      "name": "What triggers the change",
+      "type": "registryDropdown",
+      "section": "Change",
+      "mandatory": true,
+      "registryId": "r-trigger",
+      "multi": true,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "priority",
+      "name": "Priority",
+      "type": "registryDropdown",
+      "section": "Change",
+      "mandatory": true,
+      "registryId": "r-priority",
+      "multi": false,
+      "comments": "Desired priority of handling",
+      "assignsRoleId": null
+    },
+    {
+      "id": "externalCustomer",
+      "name": "External customer affected?",
+      "type": "registryDropdown",
+      "section": "Change",
+      "mandatory": true,
+      "registryId": "r-yesNo",
+      "multi": false,
+      "comments": "Yes if an external customer (or authority/certification body) is affected",
+      "assignsRoleId": null
+    },
+    {
+      "id": "description",
+      "name": "Describe what is to be changed and how",
+      "type": "textMultiline",
+      "section": "Change",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "purpose",
+      "name": "Purpose of the change",
+      "type": "textMultiline",
+      "section": "Change",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "itSystem",
+      "name": "Affected IT system",
+      "type": "registryDropdown",
+      "section": "Affected premises, equipment and IT systems",
+      "mandatory": false,
+      "registryId": "r-itSystem",
+      "multi": true,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "geoPremises",
+      "name": "Geographic location – affected premises",
+      "type": "registryDropdown",
+      "section": "Affected premises, equipment and IT systems",
+      "mandatory": false,
+      "registryId": "r-geoLocation",
+      "multi": true,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "geoEquipment",
+      "name": "Geographic location – affected equipment",
+      "type": "registryDropdown",
+      "section": "Affected premises, equipment and IT systems",
+      "mandatory": false,
+      "registryId": "r-geoLocation",
+      "multi": true,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "room",
+      "name": "Room number",
+      "type": "registryDropdown",
+      "section": "Affected premises, equipment and IT systems",
+      "mandatory": false,
+      "registryId": "r-room",
+      "multi": true,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "area",
+      "name": "Area",
+      "type": "registryDropdown",
+      "section": "Affected premises, equipment and IT systems",
+      "mandatory": false,
+      "registryId": "r-area",
+      "multi": true,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "equipment",
+      "name": "Category + ID",
+      "type": "registryDropdown",
+      "section": "Affected premises, equipment and IT systems",
+      "mandatory": false,
+      "registryId": "r-equipment",
+      "multi": true,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "productAffected",
+      "name": "Product/material affected?",
+      "type": "registryDropdown",
+      "section": "Product / material",
+      "mandatory": false,
+      "registryId": "r-yesNo",
+      "multi": false,
+      "comments": "Rule: fields below hidden unless = Yes",
+      "assignsRoleId": null
+    },
+    {
+      "id": "articleNumber",
+      "name": "Article number",
+      "type": "text",
+      "section": "Product / material",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "confirmBtn",
+      "name": "Confirm selection",
+      "type": "button",
+      "section": "Product / material",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Web service call: article name from article number",
+      "assignsRoleId": null
+    },
+    {
+      "id": "articleName",
+      "name": "Article name",
+      "type": "text",
+      "section": "Product / material",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "integrationResult",
+      "name": "Integration result",
+      "type": "text",
+      "section": "Product / material",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Hidden for all except admin",
+      "assignsRoleId": null
+    },
+    {
+      "id": "supplierAffected",
+      "name": "Supplier/manufacturer involved?",
+      "type": "registryDropdown",
+      "section": "Supplier / manufacturer",
+      "mandatory": false,
+      "registryId": "r-yesNo",
+      "multi": false,
+      "comments": "Rule: fields below hidden unless = Yes",
+      "assignsRoleId": null
+    },
+    {
+      "id": "confirmedArticle",
+      "name": "Confirmed article number",
+      "type": "text",
+      "section": "Supplier / manufacturer",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "supplierId",
+      "name": "Supplier ID",
+      "type": "text",
+      "section": "Supplier / manufacturer",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "supplierName",
+      "name": "Supplier name",
+      "type": "text",
+      "section": "Supplier / manufacturer",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "manufacturerId",
+      "name": "Manufacturer ID",
+      "type": "text",
+      "section": "Supplier / manufacturer",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "manufacturerName",
+      "name": "Manufacturer name",
+      "type": "text",
+      "section": "Supplier / manufacturer",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "comments",
+      "name": "Comments",
+      "type": "subcase",
+      "section": "Attachments",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Sub case: Comment",
+      "assignsRoleId": null
+    },
+    {
+      "id": "attachments",
+      "name": "Attached files and documents",
+      "type": "attachments",
+      "section": "Attachments",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "origin",
+      "name": "Origin",
+      "type": "registryDropdown",
+      "section": "Attachments",
+      "mandatory": false,
+      "registryId": "r-origin",
+      "multi": false,
+      "comments": "Hidden, default CC",
+      "assignsRoleId": null
+    },
+    {
+      "id": "prevReg",
+      "name": "Registration",
+      "type": "collapsiblePanel",
+      "section": "Information from previous phases",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Contains all fields from the previous phase (read-only)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "justification",
+      "name": "Justification why the change should be carried out",
+      "type": "textMultiline",
+      "section": "Coordination",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "gxp",
+      "name": "GxP impacting?",
+      "type": "registryDropdown",
+      "section": "Coordination",
+      "mandatory": true,
+      "registryId": "r-yesNo",
+      "multi": false,
+      "comments": "If unsure, consult QA/GMP responsible",
+      "assignsRoleId": null
+    },
+    {
+      "id": "proceed",
+      "name": "Shall the case be carried out?",
+      "type": "registryDropdown",
+      "section": "Coordination",
+      "mandatory": true,
+      "registryId": "r-yesNo",
+      "multi": false,
+      "comments": "Rule: No → forward goes directly to Manager approval (flow change); fields below depend on the answer",
+      "assignsRoleId": null
+    },
+    {
+      "id": "proceedBtn",
+      "name": "Confirm",
+      "type": "button",
+      "section": "Coordination",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "shm",
+      "name": "EHS impacting?",
+      "type": "registryDropdown",
+      "section": "Coordination",
+      "mandatory": true,
+      "registryId": "r-yesNo",
+      "multi": false,
+      "comments": "If yes, contact EHS (orig. SHM-påverkande?)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "coordJustification",
+      "name": "Justification",
+      "type": "textMultiline",
+      "section": "Coordination",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "Orig. Motivera",
+      "assignsRoleId": null
+    },
+    {
+      "id": "affected",
+      "name": "Who is affected in the organisation?",
+      "type": "registryDropdown",
+      "section": "Coordination",
+      "mandatory": true,
+      "registryId": "r-affected",
+      "multi": true,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "changeClass",
+      "name": "Classification of change",
+      "type": "registryDropdown",
+      "section": "Coordination",
+      "mandatory": true,
+      "registryId": "r-changeClass",
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "managerApprover",
+      "name": "Manager approver",
+      "type": "registrySearch",
+      "section": "Role assignment",
+      "mandatory": true,
+      "registryId": "r-users",
+      "multi": false,
+      "comments": "Select the manager within the area of responsibility who will approve the change",
+      "assignsRoleId": null
+    },
+    {
+      "id": "qaApprover",
+      "name": "QA approver",
+      "type": "registrySearch",
+      "section": "Role assignment",
+      "mandatory": true,
+      "registryId": "r-users",
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "prevCoord",
+      "name": "Coordination",
+      "type": "collapsiblePanel",
+      "section": "Information from previous phases",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Contains all fields from the previous phase (read-only)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "changeChangeLeader",
+      "name": "Change change leader",
+      "type": "registrySearch",
+      "section": "Planning",
+      "mandatory": true,
+      "registryId": "r-users",
+      "multi": false,
+      "comments": "A comment must be given when the change leader is changed",
+      "assignsRoleId": null
+    },
+    {
+      "id": "changeChangeLeaderBtn",
+      "name": "Confirm",
+      "type": "button",
+      "section": "Planning",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "site",
+      "name": "Affected site",
+      "type": "registryDropdown",
+      "section": "Planning",
+      "mandatory": true,
+      "registryId": "r-site",
+      "multi": true,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "plannedDate",
+      "name": "Planned completion date",
+      "type": "date",
+      "section": "Planning",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "Date when the change is planned to be implemented",
+      "assignsRoleId": null
+    },
+    {
+      "id": "analysisLevel",
+      "name": "Select analysis level",
+      "type": "registryDropdown",
+      "section": "Planning",
+      "mandatory": true,
+      "registryId": "r-analysisLevel",
+      "multi": false,
+      "comments": "Rule: Quick analysis / Extended analysis fields are shown and mandatory depending on the choice",
+      "assignsRoleId": null
+    },
+    {
+      "id": "analysisLevelBtn",
+      "name": "Confirm",
+      "type": "button",
+      "section": "Planning",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "participants",
+      "name": "Who participated?",
+      "type": "registryDropdown",
+      "section": "Extended analysis",
+      "mandatory": true,
+      "registryId": "r-participants",
+      "multi": true,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "areasAnalysed",
+      "name": "Areas analysed",
+      "type": "textMultiline",
+      "section": "Extended analysis",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "Other infrastructure/equipment/IT systems affected? Products, materials, machines? Validated status, process parameters, need for re-validation? Instructions, methods, contracts, licences? Need for resources or training?",
+      "assignsRoleId": null
+    },
+    {
+      "id": "solutionProposal",
+      "name": "Proposed solution",
+      "type": "textMultiline",
+      "section": "Extended analysis",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "identifiedActivities",
+      "name": "Identified activities",
+      "type": "textMultiline",
+      "section": "Extended analysis",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "Which activities are needed to implement the change?",
+      "assignsRoleId": null
+    },
+    {
+      "id": "conclusionExt",
+      "name": "Conclusion – to be carried out or not",
+      "type": "textMultiline",
+      "section": "Extended analysis",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "riskAssessmentDoc",
+      "name": "Risk assessment",
+      "type": "attachments",
+      "section": "Extended analysis",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "risksOpportunities",
+      "name": "Identified risks / opportunities",
+      "type": "textMultiline",
+      "section": "Extended analysis",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "Summarise the identified risks and opportunities",
+      "assignsRoleId": null
+    },
+    {
+      "id": "quickAnalysis",
+      "name": "Analysis / proposed solution",
+      "type": "textMultiline",
+      "section": "Quick analysis",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "What is affected? How? Describe the intended solution",
+      "assignsRoleId": null
+    },
+    {
+      "id": "quickRisk",
+      "name": "Risk assessment",
+      "type": "textMultiline",
+      "section": "Quick analysis",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "Assess the risks of the proposed change",
+      "assignsRoleId": null
+    },
+    {
+      "id": "conclusionQuick",
+      "name": "Conclusion – to be carried out or not",
+      "type": "textMultiline",
+      "section": "Quick analysis",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "expectedEffect",
+      "name": "Expected effect of the change and how it will be measured",
+      "type": "textMultiline",
+      "section": "Quick analysis",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "activities",
+      "name": "Activities",
+      "type": "subcase",
+      "section": "Activities",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Sub case: Activity (AKT). A saved activity can be opened to complete/adjust and attach files",
+      "assignsRoleId": null
+    },
+    {
+      "id": "prevPlan",
+      "name": "Planning",
+      "type": "collapsiblePanel",
+      "section": "Information from previous phases",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Contains all fields from the previous phase (read-only)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "managerDecision",
+      "name": "Shall the change and its activities be carried out?",
+      "type": "registryDropdown",
+      "section": "Manager approval",
+      "mandatory": true,
+      "registryId": "r-yesNo",
+      "multi": false,
+      "comments": "Rules: approved/not approved → forward; more information → backward (to Coordination if the case is not to be carried out). E-signature on forward",
+      "assignsRoleId": null
+    },
+    {
+      "id": "managerJustification",
+      "name": "Justification",
+      "type": "textMultiline",
+      "section": "Manager approval",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "prevManager",
+      "name": "Manager approval",
+      "type": "collapsiblePanel",
+      "section": "Information from previous phases",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Contains all fields from the previous phase (read-only)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "qaDecision",
+      "name": "Shall the change and its activities be carried out?",
+      "type": "registryDropdown",
+      "section": "QA approval",
+      "mandatory": true,
+      "registryId": "r-yesNo",
+      "multi": false,
+      "comments": "Rules: Yes → forward; No → quick close; more information → backward to Planning. E-signature on forward & quick close",
+      "assignsRoleId": null
+    },
+    {
+      "id": "qaJustification",
+      "name": "Justification",
+      "type": "textMultiline",
+      "section": "QA approval",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "prevQa",
+      "name": "QA approval",
+      "type": "collapsiblePanel",
+      "section": "Information from previous phases",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Contains all fields from the previous phase (read-only)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "plannedFollowUpDate",
+      "name": "Planned follow-up date",
+      "type": "date",
+      "section": "Implementation",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "Date when the follow-up of the change is planned to be done",
+      "assignsRoleId": null
+    },
+    {
+      "id": "ccDone",
+      "name": "CC implemented",
+      "type": "date",
+      "section": "Implementation",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "implementationSummary",
+      "name": "Summary of implementation",
+      "type": "textMultiline",
+      "section": "Implementation",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Summary of the activities performed, used as basis for the follow-up",
+      "assignsRoleId": null
+    },
+    {
+      "id": "implementationDate",
+      "name": "Implementation date",
+      "type": "date",
+      "section": "Implementation",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "The date the changes are introduced in the operation",
+      "assignsRoleId": null
+    },
+    {
+      "id": "prevImpl",
+      "name": "Implementation",
+      "type": "collapsiblePanel",
+      "section": "Information from previous phases",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Contains all fields from the previous phase (read-only)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "doneAsDecided",
+      "name": "Carried out as decided",
+      "type": "registryDropdown",
+      "section": "Follow-up",
+      "mandatory": true,
+      "registryId": "r-yesNo",
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "effectFollowUp",
+      "name": "Follow-up of effect",
+      "type": "textMultiline",
+      "section": "Follow-up",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "Has the change had the desired effect? Make sure no unintended consequences have occurred",
+      "assignsRoleId": null
+    },
+    {
+      "id": "followUpSummary",
+      "name": "Summary of follow-up",
+      "type": "textMultiline",
+      "section": "Follow-up",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "Check and state whether the changes are introduced in the operation. Ensure GMP-compliant documentation of actions and their implementation",
+      "assignsRoleId": null
+    },
+    {
+      "id": "followUpDone",
+      "name": "Follow-up performed",
+      "type": "date",
+      "section": "Follow-up",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "prevFollowUp",
+      "name": "Follow-up",
+      "type": "collapsiblePanel",
+      "section": "Information from previous phases",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Contains all fields from the previous phase (read-only)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "closureNote",
+      "name": "By signing you vouch that the case is complete. If completion is needed, write in Comments.",
+      "type": "staticText",
+      "section": "Closure",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    }
+  ],
+  "phases": [
+    {
+      "id": "registration",
+      "name": "Registration",
+      "description": "The initiator describes the change, its purpose and trigger, what is affected (premises, equipment, IT, product, supplier) and assigns the change leader (button sends e-mail).",
+      "responsibleRoleIds": [
+        "initiator"
+      ],
+      "permissions": {
+        "initiator": {
+          "edit": true,
+          "forward": true,
+          "backward": false,
+          "preEnd": false
+        }
+      },
+      "fields": {
+        "caseCreated": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "reporter": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "reference": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "changeLeader": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "informLeaderBtn": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "changeArea": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "trigger": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "priority": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "externalCustomer": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "description": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "purpose": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "itSystem": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "geoPremises": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "geoEquipment": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "room": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "area": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "equipment": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "productAffected": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "articleNumber": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "confirmBtn": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "articleName": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "integrationResult": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierAffected": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "confirmedArticle": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierId": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierName": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "manufacturerId": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "manufacturerName": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "comments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "attachments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "origin": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        }
+      },
+      "layout": [],
+      "rules": [
+        {
+          "id": "r-cc-art-registration",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "productAffected",
+            "operator": "neq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "articleNumber",
+            "confirmBtn",
+            "articleName"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-cc-s1-registration",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "supplierAffected",
+            "operator": "neq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "confirmedArticle",
+            "supplierId",
+            "supplierName",
+            "manufacturerId",
+            "manufacturerName"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "m-1",
+          "name": "",
+          "triggers": [
+            "onButtonClick"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "email",
+          "recipientRoleIds": [
+            "changeLeader"
+          ],
+          "recipientText": "",
+          "subject": "You have been assigned change [ID] – [Title]",
+          "message": ""
+        }
+      ],
+      "deadlineDays": 2,
+      "deadlineHours": null
+    },
+    {
+      "id": "coordination",
+      "name": "Coordination",
+      "description": "The change leader justifies the change, assesses GxP and EHS impact, classifies it and assigns manager and QA approvers. If the case is not to be carried out it goes directly to Manager approval.",
+      "responsibleRoleIds": [
+        "changeLeader"
+      ],
+      "permissions": {
+        "changeLeader": {
+          "edit": true,
+          "forward": true,
+          "backward": false,
+          "preEnd": false
+        }
+      },
+      "fields": {
+        "caseCreated": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "reporter": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "reference": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeLeader": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "informLeaderBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeArea": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "trigger": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "priority": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "externalCustomer": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "description": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "purpose": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "itSystem": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "geoPremises": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "geoEquipment": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "room": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "area": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "equipment": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "productAffected": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "articleNumber": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "confirmBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "articleName": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "integrationResult": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierAffected": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "confirmedArticle": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierId": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierName": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "manufacturerId": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "manufacturerName": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevReg": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "justification": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "gxp": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "proceed": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "proceedBtn": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "shm": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "coordJustification": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "affected": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "changeClass": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "managerApprover": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "qaApprover": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "comments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "attachments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "origin": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        }
+      },
+      "layout": [],
+      "rules": [
+        {
+          "id": "fr-1",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "Shall the case be carried out? = No",
+          "comments": "",
+          "type": "flowChange",
+          "toPhaseId": "managerApproval"
+        },
+        {
+          "id": "r-cc-art-coordination",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "productAffected",
+            "operator": "neq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "articleNumber",
+            "confirmBtn",
+            "articleName"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-cc-s1-coordination",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "supplierAffected",
+            "operator": "neq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "confirmedArticle",
+            "supplierId",
+            "supplierName",
+            "manufacturerId",
+            "manufacturerName"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "m-2",
+          "name": "",
+          "triggers": [
+            "onBackward"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "email",
+          "recipientRoleIds": [
+            "initiator"
+          ],
+          "recipientText": "",
+          "subject": "Change [ID] sent back for completion",
+          "message": ""
+        }
+      ],
+      "deadlineDays": 5,
+      "deadlineHours": null
+    },
+    {
+      "id": "planning",
+      "name": "Planning",
+      "description": "Quick or extended analysis (impact, solution, activities, risks, conclusion), activities as sub cases. On forward: e-mail to the manager approver.",
+      "responsibleRoleIds": [
+        "changeLeader"
+      ],
+      "permissions": {
+        "changeLeader": {
+          "edit": true,
+          "forward": true,
+          "backward": true,
+          "preEnd": false
+        }
+      },
+      "fields": {
+        "caseCreated": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "reporter": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "reference": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeLeader": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "informLeaderBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeArea": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "trigger": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "priority": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "externalCustomer": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "description": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "purpose": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "itSystem": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "geoPremises": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "geoEquipment": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "room": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "area": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "equipment": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "productAffected": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "articleNumber": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "confirmBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "articleName": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "integrationResult": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierAffected": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "confirmedArticle": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierId": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierName": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "manufacturerId": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "manufacturerName": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "justification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "gxp": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "proceed": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "proceedBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "shm": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "coordJustification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "affected": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeClass": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "managerApprover": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "qaApprover": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "prevReg": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevCoord": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeChangeLeader": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "changeChangeLeaderBtn": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "site": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "plannedDate": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "analysisLevel": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "analysisLevelBtn": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "participants": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "areasAnalysed": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "solutionProposal": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "identifiedActivities": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "conclusionExt": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "riskAssessmentDoc": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "risksOpportunities": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "quickAnalysis": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "quickRisk": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "conclusionQuick": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "expectedEffect": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "activities": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "comments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "attachments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "origin": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        }
+      },
+      "layout": [],
+      "rules": [
+        {
+          "id": "r-cc-art-planning",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "productAffected",
+            "operator": "neq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "articleNumber",
+            "confirmBtn",
+            "articleName"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-cc-s1-planning",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "supplierAffected",
+            "operator": "neq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "confirmedArticle",
+            "supplierId",
+            "supplierName",
+            "manufacturerId",
+            "manufacturerName"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-ext1-planning",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "analysisLevel",
+            "operator": "neq",
+            "value": "Extended analysis"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "participants",
+            "areasAnalysed",
+            "solutionProposal",
+            "identifiedActivities",
+            "conclusionExt",
+            "riskAssessmentDoc",
+            "risksOpportunities"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-q1-planning",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "analysisLevel",
+            "operator": "neq",
+            "value": "Quick analysis"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "quickAnalysis",
+            "quickRisk",
+            "conclusionQuick"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "m-3",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "email",
+          "recipientRoleIds": [
+            "managerApprover"
+          ],
+          "recipientText": "",
+          "subject": "Change [ID] – [Title] for your approval",
+          "message": ""
+        }
+      ],
+      "deadlineDays": 14,
+      "deadlineHours": null
+    },
+    {
+      "id": "managerApproval",
+      "name": "Manager approval",
+      "description": "The manager approves or rejects with justification; more information → backward. E-signature on forward.",
+      "responsibleRoleIds": [
+        "managerApprover"
+      ],
+      "permissions": {
+        "managerApprover": {
+          "edit": true,
+          "forward": true,
+          "backward": true,
+          "preEnd": false
+        }
+      },
+      "fields": {
+        "caseCreated": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "reporter": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "reference": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeLeader": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "informLeaderBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeArea": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "trigger": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "priority": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "externalCustomer": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "description": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "purpose": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "itSystem": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "geoPremises": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "geoEquipment": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "room": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "area": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "equipment": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "productAffected": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "articleNumber": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "confirmBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "articleName": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "integrationResult": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierAffected": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "confirmedArticle": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierId": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierName": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "manufacturerId": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "manufacturerName": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "justification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "gxp": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "proceed": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "proceedBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "shm": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "coordJustification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "affected": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeClass": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "managerApprover": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "qaApprover": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeChangeLeader": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeChangeLeaderBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "site": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "plannedDate": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "analysisLevel": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "analysisLevelBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "participants": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "areasAnalysed": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "solutionProposal": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "identifiedActivities": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "conclusionExt": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "riskAssessmentDoc": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "risksOpportunities": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "quickAnalysis": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "quickRisk": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "conclusionQuick": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "expectedEffect": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevReg": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevCoord": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevPlan": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "managerDecision": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "managerJustification": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "activities": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "comments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "attachments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "origin": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        }
+      },
+      "layout": [],
+      "rules": [
+        {
+          "id": "pr-cc-mgr",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "eSignature"
+        },
+        {
+          "id": "fr-2",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "Backward and the case is not to be carried out",
+          "comments": "",
+          "type": "flowChange",
+          "toPhaseId": "coordination"
+        },
+        {
+          "id": "r-cc-art-managerApproval",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "productAffected",
+            "operator": "neq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "articleNumber",
+            "confirmBtn",
+            "articleName"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-cc-s1-managerApproval",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "supplierAffected",
+            "operator": "neq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "confirmedArticle",
+            "supplierId",
+            "supplierName",
+            "manufacturerId",
+            "manufacturerName"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-ext1-managerApproval",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "analysisLevel",
+            "operator": "neq",
+            "value": "Extended analysis"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "participants",
+            "areasAnalysed",
+            "solutionProposal",
+            "identifiedActivities",
+            "conclusionExt",
+            "riskAssessmentDoc",
+            "risksOpportunities"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-q1-managerApproval",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "analysisLevel",
+            "operator": "neq",
+            "value": "Quick analysis"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "quickAnalysis",
+            "quickRisk",
+            "conclusionQuick"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "m-4",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "email",
+          "recipientRoleIds": [
+            "qaApprover"
+          ],
+          "recipientText": "",
+          "subject": "Change [ID] – [Title] for QA approval",
+          "message": ""
+        },
+        {
+          "id": "m-5",
+          "name": "",
+          "triggers": [
+            "onBackward"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "email",
+          "recipientRoleIds": [
+            "changeLeader"
+          ],
+          "recipientText": "",
+          "subject": "Change [ID] sent back by the manager",
+          "message": ""
+        }
+      ],
+      "deadlineDays": 5,
+      "deadlineHours": null
+    },
+    {
+      "id": "qaApproval",
+      "name": "QA approval",
+      "description": "QA approves (forward), rejects (quick close) or sends back to Planning. E-signature on forward and quick close.",
+      "responsibleRoleIds": [
+        "qaApprover"
+      ],
+      "permissions": {
+        "qaApprover": {
+          "edit": true,
+          "forward": true,
+          "backward": true,
+          "preEnd": true
+        }
+      },
+      "fields": {
+        "caseCreated": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "reporter": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "reference": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeLeader": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "informLeaderBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeArea": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "trigger": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "priority": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "externalCustomer": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "description": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "purpose": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "itSystem": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "geoPremises": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "geoEquipment": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "room": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "area": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "equipment": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "productAffected": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "articleNumber": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "confirmBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "articleName": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "integrationResult": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierAffected": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "confirmedArticle": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierId": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierName": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "manufacturerId": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "manufacturerName": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "justification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "gxp": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "proceed": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "proceedBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "shm": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "coordJustification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "affected": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeClass": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "managerApprover": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "qaApprover": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeChangeLeader": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeChangeLeaderBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "site": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "plannedDate": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "analysisLevel": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "analysisLevelBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "participants": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "areasAnalysed": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "solutionProposal": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "identifiedActivities": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "conclusionExt": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "riskAssessmentDoc": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "risksOpportunities": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "quickAnalysis": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "quickRisk": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "conclusionQuick": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "expectedEffect": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "managerDecision": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "managerJustification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevReg": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevCoord": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevPlan": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevManager": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "qaDecision": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "qaJustification": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "activities": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "comments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "origin": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        }
+      },
+      "layout": [],
+      "rules": [
+        {
+          "id": "pr-cc-qa",
+          "name": "",
+          "triggers": [
+            "onForward",
+            "onPreEnd"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "eSignature"
+        },
+        {
+          "id": "pr-cc-qa-no",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "Shall the change be carried out? = No",
+          "comments": "",
+          "type": "direction",
+          "allowed": "preEnd",
+          "message": "Rejected changes are quick-closed."
+        },
+        {
+          "id": "fr-3",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "More information needed (backward)",
+          "comments": "",
+          "type": "flowChange",
+          "toPhaseId": "planning"
+        },
+        {
+          "id": "fr-4",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "Backward and the case is not to be carried out",
+          "comments": "",
+          "type": "flowChange",
+          "toPhaseId": "coordination"
+        },
+        {
+          "id": "r-cc-art-qaApproval",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "productAffected",
+            "operator": "neq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "articleNumber",
+            "confirmBtn",
+            "articleName"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-cc-s1-qaApproval",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "supplierAffected",
+            "operator": "neq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "confirmedArticle",
+            "supplierId",
+            "supplierName",
+            "manufacturerId",
+            "manufacturerName"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-ext1-qaApproval",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "analysisLevel",
+            "operator": "neq",
+            "value": "Extended analysis"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "participants",
+            "areasAnalysed",
+            "solutionProposal",
+            "identifiedActivities",
+            "conclusionExt",
+            "riskAssessmentDoc",
+            "risksOpportunities"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-q1-qaApproval",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "analysisLevel",
+            "operator": "neq",
+            "value": "Quick analysis"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "quickAnalysis",
+            "quickRisk",
+            "conclusionQuick"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "m-6",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "email",
+          "recipientRoleIds": [
+            "changeLeader"
+          ],
+          "recipientText": "",
+          "subject": "Change [ID] approved – implementation can start",
+          "message": ""
+        },
+        {
+          "id": "m-7",
+          "name": "",
+          "triggers": [
+            "onBackward"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "email",
+          "recipientRoleIds": [
+            "changeLeader"
+          ],
+          "recipientText": "",
+          "subject": "Change [ID] sent back by QA",
+          "message": ""
+        }
+      ],
+      "deadlineDays": 5,
+      "deadlineHours": null
+    },
+    {
+      "id": "implementation",
+      "name": "Implementation",
+      "description": "The change leader carries out the activities and documents implementation and implementation date.",
+      "responsibleRoleIds": [
+        "changeLeader"
+      ],
+      "permissions": {
+        "changeLeader": {
+          "edit": true,
+          "forward": true,
+          "backward": false,
+          "preEnd": false
+        }
+      },
+      "fields": {
+        "caseCreated": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "reporter": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "reference": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeLeader": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "informLeaderBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeArea": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "trigger": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "priority": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "externalCustomer": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "description": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "purpose": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "itSystem": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "geoPremises": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "geoEquipment": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "room": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "area": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "equipment": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "productAffected": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "articleNumber": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "confirmBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "articleName": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "integrationResult": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierAffected": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "confirmedArticle": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierId": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierName": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "manufacturerId": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "manufacturerName": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "justification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "gxp": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "proceed": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "proceedBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "shm": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "coordJustification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "affected": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeClass": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "managerApprover": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "qaApprover": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeChangeLeader": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeChangeLeaderBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "site": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "plannedDate": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "analysisLevel": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "analysisLevelBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "participants": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "areasAnalysed": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "solutionProposal": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "identifiedActivities": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "conclusionExt": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "riskAssessmentDoc": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "risksOpportunities": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "quickAnalysis": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "quickRisk": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "conclusionQuick": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "expectedEffect": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "managerDecision": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "managerJustification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "qaDecision": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "qaJustification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevReg": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevCoord": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevPlan": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevManager": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevQa": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "plannedFollowUpDate": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "ccDone": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "implementationSummary": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "implementationDate": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "activities": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "comments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "attachments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "origin": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        }
+      },
+      "layout": [],
+      "rules": [
+        {
+          "id": "fr-5",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "Backward",
+          "comments": "",
+          "type": "flowChange",
+          "toPhaseId": "planning"
+        },
+        {
+          "id": "r-cc-art-implementation",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "productAffected",
+            "operator": "neq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "articleNumber",
+            "confirmBtn",
+            "articleName"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-cc-s1-implementation",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "supplierAffected",
+            "operator": "neq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "confirmedArticle",
+            "supplierId",
+            "supplierName",
+            "manufacturerId",
+            "manufacturerName"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-ext1-implementation",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "analysisLevel",
+            "operator": "neq",
+            "value": "Extended analysis"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "participants",
+            "areasAnalysed",
+            "solutionProposal",
+            "identifiedActivities",
+            "conclusionExt",
+            "riskAssessmentDoc",
+            "risksOpportunities"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-q1-implementation",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "analysisLevel",
+            "operator": "neq",
+            "value": "Quick analysis"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "quickAnalysis",
+            "quickRisk",
+            "conclusionQuick"
+          ],
+          "access": "hidden"
+        }
+      ],
+      "deadlineDays": 60,
+      "deadlineHours": null
+    },
+    {
+      "id": "followUp",
+      "name": "Follow-up",
+      "description": "Follow-up of effect and GMP documentation. E-signature on forward; e-mail to the manager approver.",
+      "responsibleRoleIds": [
+        "changeLeader"
+      ],
+      "permissions": {
+        "changeLeader": {
+          "edit": true,
+          "forward": true,
+          "backward": true,
+          "preEnd": false
+        }
+      },
+      "fields": {
+        "caseCreated": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "reporter": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "reference": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeLeader": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "informLeaderBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeArea": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "trigger": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "priority": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "externalCustomer": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "description": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "purpose": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "itSystem": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "geoPremises": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "geoEquipment": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "room": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "area": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "equipment": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "productAffected": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "articleNumber": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "confirmBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "articleName": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "integrationResult": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierAffected": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "confirmedArticle": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierId": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierName": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "manufacturerId": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "manufacturerName": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "justification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "gxp": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "proceed": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "proceedBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "shm": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "coordJustification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "affected": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeClass": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "managerApprover": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "qaApprover": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeChangeLeader": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeChangeLeaderBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "site": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "plannedDate": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "analysisLevel": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "analysisLevelBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "participants": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "areasAnalysed": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "solutionProposal": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "identifiedActivities": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "conclusionExt": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "riskAssessmentDoc": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "risksOpportunities": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "quickAnalysis": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "quickRisk": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "conclusionQuick": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "expectedEffect": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "plannedFollowUpDate": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "ccDone": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "implementationSummary": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "implementationDate": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "managerDecision": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "managerJustification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "qaDecision": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "qaJustification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevReg": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevCoord": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevPlan": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevManager": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevQa": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevImpl": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "doneAsDecided": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "effectFollowUp": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "followUpSummary": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "followUpDone": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "activities": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "comments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "attachments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "origin": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        }
+      },
+      "layout": [],
+      "rules": [
+        {
+          "id": "pr-cc-fu",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "eSignature"
+        },
+        {
+          "id": "r-cc-art-followUp",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "productAffected",
+            "operator": "neq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "articleNumber",
+            "confirmBtn",
+            "articleName"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-cc-s1-followUp",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "supplierAffected",
+            "operator": "neq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "confirmedArticle",
+            "supplierId",
+            "supplierName",
+            "manufacturerId",
+            "manufacturerName"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-ext1-followUp",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "analysisLevel",
+            "operator": "neq",
+            "value": "Extended analysis"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "participants",
+            "areasAnalysed",
+            "solutionProposal",
+            "identifiedActivities",
+            "conclusionExt",
+            "riskAssessmentDoc",
+            "risksOpportunities"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-q1-followUp",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "analysisLevel",
+            "operator": "neq",
+            "value": "Quick analysis"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "quickAnalysis",
+            "quickRisk",
+            "conclusionQuick"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "m-8",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "email",
+          "recipientRoleIds": [
+            "managerApprover"
+          ],
+          "recipientText": "",
+          "subject": "Change [ID] followed up – ready for closure",
+          "message": ""
+        }
+      ],
+      "deadlineDays": 90,
+      "deadlineHours": null
+    },
+    {
+      "id": "closure",
+      "name": "Closure",
+      "description": "The manager signs off the change (e-signature). If completion is needed: comment and send backward to the change leader.",
+      "responsibleRoleIds": [
+        "managerApprover"
+      ],
+      "permissions": {
+        "managerApprover": {
+          "edit": true,
+          "forward": true,
+          "backward": true,
+          "preEnd": false
+        },
+        "changeLeader": {
+          "edit": true,
+          "forward": false,
+          "backward": false,
+          "preEnd": false
+        }
+      },
+      "fields": {
+        "caseCreated": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "reporter": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "reference": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeLeader": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "informLeaderBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeArea": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "trigger": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "priority": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "externalCustomer": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "description": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "purpose": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "itSystem": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "geoPremises": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "geoEquipment": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "room": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "area": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "equipment": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "productAffected": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "articleNumber": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "confirmBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "articleName": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "integrationResult": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierAffected": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "confirmedArticle": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierId": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierName": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "manufacturerId": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "manufacturerName": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "justification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "gxp": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "proceed": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "proceedBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "shm": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "coordJustification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "affected": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeClass": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "managerApprover": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "qaApprover": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeChangeLeader": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeChangeLeaderBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "site": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "plannedDate": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "analysisLevel": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "analysisLevelBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "participants": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "areasAnalysed": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "solutionProposal": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "identifiedActivities": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "conclusionExt": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "riskAssessmentDoc": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "risksOpportunities": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "quickAnalysis": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "quickRisk": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "conclusionQuick": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "expectedEffect": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "plannedFollowUpDate": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "ccDone": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "implementationSummary": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "implementationDate": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "doneAsDecided": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "effectFollowUp": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "followUpSummary": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "followUpDone": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "managerDecision": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "managerJustification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "qaDecision": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "qaJustification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevReg": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevCoord": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevPlan": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevManager": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevQa": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevImpl": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "prevFollowUp": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "closureNote": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "activities": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "comments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "attachments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "origin": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        }
+      },
+      "layout": [],
+      "rules": [
+        {
+          "id": "pr-cc-close",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "eSignature"
+        },
+        {
+          "id": "r-cc-art-closure",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "productAffected",
+            "operator": "neq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "articleNumber",
+            "confirmBtn",
+            "articleName"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-cc-s1-closure",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "supplierAffected",
+            "operator": "neq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "confirmedArticle",
+            "supplierId",
+            "supplierName",
+            "manufacturerId",
+            "manufacturerName"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-ext1-closure",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "analysisLevel",
+            "operator": "neq",
+            "value": "Extended analysis"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "participants",
+            "areasAnalysed",
+            "solutionProposal",
+            "identifiedActivities",
+            "conclusionExt",
+            "riskAssessmentDoc",
+            "risksOpportunities"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-q1-closure",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "analysisLevel",
+            "operator": "neq",
+            "value": "Quick analysis"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "quickAnalysis",
+            "quickRisk",
+            "conclusionQuick"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "m-9",
+          "name": "",
+          "triggers": [
+            "onBackward"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "email",
+          "recipientRoleIds": [
+            "changeLeader"
+          ],
+          "recipientText": "",
+          "subject": "Change [ID] sent back from closure",
+          "message": ""
+        }
+      ],
+      "deadlineDays": 10,
+      "deadlineHours": null
+    }
+  ],
+  "views": [
+    {
+      "id": "v-1",
+      "name": "Open changes",
+      "columns": [
+        "ID",
+        "Title",
+        "Created date",
+        "Phase overview",
+        "Role column",
+        "Propertycategory column"
+      ],
+      "filters": "Workflow = Change control, Closed = False",
+      "comments": "Propertycategory column = Classification of change"
+    }
+  ],
+  "systemRoles": [
+    {
+      "id": "sys-admin",
+      "name": "Admin",
+      "isDefault": false,
+      "securityLevel": 10,
+      "permissions": [
+        "Use the module",
+        "Create cases",
+        "Manage cases",
+        "See views",
+        "See diagrams",
+        "Create case views",
+        "Create diagram",
+        "Create templates",
+        "Manage all cases",
+        "Conf. Module",
+        "Admin"
+      ]
+    },
+    {
+      "id": "sys-reporter",
+      "name": "Reporter",
+      "isDefault": true,
+      "securityLevel": 1,
+      "permissions": [
+        "Use the module",
+        "Create cases",
+        "See views"
+      ]
+    },
+    {
+      "id": "sys-handler",
+      "name": "Case handler",
+      "isDefault": false,
+      "securityLevel": 1,
+      "permissions": [
+        "Use the module",
+        "Create cases",
+        "Manage cases",
+        "See views",
+        "See diagrams",
+        "Create case views",
+        "Manage all cases"
+      ]
+    }
+  ],
+  "relatedCaseTypes": [
+    {
+      "id": "rel-1",
+      "name": "Change request (CR)",
+      "relation": "parent",
+      "description": "Change request that led to the change"
+    },
+    {
+      "id": "rel-2",
+      "name": "Comment",
+      "relation": "sub",
+      "description": "Comments"
+    },
+    {
+      "id": "rel-3",
+      "name": "Activity (AKT)",
+      "relation": "sub",
+      "description": "Activities"
+    },
+    {
+      "id": "rel-4",
+      "name": "CAPA",
+      "relation": "related",
+      "description": "CAPA"
+    },
+    {
+      "id": "rel-5",
+      "name": "Deviation (DEV)",
+      "relation": "related",
+      "description": "Deviation"
+    }
+  ],
+  "requirements": [
+    {
+      "standard": "GMP",
+      "clause": "EU GMP Annex 15 §11",
+      "title": "Change control"
+    },
+    {
+      "standard": "GMP",
+      "clause": "ICH Q10 3.2.3",
+      "title": "Change management system"
+    },
+    {
+      "standard": "GMP",
+      "clause": "EU GMP Annex 11",
+      "title": "Computerised systems – electronic signatures"
+    },
+    {
+      "standard": "ISO 9001",
+      "clause": "8.5.6",
+      "title": "Control of changes"
+    }
+  ],
+  "notes": "Reference configuration EX-26755 (Workflow – Ändringsärende (CC) – Life Science, Pharma), translated to English.\n\nRules in the original: product/supplier fields hidden unless the Yes/No field = Yes (all phases); integration result hidden for all but admin; web service call for article number; in Coordination the fields shown/mandatory depend on 'Shall the case be carried out?' and the case goes directly to Manager approval when No; in Planning the fields depend on analysis level (quick/extended); hidden mandatory checkboxes force direction at approvals; flow changes: Manager/QA backward → Coordination when the case is not to be carried out, QA/Implementation backward → Planning; e-signature on forward from Manager approval, QA approval (also quick close), Follow-up and Closure."
+}

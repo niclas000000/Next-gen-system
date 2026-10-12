@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useFormBuilderStore } from '@/lib/stores/form-builder-store'
-import { FieldPalette } from '@/components/workflows/designer/FormBuilder/FieldPalette'
-import { FieldList } from '@/components/workflows/designer/FormBuilder/FieldList'
-import { FieldProperties } from '@/components/workflows/designer/FormBuilder/FieldProperties'
+import { FieldPalette } from '@/components/form-builder/FieldPalette'
+import { FieldList } from '@/components/form-builder/FieldList'
+import { FieldProperties } from '@/components/form-builder/FieldProperties'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'

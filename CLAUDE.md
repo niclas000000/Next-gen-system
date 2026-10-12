@@ -7,8 +7,10 @@ Update this file after every major prompt/implementation session.
 
 ## Project: Nexus
 
-A modern web-based governance platform replacing Canea One.
-Handles documents, processes, and workflows with focus on modern tech and UX.
+A **vision/demo** of a modern governance platform replacing CANEA ONE: documents, processes
+and phase-based cases (deviations, CAPA, changes …) with roles, rules and e-signatures.
+The case model mirrors CANEA ONE and CANEA Blueprint (Workshop-tool) so configurations can
+move between them. Priority is a convincing end-to-end demo; hardening is kept light.
 
 ---
 
@@ -16,290 +18,139 @@ Handles documents, processes, and workflows with focus on modern tech and UX.
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 18+ with TypeScript |
-| Framework | Next.js 16+ (App Router) |
-| Styling | Tailwind CSS |
-| UI Components | Shadcn/ui (Radix UI primitives) |
-| State Management | Zustand |
-| Database | PostgreSQL (Docker locally) |
-| ORM | Prisma |
-| Authentication | NextAuth.js |
-| Forms | React Hook Form + Zod |
-| Workflow Engine | Custom + ReactFlow (visual designer) |
-| Expression Engine | Custom expression parser |
-| Icons | Lucide React |
-| Rich Text | TipTap |
-| Date/Time | date-fns |
-| Compliance | WCAG, ISO 9001, GDPR-ready |
+| Framework | Next.js 16 (App Router), React 18, TypeScript |
+| Styling | Tailwind CSS 3 with Northwind tokens (CSS variables) |
+| UI | Shadcn/ui (Radix primitives), Lucide icons, own toast + confirm dialog |
+| Database | PostgreSQL in Docker (host port **5433**), Prisma 5 |
+| Auth | NextAuth (credentials, JWT); demo "view as" for admins |
+| Config model | Zod (`lib/case-config/schema.ts`) |
+| Rich text | TipTap (documents) |
+| Canvas | ReactFlow (process maps only) |
+| Tests | Vitest (`npm test`), tsx for scripts |
 
 ---
 
 ## Project Structure
 
 ```
-nexus/
-├── app/
-│   ├── (auth)/login/
-│   ├── (dashboard)/
-│   │   ├── layout.tsx                  # Sidebar + TopBar (wrapped in Suspense for useSearchParams)
-│   │   ├── page.tsx                    # Dashboard (live stats, greeting, recent cases/docs)
-│   │   ├── documents/
-│   │   ├── processes/
-│   │   ├── cases/                      # Cases hub with view library
-│   │   │   ├── page.tsx
-│   │   │   └── CasesClient.tsx
-│   │   ├── design/                     # Design top-level section
-│   │   │   ├── workflows/page.tsx      # Workflow list (same as old /workflows/design)
-│   │   │   ├── processes/page.tsx      # Redirects to /processes
-│   │   │   ├── forms/                  # Standalone form designer
-│   │   │   │   ├── page.tsx            # Form list
-│   │   │   │   ├── NewFormButton.tsx
-│   │   │   │   └── [id]/
-│   │   │   │       ├── page.tsx
-│   │   │   │       └── FormDesigner.tsx
-│   │   │   └── document-types/         # Document type stubs
-│   │   │       ├── page.tsx            # Cards per type
-│   │   │       └── [type]/page.tsx     # Per-type stub
-│   │   ├── workflows/
-│   │   │   ├── design/[id]/            # Workflow designer (Canvas/Forms/Logic/Settings tabs)
-│   │   │   └── instances/[id]/         # Case detail (unchanged)
-│   │   └── admin/users|settings|register|appearance|system
-│   └── api/
-│       ├── workflows|instances|expressions
-│       ├── forms/                      # Standalone forms CRUD
-│       ├── views/                      # Saved case views CRUD
-│       ├── processes/
-│       ├── registry/
-│       └── settings/
-├── components/
-│   ├── layout/
-│   │   ├── Sidebar.tsx                 # Collapsible, isActive handles query params
-│   │   ├── TopBar.tsx
-│   │   └── DashboardBackground.tsx     # Background image with opacity overlay
-│   └── workflows/
-│       ├── designer/
-│       │   ├── FormBuilder/
-│       │   │   ├── FormBuilder.tsx     # Workflow node form builder
-│       │   │   ├── ImportFormDialog.tsx # Import standalone form into workflow node
-│       │   │   ├── FieldPalette.tsx
-│       │   │   ├── FieldList.tsx
-│       │   │   ├── FieldProperties.tsx
-│       │   │   └── FormPreview.tsx
-│       │   └── ...
-│       └── runtime/
-├── lib/
-│   ├── db/
-│   ├── auth/
-│   ├── workflow-engine/
-│   ├── expression-parser/
-│   └── settings-context.tsx            # React context for app-wide settings (background, theme)
-├── prisma/schema.prisma
-├── proxy.ts                            # Next.js 16 route protection (renamed from middleware.ts)
-├── types/
-└── docker-compose.yml
+app/
+├── (auth)/login/                 # Sign in; demo account quick sign-in when DEMO_MODE=true
+├── (dashboard)/
+│   ├── layout.tsx                # AppShell (rail + context panel + top bar), Suspense for search params
+│   ├── page.tsx                  # Home: waiting-for-you hero, stats, open cases per phase, activity
+│   ├── tasks/                    # My work: assigned cases, group inboxes, document approvals
+│   ├── cases/                    # Case list (status tabs, filters, pagination, new case)
+│   │   └── [number]/             # Case page (e.g. /cases/DEV3)
+│   ├── documents/                # Document library + editor
+│   ├── processes/                # Process tree, canvas, linked documents and case types
+│   ├── design/
+│   │   ├── case-types/           # Case type list + editor (/design/case-types/[id])
+│   │   ├── document-types/ approval-flows/ views/
+│   │   └── processes/            # Redirects to /processes
+│   └── admin/ users | settings (groups) | roles | register (labels) | lookup-tables | appearance | system
+└── api/
+    ├── case-types/[id]/publish   # Case type CRUD + publish
+    ├── cases/[id]/actions|comments|attachments
+    ├── inbox/  me/  demo/view-as/
+    └── documents/ processes/ registry/ roles/ settings/ system-views/ notifications/ …
+components/
+├── layout/   AppShell, Rail, ContextPanel, TopBar (breadcrumb), CommandPalette, Logo, nav.tsx
+├── cases/    CaseView, FieldControl, CaseSidePanel, SignDialog, CaseList, NewCaseDialog, format.ts
+├── design/   NewCaseTypeDialog, editor/ (Basics, Phases, Fields, Matrix, Permissions, Rules, Try)
+├── form-builder/  Field palette/list/properties/preview — used by Document Types' property packages
+└── ui/       shadcn primitives + toast.tsx + confirm.tsx
+lib/
+├── case-config/  schema.ts, validate.ts, runtime.ts, layout.ts, publish.ts, fixtures/deviation-pharma.json
+├── cases/        engine.ts (pure), service.ts (DB), attachments.ts, http.ts
+├── auth/         config.ts, session.ts (getSessionUser/requireUser/requireAdmin), password.ts
+├── settings-context.tsx  # theme (light/dark/system) default + per-browser override
+├── recent.ts             # recently visited items for the palette
+└── stores/form-builder-store.ts
+prisma/  schema.prisma, seed.ts (admin, system views, DEV case type), demo.ts (demo data)
 ```
 
 ---
 
-## Design System — Northwind Suite
+## Case model (phase-based, CANEA ONE style)
 
-The UI uses the **Northwind design system** throughout. Never use raw Tailwind blue/green/slate color classes in UI code — always use CSS custom properties.
-
-### Color Tokens (CSS custom properties)
-| Token | Value | Role |
-|---|---|---|
-| `var(--paper)` | `#FAFAF7` | App background (body) |
-| `var(--paper-2)` | `#F2F1EC` | Sidebar, secondary surfaces |
-| `var(--paper-3)` | `#E8E6DF` | Dividers, hover states, icon backgrounds |
-| `var(--surface)` | `#FFFFFF` | Cards, inputs, editors |
-| `var(--rule)` | `#E8E6DF` | Borders everywhere |
-| `var(--ink)` | `#111111` | Primary text |
-| `var(--ink-3)` | `#54524D` | Secondary text |
-| `var(--ink-4)` | `#8A877F` | Meta text, placeholders, icons |
-| `var(--nw-accent)` | oklch teal | Active item, links, focus rings |
-| `var(--accent-tint)` | teal tint | Active backgrounds, info highlight |
-| `var(--ok)` | oklch green | Success, published, completed |
-| `var(--warn)` | oklch amber | Pending, running, in-review |
-| `var(--risk)` | oklch red | Error, cancelled, destructive |
-
-### Typography
-- **Display font**: `var(--font-display)` (Inter Tight) — page headings, card titles, large stat numbers
-- **UI font**: Inter — body copy, labels, nav
-- **Mono font**: JetBrains Mono — IDs, versions, dates, section eyebrows
-
-### Components
-- **Border radius**: `rounded-[2px]` everywhere (chips/pills keep `rounded-full`)
-- **Shadows**: None on cards — border only: `1px solid var(--rule)`
-- **Buttons**: Default variant = ink-black fill. Never use `bg-blue-600`.
-- **Status badges**: Use `variant="ok"`, `variant="warn"`, `variant="risk"`, `variant="default"` — never inline color classes
-- **Hover states**: `hover:bg-[var(--paper-2)]` or `hover:border-[var(--nw-accent)]`
-- **Active tab indicator**: `borderColor: 'var(--nw-accent)'`, `color: 'var(--nw-accent)'`
-
-### Navigation modes
-- `navMode: 'v1'` (default) — collapsible sidebar (`var(--paper-2)` background)
-- `navMode: 'v2'` — 68px dark icon rail + Ctrl+K command palette
-- Toggled via Admin → Appearance, stored in `SystemSetting` DB
-
-### Node Colors (Workflow Canvas — kept as semantic colors)
-| Node | Color |
-|---|---|
-| Start | green-500 |
-| Task | blue-500 |
-| Decision | orange-500 |
-| Automation | purple-500 |
-| Notification | sky-500 |
-| Subprocess | indigo-500 |
-| Delay | amber-500 |
-| Parallel Gateway | teal-500 |
-| End | red-500 |
-
-### Background image pattern
-- Background image stored in `SystemSetting` table (key: `backgroundImage`, `backgroundOpacity`)
-- Applied via `DashboardBackground` component with configurable opacity
+- **`CaseTypeConfig`** (`lib/case-config/schema.ts`) is a port of Workshop-tool `shared/src/workflowConfig.ts`.
+  Keep field names/defaults in sync so Blueprint JSON imports unchanged. Case type → ordered phases →
+  fields defined once and placed per phase (`edit` / `readOnly` / hidden, mandatory override) → role ×
+  phase permissions (edit / forward / backward / preEnd) → phase rules with triggers and structured
+  `when` conditions (`eq|neq|empty|notEmpty`). Free-text conditions are kept but never evaluated.
+- **`runtime.ts`** (port of Workshop-tool `formTrial.ts`): field states, missing mandatory, next phase,
+  forced direction, firing rules, e-signature requirement. Pure.
+- **`lib/cases/engine.ts`**: per actor — roles from `Case.roles` + `CaseType.roleBindings` (users/groups),
+  permissions, `restrictForActor` (group roles only edit the assignment field), `moveStates`,
+  `allowedActions` (with reasons), `applySave` (multi-pass so dependent fields can be set together),
+  `applyTake`, `planMove`, `initialCase`. Pure and covered by golden tests on the Deviation fixture.
+  The case page and the editor's Try tab call the same functions client-side.
+- **`lib/cases/service.ts`**: numbering (`prefix + nextNumber`), optimistic locking (`revision` → 409),
+  e-signature (password + meaning → `CaseEvent signed`), notifications for e-mail rules and phase entry
+  (e-mail itself is a console stub), comments, attachments (files under `uploads/`, gitignored), inbox, list.
+- Prisma: `CaseType` (draft JSON, unique prefix, `roleBindings`, `nextNumber`), immutable `CaseTypeVersion`
+  (running cases keep their version), `Case`, `CaseEvent`, `CaseComment`, `CaseAttachment`, `ProcessCaseType`.
+- Other models: `User`, `Group` (members[] used for role bindings), `Document*`, `ApprovalFlow`, `DocumentType`,
+  `Process*`, `ProcessRole`, `LookupTable/Value`, `RegistryItem`, `SystemView`, `SavedView`, `ViewFolder`,
+  `Notification`, `SystemSetting`. JSON writes use `as never` casts (repo convention).
+- The old graph workflow module (ReactFlow designer, WorkflowInstance engine, standalone forms) was removed
+  on 2026-10-12; a DB backup from before is in `backups/` (gitignored).
 
 ---
 
-## Prisma Schema (current models)
+## Design System — Northwind
 
-`User`, `Group`, `Document`, `DocumentVersion`, `ReadReceipt`, `DocumentApproval`, `Workflow`, `WorkflowForm`, `WorkflowRule`, `WorkflowInstance`, `WorkflowStep`, `Comment`, `Attachment`, `AuditLog`, `SystemSetting`, `RegistryItem`, `Process`, `ProcessRole`, `ProcessDocument`, `ProcessWorkflow`, `Form`, `SavedView`, `SystemView`, `DocumentType`, `ApprovalFlow`, `LookupTable`, `LookupTableRow`, `ViewFolder`, `Notification`
+Never use raw Tailwind palette colours (blue/green/slate …) or hex in components — use the token classes.
 
-Key models:
-- `Form` — standalone reusable forms (fields JSON, settings JSON)
-- `SavedView` — user-saved case view filters (userId, filters JSON)
-- `SystemView` — admin-defined saved views for Cases/Documents sidebars (section, icon, filters JSON, order, isDefault); filter keys are `status` / `view` only
-- `DocumentType` — document type definitions (prefix, format, propertyPackage JSON, approvalFlowId)
-- `ApprovalFlow` — multi-phase approval flows (phases JSON; each phase has `role` = a `ProcessRole.name`, `rule` = any|all)
-- `DocumentApproval` — per-phase approval record for a document in flight (phase, status, assignedTo[], responses JSON)
-- `ProcessRole` — named workflow/approval roles (e.g. "Reviewer"); bound to actual users per-instance via `user_role` form fields → `WorkflowInstance.roles`, or per-document at submit via `Document.approvalAssignments`
-- `WorkflowRule` — lifecycle automation rules (trigger `on_start`|`on_step_complete`|`on_instance_complete`, expression, actions JSON, priority, active); evaluated by the engine
-- `Notification` — in-app notifications (userId, type, title, body, link, read)
-- `LookupTable` / `LookupTableRow` — reusable dropdown data for FormBuilder `lookup` fields
-- `Process` — full process tree with canvas (nodes/edges JSON), KPIs, linked documents/workflows
+- Tokens are CSS variables in `app/globals.css`, exposed as Tailwind colours: `paper paper-2 paper-3 surface
+  ink ink-2 ink-3 ink-4 rule rule-soft nw-accent accent-tint on-fill rail chart-1` and status
+  `ok warn risk` with `-tint -line -ink` variants (e.g. `bg-risk-tint border-risk-line text-risk-ink`).
+- Use classes with real `hover:` and `focus-visible:ring-2 focus-visible:ring-nw-accent` states — no
+  `onMouseEnter` style hacks (older pages still have some; replace when touching them).
+- Fonts: `font-display` (Inter Tight) for headings and numbers, Inter for UI, `font-mono` / `.mono-meta` for
+  IDs, case numbers and eyebrows. Radius `rounded-[2px]` (pills `rounded-full`). Borders, no shadows on cards.
+- Badges: `variant="ok|warn|risk|accent|default"`. Buttons: default = ink fill.
+- Charts: `chart-1` (#008C99) is validated for light and dark surfaces (dataviz validator).
+- Theme: `data-theme` on `<html>` from `SettingsProvider` (admin default in Appearance, user override in the
+  account menu, stored in localStorage `nexus-theme`).
 
----
-
-## Implementation Status
-
-### Done ✓
-- Full layout: Sidebar (collapsible, query-param-aware isActive), TopBar — **Northwind design system applied**
-- Dashboard: live DB stats, time-based greeting (morning/afternoon/evening), capitalized first name
-- Auth: NextAuth with scrypt password hashing, JWT with user.id, route protection via `proxy.ts`
-- Documents: list, create/edit/view/delete, TipTap rich text editor, categories/tags/status, version history, read receipts
-- Document Types (`/design/document-types`): per-type editor with property fields (FormBuilder), approval flow assignment, read receipt + change desc toggles
-- Approval Flows (`/design/approval-flows`): create/edit multi-phase flows, assign to document types
-- Processes: tree navigation (right-click context menu), inline detail panel with tabs (Overview, Canvas, Documents, Workflows, KPIs), ReactFlow canvas per process
-- Workflow designer: canvas, 9 node types, properties panel, form builder, logic builder, expression editor, auto-save, publish
-- Workflow engine: startInstance, completeStep, cancelInstance, auto-advance, condition evaluation
-- Case management: list, detail page, form filling, decision branching, comments, audit log, step timeline
-- **Cases hub** (`/cases`): two-panel layout, predefined views, saved views, "+ Start case" button opens published workflow picker
-- **Design section** (`/design`): Workflows, Processes (redirect), Forms, Document Types, Approval Flows
-- **Standalone Form Designer** (`/design/forms`, `/design/forms/[id]`): full three-panel designer, FormPreview toggle, auto-save 2s
-- **Import form into workflow**: "Use existing form" button in workflow Form tab → `ImportFormDialog`
-- Admin: Users, Groups, Register (categories/tags), Appearance (background image + opacity + nav mode toggle), System
-- Settings: `GET/PATCH /api/settings`, `SettingsProvider` context, `navMode` ('v1'|'v2') stored in DB
-- **V2 navigation**: Icon rail (`components/layout/IconRail.tsx`) + Ctrl+K command palette (`components/layout/CommandPalette.tsx`)
-- **Northwind design system**: fully applied across all pages — CSS tokens, ink/paper/ok/warn/risk palette, 2px radius, no shadows, teal accent, Inter Tight + JetBrains Mono typography
-- Lookup tables (`/admin/lookup-tables`): CRUD for reusable dropdown data, used in FormBuilder `lookup` field type
-- **Roles** (`/admin/roles`): CRUD for `ProcessRole` catalog — names used by `user_role` form fields, `workflow_role` task assignment, and approval flow phases
-- **Workflow rules** (`Logic → Rules` tab): `RuleBuilder` + `ActionConfigForm` → `/api/workflows/[id]/rules`; engine evaluates active rules at `on_start` / `on_step_complete` / `on_instance_complete`. Actions: `set_variable`, `send_notification` (creates Notification rows), `send_email` (console stub — no SMTP yet)
-- **Document approval lifecycle**: draft → submit (assign approvers per phase) → pending → approve/reject per phase → publish. Routes `/api/documents/[id]/submit|approve|reject|approval`. Approvers chosen at submit are persisted in `Document.approvalAssignments` and consumed as phases advance (role resolution as fallback). Approve/reject create Notifications
-- **DB-driven System Views** (`/design/views`): admin-managed saved views for Cases/Documents; Sidebar + list pages fetch `/api/system-views` and apply `filters` as query params; defaults seeded idempotently
-- **Notifications**: `NotificationBell` (TopBar) + `/api/notifications` (list / mark-read / read-all)
-- **Tasks** (`/tasks`): user's open workflow steps + pending document approvals
-
-### Navigation structure (Sidebar — V1)
-```
-Dashboard
-Processes
-Documents
-Cases (expanded by default)
-  ├── All cases        /cases
-  ├── Running          /cases?status=running
-  ├── Completed        /cases?status=completed
-  ├── Cancelled        /cases?status=cancelled
-  ├── My cases         /cases?view=mine
-  └── Per workflow     /cases?view=by-workflow
-Design
-  ├── Workflows        /design/workflows
-  ├── Processes        /design/processes  → redirect /processes
-  ├── Forms            /design/forms
-  ├── Document Types   /design/document-types
-  ├── Approval Flows   /design/approval-flows
-  └── Views            /design/views
-Admin
-  ├── Users            /admin/users
-  ├── Groups           /admin/settings
-  ├── Register         /admin/register
-  ├── Lookup Tables    /admin/lookup-tables
-  ├── Roles            /admin/roles
-  ├── Appearance       /admin/appearance
-  └── System           /admin/system
-```
-
-### Phase-based case model (rebuild in progress — Nexus is a vision/demo)
-The graph workflow module (`Workflow`/`WorkflowInstance`, `lib/workflow-engine`) is being replaced by a CANEA ONE-style phase model:
-- `lib/case-config/schema.ts` — `CaseTypeConfig` (zod), a port of Workshop-tool `shared/src/workflowConfig.ts`; keep field names in sync so Blueprint JSON imports unchanged. Case type → ordered phases → fields placed per phase (`edit`/`readOnly`/`hidden`, mandatory override) → role × phase permissions (edit/forward/backward/preEnd) → phase rules with triggers and structured `when` conditions
-- `lib/case-config/validate.ts` — errors block publishing, warnings don't; `publish.ts` snapshots the draft into an immutable `CaseTypeVersion`
-- Prisma: `CaseType` (draft JSON, unique `prefix`, `roleBindings` = who holds group roles, `nextNumber`), `CaseTypeVersion`, `Case` (number, phaseId, values by fieldId, roles by roleId, `revision` for optimistic locking), `CaseEvent`
-- API: `/api/case-types` (GET, POST `{name}` or `{config}`), `/api/case-types/[id]` (GET/PATCH/DELETE), `/api/case-types/[id]/publish`
-- Fixture `lib/case-config/fixtures/deviation-pharma.json` = CANEA reference EX-26714, exported from Workshop-tool; seeded and published as `DEV` v1
-- Next: pure runtime evaluator (field states, allowed actions, rule violations) → case page → phase designer → importers (Blueprint JSON, CANEA ONE SQL export)
-
-### Possible next areas
-- Email delivery for `send_email` rule action + approval notifications (SMTP — currently console stub)
-- Full-text search across documents/cases
-- Dashboard widgets customization
-- BPMN 2.0 node types for process canvas
-- `isProcessRoot` usage in process tree UI
-- Multi-approver-per-phase UI (model `assignedTo[]` already supports it; submit modal picks one per phase)
+### Navigation
+- Dark icon **rail** (Home, My work with count, Cases, Documents, Processes, + New; Design/Admin for admins,
+  account menu) + light **context panel** per module (Cases: system views + case types; Documents: views;
+  Design; Admin). Panel collapses (localStorage `nexus-panel`), drawer on mobile. Definitions in `components/layout/nav.tsx`.
+- Ctrl+K command palette: case number/title search, documents, actions, recent items.
 
 ---
 
 ## Architecture Notes
 
-- `CanvasProvider` owns `useNodesState`/`useEdgesState`, shared via `CanvasContext` — no Zustand
-- `AutoSave` is a child of `CanvasProvider`, reads canvas state via `useCanvas()`
-- `form-builder-store` (Zustand) is shared between workflow FormBuilder and standalone FormDesigner — both call `loadForm(id, fields, settings)`
-- Designer and Cases pages use `-m-6` to escape dashboard's `p-6` padding for full-height layouts
-- Sidebar uses `useSearchParams()` — requires Suspense boundary in `layout.tsx`
-- `proxy.ts` replaces `middleware.ts` (Next.js 16 convention change); its matcher protects everything except `/api/auth`, `_next`, `login`, `register` — so API route handlers can rely on the middleware for auth
-- `params` in pages and API routes is a `Promise` — always `await params`
-- Authorization: `proxy.ts` requires the admin role for `/admin/*` and `/api/admin/*`; elsewhere use `requireUser()` / `requireAdmin()` from `lib/auth/session.ts` (they return the user or a NextResponse to return)
-- Tests: `npm test` (Vitest, `*.test.ts`). npm installs need `--legacy-peer-deps` (pre-existing eslint 8 vs eslint-config-next 16 conflict)
-- **Node forms live in the `WorkflowForm` table** (keyed by `workflowId_nodeId`), NOT in `node.data` — the engine reads `prisma.workflowForm` to extract `user_role` submissions into `WorkflowInstance.roles`
-- **Role key consistency**: `user_role` field `roleName`, `workflow_role` assignment `value`, and `WorkflowInstance.roles` keys are all the `ProcessRole.name` (never the id)
-- Prisma JSON fields use `as never` casts on write (repo convention) since `Record<string, unknown>` / `unknown[]` aren't assignable to `InputJsonValue`
+- `proxy.ts` (Next 16's middleware) requires a session everywhere except auth/static; `/admin/*` and
+  `/api/admin/*` also require the admin role. In routes use `requireUser()` / `requireAdmin()` from
+  `lib/auth/session.ts` — they honour demo "view as" (cookie `nexus-view-as`, only when `DEMO_MODE=true`).
+- `params` / `searchParams` in pages and routes are Promises — always `await` them.
+- Pages that need full height use `-m-6` to escape the main `p-6` padding (processes, case type editor).
+- `npx prisma generate` fails with EPERM while the dev server runs (locked engine DLL) — stop it first.
+- npm installs need `--legacy-peer-deps` (pre-existing eslint 8 vs eslint-config-next 16 conflict).
+- Git Bash rewrites arguments starting with `/` into Windows paths — use `MSYS_NO_PATHCONV=1` for scripts
+  that take URL paths.
 
 ---
 
-## Key Field Types (Form Builder)
+## Status
 
-`text | textarea | number | date | select | multiselect | checkbox | radio | file | user | user_role | table | richtext`
+### Done
+- Phase-based cases end to end: case page (phase stepper, live field rules, history of earlier phases,
+  sticky actions with block reasons, take-from-group-inbox, e-signature dialog, activity, comments,
+  attachments), case list, My work, Home dashboard.
+- Case type designer with Blueprint JSON import, autosave, undo/redo, validation, publish to versions, Try it.
+- Documents (library, editor, versions, read receipts, approval flows), processes (tree, canvas, links to
+  documents and case types), admin pages.
+- Demo: `npm run demo:reset` → demo users (password `demo`), inbox groups, 8 DEV cases in every state.
 
-- `user_role` — picks a user to fill a named `ProcessRole` for this instance; on step complete the engine writes `{ [roleName]: userId }` into `WorkflowInstance.roles`, later resolved by `workflow_role` task assignment
-
----
-
-## Built-in Expression Functions
-
-```
-Math:    SUM, AVG, MIN, MAX, ROUND, FLOOR, CEIL, ABS
-String:  CONCAT, UPPER, LOWER, TRIM, SUBSTRING, REPLACE, LENGTH
-Date:    NOW, TODAY, DATEDIFF, DATEADD, FORMAT_DATE, WORKDAYS
-Logic:   IF, AND, OR, NOT, SWITCH, COALESCE
-Array:   FILTER, MAP, FIND, COUNT, JOIN
-User:    CURRENT_USER, USER_ROLE, USER_GROUP, HAS_PERMISSION
-Workflow: GET_VARIABLE, SET_VARIABLE, GET_STEP_DATA
-```
-
----
-
-## Performance Requirements
-- Canvas: 100+ nodes smoothly
-- Form render: < 100ms
-- Expression evaluation: < 10ms
-- Instance list: 1000+ items with virtual scrolling
-- Auto-save: debounced 2s
+### Not yet / ideas
+- Sub cases (CAPA, Action) are placeholders; e-mail is a console stub; SMS/web service/computed/alarm rules are
+  kept from imports but not executed; no per-case security levels; property categories for cross-case reporting.
+- Import of CANEA ONE SQL exports (`wf_dev.txt` + `wf_dev_rules.txt` from conf-import-tool).
 
 ---
 
@@ -319,18 +170,19 @@ Workflow: GET_VARIABLE, SET_VARIABLE, GET_STEP_DATA
 All UI text must be in English. No Swedish strings in components, pages, or data.
 
 ## Startup
-1. `docker-compose up -d` — start PostgreSQL (host port 5433; 5432 is taken by Workshop-tool's DB)
-2. `npx prisma db push` — sync schema (first time or after schema changes)
-3. `npx prisma generate` — regenerate client after schema changes (stop dev server first — EPERM otherwise)
-4. `npx prisma db seed` — create default admin user (idempotent, safe to re-run)
-5. `npm run dev` — start Next.js dev server at http://localhost:3000
-- Use `cmd.exe` (not PowerShell) to avoid execution policy issues on Windows
-- Dashboard is at `/` (not `/dashboard`)
+1. `docker-compose up -d` — PostgreSQL on host port 5433 (5432 is used by Workshop-tool's DB)
+2. `npx prisma db push` — sync schema (stop the dev server first if it is running)
+3. `npx prisma db seed` — admin user, system views, Deviation case type (idempotent)
+4. `npm run demo:reset` — demo users, groups and DEV cases (optional, resets DEV cases)
+5. `npm run dev` — http://localhost:3000 (dashboard at `/`)
+- `.env` needs `DATABASE_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`; `DEMO_MODE=true` enables "view as" and the
+  demo accounts on the login page.
+- Use `cmd.exe` (not PowerShell) to avoid execution policy issues on Windows.
 
-## Default credentials (first run)
-- Email: `admin@nexus.internal`
-- Password: `admin`
-- Change password after first login via Admin → Users
+## Default credentials
+- Seed admin: `admin@nexus.internal` / `admin` (change after first login)
+- Demo (after `demo:reset`): `admin@nexus.demo`, `anna.berg@`, `erik.lund@`, `johan.ek@`, `sara.nilsson@`,
+  `lina.holm@nexus.demo` — password `demo`
 
 ## Memory
 Persistent memory: `C:\Users\NiclasSvensson\.claude\projects\c--Project-Nexus\memory\`

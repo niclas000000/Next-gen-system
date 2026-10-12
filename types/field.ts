@@ -147,15 +147,6 @@ export interface SelectFieldProperties extends BaseFieldProperties {
   clearable?: boolean
 }
 
-export interface FormDefinition {
-  id: string
-  workflowId: string
-  nodeId: string
-  name: string
-  fields: FormField[]
-  settings: FormSettings
-}
-
 export interface FormSettings {
   title?: string
   submitButtonText: string

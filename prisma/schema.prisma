@@ -18,17 +18,10 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  createdWorkflows Workflow[]         @relation("WorkflowCreator")
-  createdInstances WorkflowInstance[] @relation("InstanceCreator")
-  assignedSteps    WorkflowStep[]     @relation("StepAssignee")
-  comments         Comment[]
-  uploadedFiles    Attachment[]
-  auditLogs        AuditLog[]
   documents        Document[]         @relation("DocumentAuthor")
   processesOwned   Process[]          @relation("ProcessOwner")
   processesCreated Process[]          @relation("ProcessCreator")
   savedViews       SavedView[]
-  forms            Form[]
   documentVersions DocumentVersion[]  @relation("VersionAuthor")
   readReceipts     ReadReceipt[]      @relation("ReadReceiptUser")
   notifications    Notification[]
@@ -85,175 +78,6 @@ model Document {
   readReceipts ReadReceipt[]
 }
 
-model Workflow {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  version     Int      @default(1)
-  status      String   @default("draft") // draft, published, archived
-  category    String?
-  tags        String[]
-  icon        String?
-  color       String?
-
-  // Canvas definition
-  nodes Json @default("[]")
-  edges Json @default("[]")
-
-  // Settings
-  settings Json @default("{}")
-
-  createdBy String
-  creator   User   @relation("WorkflowCreator", fields: [createdBy], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  instances WorkflowInstance[]
-  forms     WorkflowForm[]
-  rules     WorkflowRule[]
-  processes ProcessWorkflow[]
-}
-
-model WorkflowForm {
-  id         String   @id @default(cuid())
-  workflowId String
-  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-
-  nodeId       String
-  name         String
-  fields       Json   @default("[]")
-  validations  Json   @default("[]")
-  calculations Json   @default("[]")
-  conditionals Json   @default("[]")
-  settings     Json   @default("{}")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([workflowId, nodeId])
-}
-
-model WorkflowRule {
-  id         String   @id @default(cuid())
-  workflowId String
-  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-
-  nodeId     String?
-  type       String // condition, automation, validation, notification, sla
-  trigger    String // on_entry, on_exit, on_change, on_start, on_complete, scheduled
-  expression String
-  actions    Json    @default("[]")
-  priority   Int     @default(0)
-  active     Boolean @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model WorkflowInstance {
-  id         String   @id @default(cuid())
-  workflowId String
-  workflow   Workflow @relation(fields: [workflowId], references: [id])
-
-  title       String
-  status      String  @default("running") // running, completed, cancelled, error
-  currentStep String?
-
-  // Runtime data
-  variables Json @default("{}")
-  roles     Json @default("{}") // { [roleName]: userId } — assigned via user_role form fields
-
-  createdBy String
-  creator   User   @relation("InstanceCreator", fields: [createdBy], references: [id])
-
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  completedAt DateTime?
-
-  steps       WorkflowStep[]
-  comments    Comment[]
-  attachments Attachment[]
-  history     AuditLog[]
-}
-
-model WorkflowStep {
-  id         String           @id @default(cuid())
-  instanceId String
-  instance   WorkflowInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
-
-  nodeId   String
-  stepName String
-  stepType String // task, decision, automation, notification, etc.
-  status   String @default("pending") // pending, in_progress, completed, skipped, error
-
-  assignedTo   String?
-  assignee     User?   @relation("StepAssignee", fields: [assignedTo], references: [id])
-  assignedRole String?
-
-  // Step data
-  formData Json? // Form submission data
-  decision String? // For decision nodes
-  output   Json? // Output from automation
-
-  // Timing
-  startedAt   DateTime?
-  completedAt DateTime?
-  dueAt       DateTime?
-
-  // Escalation
-  escalated   Boolean   @default(false)
-  escalatedAt DateTime?
-}
-
-model Comment {
-  id         String           @id @default(cuid())
-  instanceId String
-  instance   WorkflowInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
-
-  stepId   String?
-  content  String
-  mentions String[] // User IDs
-
-  createdBy String
-  author    User   @relation(fields: [createdBy], references: [id])
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  attachments String[] // File references
-}
-
-model Attachment {
-  id         String           @id @default(cuid())
-  instanceId String
-  instance   WorkflowInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
-
-  stepId   String?
-  fileName String
-  fileSize Int
-  mimeType String
-  fileUrl  String
-
-  uploadedBy String
-  uploader   User   @relation(fields: [uploadedBy], references: [id])
-
-  uploadedAt DateTime @default(now())
-}
-
-model AuditLog {
-  id         String           @id @default(cuid())
-  instanceId String
-  instance   WorkflowInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
-
-  action    String // step_started, step_completed, reassigned, cancelled, commented, etc.
-  actor     String
-  actorUser User   @relation(fields: [actor], references: [id])
-
-  timestamp DateTime @default(now())
-  details   Json     @default("{}")
-  changes   Json? // Before/after for data changes
-}
-
 model SystemSetting {
   key       String   @id
   value     String
@@ -272,18 +96,6 @@ model RegistryItem {
   updatedAt     DateTime @updatedAt
 
   @@unique([type, name])
-}
-
-model Form {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  fields      Json     @default("[]")
-  settings    Json     @default("{}")
-  createdBy   String
-  creator     User     @relation(fields: [createdBy], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }
 
 model SavedView {
@@ -313,7 +125,7 @@ model Process {
   edges       Json              @default("[]")
   kpis        Json              @default("[]")
   documents   ProcessDocument[]
-  workflows   ProcessWorkflow[]
+  caseTypes   ProcessCaseType[]
   createdBy   String
   creator     User              @relation("ProcessCreator", fields: [createdBy], references: [id])
   createdAt   DateTime          @default(now())
@@ -327,15 +139,6 @@ model ProcessDocument {
   document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
   @@id([processId, documentId])
-}
-
-model ProcessWorkflow {
-  processId  String
-  workflowId String
-  process    Process  @relation(fields: [processId], references: [id], onDelete: Cascade)
-  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-
-  @@id([processId, workflowId])
 }
 
 model DocumentType {
@@ -486,6 +289,7 @@ model CaseType {
   updatedAt    DateTime          @updatedAt
   versions     CaseTypeVersion[]
   cases        Case[]
+  processes    ProcessCaseType[]
 }
 
 // Immutable snapshot; running cases keep the version they were started on.
@@ -569,4 +373,13 @@ model CaseAttachment {
   uploadedBy String
   uploader   User     @relation("CaseAttachmentUploader", fields: [uploadedBy], references: [id])
   uploadedAt DateTime @default(now())
+}
+
+model ProcessCaseType {
+  processId  String
+  caseTypeId String
+  process    Process  @relation(fields: [processId], references: [id], onDelete: Cascade)
+  caseType   CaseType @relation(fields: [caseTypeId], references: [id], onDelete: Cascade)
+
+  @@id([processId, caseTypeId])
 }

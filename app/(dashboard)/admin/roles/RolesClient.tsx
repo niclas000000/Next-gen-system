@@ -49,7 +49,7 @@ export function RolesClient({ initialRoles }: { initialRoles: ProcessRole[] }) {
   }
 
   const handleDelete = async (id: string) => {
-    if (!(await confirmDialog('Delete this role? Workflows and approval flows referencing it will need to be updated.'))) return
+    if (!(await confirmDialog('Delete this role?\nApproval flows that use it will need to be updated.'))) return
     setDeleting(id)
     try {
       await fetch(`/api/roles/${id}`, { method: 'DELETE' })

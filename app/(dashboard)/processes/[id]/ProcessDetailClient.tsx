@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import {
-  GitBranch, FileText, Workflow, Target, ChevronRight, Plus,
+  GitBranch, FileText, ClipboardList, Target, ChevronRight, Plus,
   Pencil, Trash2, Check, X, Link2, Unlink, Users,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
@@ -79,7 +79,7 @@ interface ProcessDetail {
   edges: unknown[]
   kpis: unknown[]
   documents: { id: string; title: string; status: string; category: string | null; updatedAt: string }[]
-  workflows: { id: string; name: string; status: string; updatedAt: string }[]
+  caseTypes: { id: string; name: string; status: string; updatedAt: string }[]
   createdAt: string
   updatedAt: string
 }
@@ -98,16 +98,16 @@ const docStatus: Record<string, string> = {
 let nodeIdCounter = 100
 
 export function ProcessDetailClient({
-  process: initial, allDocuments, allWorkflows, allUsers,
+  process: initial, allDocuments, allCaseTypes, allUsers,
 }: {
   process: ProcessDetail
   allDocuments: { id: string; title: string; status: string }[]
-  allWorkflows: { id: string; name: string; status: string }[]
+  allCaseTypes: { id: string; name: string; status: string }[]
   allUsers: { id: string; name: string }[]
 }) {
   const router = useRouter()
   const [, startTransition] = useTransition()
-  const [tab, setTab] = useState<'overview' | 'canvas' | 'documents' | 'workflows' | 'kpis'>('overview')
+  const [tab, setTab] = useState<'overview' | 'canvas' | 'documents' | 'caseTypes' | 'kpis'>('overview')
   const [process, setProcess] = useState(initial)
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState({ name: initial.name, description: initial.description ?? '', purpose: initial.purpose ?? '', scope: initial.scope ?? '', status: initial.status, ownerId: (initial.owner as { id: string; name: string } | null)?.id ?? '' })
@@ -120,9 +120,9 @@ export function ProcessDetailClient({
 
   // Links
   const [linkedDocs, setLinkedDocs] = useState(initial.documents)
-  const [linkedWorkflows, setLinkedWorkflows] = useState(initial.workflows)
+  const [linkedCaseTypes, setLinkedCaseTypes] = useState(initial.caseTypes)
   const [showDocPicker, setShowDocPicker] = useState(false)
-  const [showWfPicker, setShowWfPicker] = useState(false)
+  const [showTypePicker, setShowTypePicker] = useState(false)
   const [pickerSearch, setPickerSearch] = useState('')
 
   // KPIs
@@ -184,22 +184,22 @@ export function ProcessDetailClient({
     setLinkedDocs((prev) => prev.filter((d) => d.id !== docId))
   }
 
-  const linkWorkflow = async (wfId: string) => {
+  const linkCaseType = async (typeId: string) => {
     await fetch(`/api/processes/${process.id}/links`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'workflow', targetId: wfId }),
+      body: JSON.stringify({ type: 'caseType', targetId: typeId }),
     })
-    const wf = allWorkflows.find((w) => w.id === wfId)!
-    setLinkedWorkflows((prev) => [...prev, { id: wf.id, name: wf.name, status: wf.status, updatedAt: new Date().toISOString() }])
-    setShowWfPicker(false)
+    const wf = allCaseTypes.find((w) => w.id === typeId)!
+    setLinkedCaseTypes((prev) => [...prev, { id: wf.id, name: wf.name, status: wf.status, updatedAt: new Date().toISOString() }])
+    setShowTypePicker(false)
   }
 
-  const unlinkWorkflow = async (wfId: string) => {
+  const unlinkCaseType = async (typeId: string) => {
     await fetch(`/api/processes/${process.id}/links`, {
       method: 'DELETE', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'workflow', targetId: wfId }),
+      body: JSON.stringify({ type: 'caseType', targetId: typeId }),
     })
-    setLinkedWorkflows((prev) => prev.filter((w) => w.id !== wfId))
+    setLinkedCaseTypes((prev) => prev.filter((w) => w.id !== typeId))
   }
 
   const saveKpis = async (updated: KPI[]) => {
@@ -232,13 +232,13 @@ export function ProcessDetailClient({
     { key: 'overview', label: 'Overview', icon: <GitBranch size={14} /> },
     { key: 'canvas', label: 'Canvas', icon: <Target size={14} /> },
     { key: 'documents', label: `Documents (${linkedDocs.length})`, icon: <FileText size={14} /> },
-    { key: 'workflows', label: `Workflows (${linkedWorkflows.length})`, icon: <Workflow size={14} /> },
+    { key: 'caseTypes', label: `Case types (${linkedCaseTypes.length})`, icon: <ClipboardList size={14} /> },
     { key: 'kpis', label: `KPIs (${kpis.length})`, icon: <Target size={14} /> },
   ] as const
 
   const unlinkedDocs = allDocuments.filter((d) => !linkedDocs.some((ld) => ld.id === d.id))
     .filter((d) => !pickerSearch || d.title.toLowerCase().includes(pickerSearch.toLowerCase()))
-  const unlinkedWfs = allWorkflows.filter((w) => !linkedWorkflows.some((lw) => lw.id === w.id))
+  const unlinkedCaseTypes = allCaseTypes.filter((w) => !linkedCaseTypes.some((lw) => lw.id === w.id))
     .filter((w) => !pickerSearch || w.name.toLowerCase().includes(pickerSearch.toLowerCase()))
 
   return (
@@ -401,8 +401,8 @@ export function ProcessDetailClient({
                       <span className="font-medium">{linkedDocs.length}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">Workflows</span>
-                      <span className="font-medium">{linkedWorkflows.length}</span>
+                      <span className="text-slate-500">Case types</span>
+                      <span className="font-medium">{linkedCaseTypes.length}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-500">KPIs</span>
@@ -511,29 +511,29 @@ export function ProcessDetailClient({
         </div>
       )}
 
-      {/* ── WORKFLOWS ── */}
-      {tab === 'workflows' && (
+      {/* ── CASE TYPES ── */}
+      {tab === 'caseTypes' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <p className="text-sm text-slate-500">{linkedWorkflows.length} linked workflow{linkedWorkflows.length !== 1 ? 's' : ''}</p>
-            <Button size="sm" variant="outline" onClick={() => { setPickerSearch(''); setShowWfPicker(true) }}>
-              <Link2 size={13} className="mr-1.5" /> Link workflow
+            <p className="text-sm text-slate-500">{linkedCaseTypes.length} linked case type{linkedCaseTypes.length !== 1 ? 's' : ''}</p>
+            <Button size="sm" variant="outline" onClick={() => { setPickerSearch(''); setShowTypePicker(true) }}>
+              <Link2 size={13} className="mr-1.5" /> Link case type
             </Button>
           </div>
-          {linkedWorkflows.length === 0 ? (
-            <Card className="shadow-sm"><CardContent className="py-12 text-center text-sm text-slate-400">No workflows linked yet.</CardContent></Card>
+          {linkedCaseTypes.length === 0 ? (
+            <Card className="shadow-sm"><CardContent className="py-12 text-center text-sm text-slate-400">No case types linked yet.</CardContent></Card>
           ) : (
             <div className="space-y-2">
-              {linkedWorkflows.map((wf) => (
+              {linkedCaseTypes.map((wf) => (
                 <Card key={wf.id} className="shadow-sm">
                   <CardContent className="p-4 flex items-center gap-3">
-                    <Workflow size={16} className="text-slate-400 shrink-0" />
+                    <ClipboardList size={16} className="text-slate-400 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-slate-800 truncate">{wf.name}</p>
                       <p className="text-xs text-slate-400">Updated {formatDistanceToNow(new Date(wf.updatedAt), { addSuffix: true })}</p>
                     </div>
                     <span className={`text-xs px-2 py-0.5 rounded font-medium ${docStatus[wf.status] ?? docStatus.draft}`}>{wf.status}</span>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-red-500" onClick={() => unlinkWorkflow(wf.id)} title="Unlink">
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-red-500" onClick={() => unlinkCaseType(wf.id)} title="Unlink">
                       <Unlink size={13} />
                     </Button>
                   </CardContent>
@@ -610,18 +610,18 @@ export function ProcessDetailClient({
         </DialogContent>
       </Dialog>
 
-      {/* Workflow picker */}
-      <Dialog open={showWfPicker} onOpenChange={(o) => !o && setShowWfPicker(false)}>
+      {/* Case type picker */}
+      <Dialog open={showTypePicker} onOpenChange={(o) => !o && setShowTypePicker(false)}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Link workflow</DialogTitle></DialogHeader>
-          <Input value={pickerSearch} onChange={(e) => setPickerSearch(e.target.value)} placeholder="Search workflows..." className="mb-3" />
+          <DialogHeader><DialogTitle>Link case type</DialogTitle></DialogHeader>
+          <Input value={pickerSearch} onChange={(e) => setPickerSearch(e.target.value)} placeholder="Search case types..." className="mb-3" />
           <div className="space-y-1 max-h-72 overflow-y-auto">
-            {unlinkedWfs.length === 0
-              ? <p className="text-sm text-slate-400 text-center py-6">No workflows to link.</p>
-              : unlinkedWfs.map((w) => (
-                <button key={w.id} onClick={() => linkWorkflow(w.id)}
+            {unlinkedCaseTypes.length === 0
+              ? <p className="text-sm text-slate-400 text-center py-6">No case types to link.</p>
+              : unlinkedCaseTypes.map((w) => (
+                <button key={w.id} onClick={() => linkCaseType(w.id)}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 text-left transition-colors">
-                  <Workflow size={14} className="text-slate-400 shrink-0" />
+                  <ClipboardList size={14} className="text-slate-400 shrink-0" />
                   <span className="text-sm text-slate-700 flex-1 truncate">{w.name}</span>
                   <span className={`text-xs px-1.5 py-0.5 rounded ${docStatus[w.status]}`}>{w.status}</span>
                 </button>

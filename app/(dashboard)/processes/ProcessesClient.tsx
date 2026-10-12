@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import {
-  GitBranch, Plus, ChevronRight, ChevronDown, FileText, Workflow as WorkflowIcon,
+  GitBranch, Plus, ChevronRight, ChevronDown, FileText, ClipboardList,
   Users, Circle, Trash2, FolderPlus, ExternalLink, Pencil, Check, X,
   Link2, Unlink,
 } from 'lucide-react'
@@ -46,7 +46,7 @@ interface Process {
   id: string; name: string; description: string | null; status: string
   parentId: string | null; owner: { id: string; name: string } | null
   category: string | null; tags: string[]
-  _count: { documents: number; workflows: number; children: number }
+  _count: { documents: number; caseTypes: number; children: number }
   createdAt: string; updatedAt: string
 }
 
@@ -56,7 +56,7 @@ interface ProcessDetail extends Process {
   children: { id: string; name: string; status: string }[]
   nodes: unknown[]; edges: unknown[]; kpis: unknown[]
   linkedDocuments: { id: string; title: string; status: string; category: string | null; updatedAt: string }[]
-  linkedWorkflows: { id: string; name: string; status: string; updatedAt: string }[]
+  linkedCaseTypes: { id: string; name: string; status: string; updatedAt: string }[]
 }
 
 interface KPI { id: string; name: string; description: string; value: string; unit: string; target: string }
@@ -64,7 +64,7 @@ interface KPI { id: string; name: string; description: string; value: string; un
 interface Props {
   initialProcesses: Process[]
   allDocuments: { id: string; title: string; status: string }[]
-  allWorkflows: { id: string; name: string; status: string }[]
+  allCaseTypes: { id: string; name: string; status: string }[]
   allUsers: { id: string; name: string }[]
 }
 
@@ -204,7 +204,7 @@ function CanvasPanel({ processId, initialNodes, initialEdges }: { processId: str
 }
 
 // ── Main component ─────────────────────────────────────────────────────────
-export function ProcessesClient({ initialProcesses, allDocuments, allWorkflows, allUsers }: Props) {
+export function ProcessesClient({ initialProcesses, allDocuments, allCaseTypes, allUsers }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
   const [processes, setProcesses] = useState(initialProcesses)
@@ -217,7 +217,7 @@ export function ProcessesClient({ initialProcesses, allDocuments, allWorkflows, 
   const [createParentId, setCreateParentId] = useState<string | null>(null)
   const [newName, setNewName] = useState('')
   const [creating, setCreating] = useState(false)
-  const [tab, setTab] = useState<'overview' | 'canvas' | 'documents' | 'workflows' | 'kpis'>('overview')
+  const [tab, setTab] = useState<'overview' | 'canvas' | 'documents' | 'caseTypes' | 'kpis'>('overview')
 
   // Overview edit
   const [editing, setEditing] = useState(false)
@@ -226,7 +226,7 @@ export function ProcessesClient({ initialProcesses, allDocuments, allWorkflows, 
 
   // Link pickers
   const [showDocPicker, setShowDocPicker] = useState(false)
-  const [showWfPicker, setShowWfPicker] = useState(false)
+  const [showTypePicker, setShowTypePicker] = useState(false)
   const [pickerSearch, setPickerSearch] = useState('')
 
   // KPIs
@@ -251,15 +251,15 @@ export function ProcessesClient({ initialProcesses, allDocuments, allWorkflows, 
         owner: { id: string; name: string } | null; parent: { id: string; name: string } | null
         children: { id: string; name: string; status: string }[]
         nodes: unknown[]; edges: unknown[]; kpis: unknown[]
-        _count: { documents: number; workflows: number; children: number }
+        _count: { documents: number; caseTypes: number; children: number }
         documents: { document: { id: string; title: string; status: string; category: string | null; updatedAt: string } }[]
-        workflows: { workflow: { id: string; name: string; status: string; updatedAt: string } }[]
+        caseTypes: { caseType: { id: string; name: string; status: string; updatedAt: string } }[]
       } }) => {
         setDetail({
           ...p,
-          _count: p._count ?? { documents: p.documents.length, workflows: p.workflows.length, children: p.children.length },
+          _count: p._count ?? { documents: p.documents.length, caseTypes: p.caseTypes.length, children: p.children.length },
           linkedDocuments: p.documents.map((pd) => ({ ...pd.document, updatedAt: pd.document.updatedAt })),
-          linkedWorkflows: p.workflows.map((pw) => ({ ...pw.workflow, updatedAt: pw.workflow.updatedAt })),
+          linkedCaseTypes: p.caseTypes.map((pw) => ({ ...pw.caseType, updatedAt: pw.caseType.updatedAt })),
         })
         setKpis((p.kpis as KPI[]) ?? [])
         setEditForm({
@@ -302,15 +302,15 @@ export function ProcessesClient({ initialProcesses, allDocuments, allWorkflows, 
     await fetch(`/api/processes/${selectedId}/links`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'document', targetId: docId }) })
     setDetail((d) => d ? { ...d, linkedDocuments: d.linkedDocuments.filter((x) => x.id !== docId) } : d)
   }
-  const linkWorkflow = async (wfId: string) => {
-    await fetch(`/api/processes/${selectedId}/links`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'workflow', targetId: wfId }) })
-    const wf = allWorkflows.find((w) => w.id === wfId)!
-    setDetail((d) => d ? { ...d, linkedWorkflows: [...d.linkedWorkflows, { id: wf.id, name: wf.name, status: wf.status, updatedAt: new Date().toISOString() }] } : d)
-    setShowWfPicker(false)
+  const linkCaseType = async (typeId: string) => {
+    await fetch(`/api/processes/${selectedId}/links`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'caseType', targetId: typeId }) })
+    const wf = allCaseTypes.find((w) => w.id === typeId)!
+    setDetail((d) => d ? { ...d, linkedCaseTypes: [...d.linkedCaseTypes, { id: wf.id, name: wf.name, status: wf.status, updatedAt: new Date().toISOString() }] } : d)
+    setShowTypePicker(false)
   }
-  const unlinkWorkflow = async (wfId: string) => {
-    await fetch(`/api/processes/${selectedId}/links`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'workflow', targetId: wfId }) })
-    setDetail((d) => d ? { ...d, linkedWorkflows: d.linkedWorkflows.filter((x) => x.id !== wfId) } : d)
+  const unlinkCaseType = async (typeId: string) => {
+    await fetch(`/api/processes/${selectedId}/links`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'caseType', targetId: typeId }) })
+    setDetail((d) => d ? { ...d, linkedCaseTypes: d.linkedCaseTypes.filter((x) => x.id !== typeId) } : d)
   }
 
   const saveKpis = async (updated: KPI[]) => {
@@ -357,15 +357,15 @@ export function ProcessesClient({ initialProcesses, allDocuments, allWorkflows, 
 
   const tree = buildTree(processes)
   const linkedDocs = detail?.linkedDocuments ?? []
-  const linkedWorkflows = detail?.linkedWorkflows ?? []
+  const linkedCaseTypes = detail?.linkedCaseTypes ?? []
   const unlinkedDocs = allDocuments.filter((d) => !linkedDocs.some((ld) => ld.id === d.id)).filter((d) => !pickerSearch || d.title.toLowerCase().includes(pickerSearch.toLowerCase()))
-  const unlinkedWfs = allWorkflows.filter((w) => !linkedWorkflows.some((lw) => lw.id === w.id)).filter((w) => !pickerSearch || w.name.toLowerCase().includes(pickerSearch.toLowerCase()))
+  const unlinkedCaseTypes = allCaseTypes.filter((w) => !linkedCaseTypes.some((lw) => lw.id === w.id)).filter((w) => !pickerSearch || w.name.toLowerCase().includes(pickerSearch.toLowerCase()))
 
   const tabs = [
     { key: 'overview' as const, label: 'Overview' },
     { key: 'canvas' as const, label: 'Canvas' },
     { key: 'documents' as const, label: `Documents (${linkedDocs.length})` },
-    { key: 'workflows' as const, label: `Workflows (${linkedWorkflows.length})` },
+    { key: 'caseTypes' as const, label: `Case types (${linkedCaseTypes.length})` },
     { key: 'kpis' as const, label: `KPIs (${kpis.length})` },
   ]
 
@@ -507,7 +507,7 @@ export function ProcessesClient({ initialProcesses, allDocuments, allWorkflows, 
                         ['Status', <Badge key="s" variant={statusVariant[detail.status] ?? 'default'} className="text-xs">{statusLabel[detail.status] ?? detail.status}</Badge>],
                         detail.owner && ['Owner', <span key="o" className="font-medium" style={{ color: 'var(--ink)' }}>{detail.owner.name}</span>],
                         ['Documents', <span key="d" className="font-medium">{linkedDocs.length}</span>],
-                        ['Workflows', <span key="w" className="font-medium">{linkedWorkflows.length}</span>],
+                        ['Case types', <span key="w" className="font-medium">{linkedCaseTypes.length}</span>],
                         ['KPIs', <span key="k" className="font-medium">{kpis.length}</span>],
                         detail.children.length > 0 && ['Sub-processes', <span key="c" className="font-medium">{detail.children.length}</span>],
                         ['Updated', <span key="u" className="text-xs" style={{ color: 'var(--ink-4)' }}>{formatDistanceToNow(new Date(detail.updatedAt), { addSuffix: true })}</span>],
@@ -567,24 +567,24 @@ export function ProcessesClient({ initialProcesses, allDocuments, allWorkflows, 
               </div>
             )}
 
-            {/* ── Workflows ── */}
-            {tab === 'workflows' && (
+            {/* ── Case types ── */}
+            {tab === 'caseTypes' && (
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <p className="text-sm" style={{ color: 'var(--ink-3)' }}>{linkedWorkflows.length} linked workflow{linkedWorkflows.length !== 1 ? 's' : ''}</p>
-                  <Button size="sm" variant="outline" onClick={() => { setPickerSearch(''); setShowWfPicker(true) }}><Link2 size={13} className="mr-1.5" />Link workflow</Button>
+                  <p className="text-sm" style={{ color: 'var(--ink-3)' }}>{linkedCaseTypes.length} linked case type{linkedCaseTypes.length !== 1 ? 's' : ''}</p>
+                  <Button size="sm" variant="outline" onClick={() => { setPickerSearch(''); setShowTypePicker(true) }}><Link2 size={13} className="mr-1.5" />Link case type</Button>
                 </div>
-                {linkedWorkflows.length === 0
-                  ? <Card><CardContent className="py-12 text-center text-sm" style={{ color: 'var(--ink-4)' }}>No workflows linked yet.</CardContent></Card>
-                  : <div className="space-y-2">{linkedWorkflows.map((wf) => (
+                {linkedCaseTypes.length === 0
+                  ? <Card><CardContent className="py-12 text-center text-sm" style={{ color: 'var(--ink-4)' }}>No case types linked yet.</CardContent></Card>
+                  : <div className="space-y-2">{linkedCaseTypes.map((wf) => (
                     <Card key={wf.id}><CardContent className="p-4 flex items-center gap-3">
-                      <WorkflowIcon size={16} className="shrink-0" style={{ color: 'var(--ink-4)' }} />
+                      <ClipboardList size={16} className="shrink-0" style={{ color: 'var(--ink-4)' }} />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate" style={{ color: 'var(--ink)' }}>{wf.name}</p>
                         <p className="text-xs" style={{ color: 'var(--ink-4)' }}>Updated {formatDistanceToNow(new Date(wf.updatedAt), { addSuffix: true })}</p>
                       </div>
                       <Badge variant={statusVariant[wf.status] ?? 'default'} className="text-xs">{wf.status}</Badge>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" style={{ color: 'var(--ink-4)' }} onClick={() => unlinkWorkflow(wf.id)} title="Unlink"><Unlink size={13} /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" style={{ color: 'var(--ink-4)' }} onClick={() => unlinkCaseType(wf.id)} title="Unlink"><Unlink size={13} /></Button>
                     </CardContent></Card>
                   ))}</div>
                 }
@@ -683,16 +683,16 @@ export function ProcessesClient({ initialProcesses, allDocuments, allWorkflows, 
         </DialogContent>
       </Dialog>
 
-      {/* ── Workflow picker ── */}
-      <Dialog open={showWfPicker} onOpenChange={(o) => !o && setShowWfPicker(false)}>
+      {/* ── Case type picker ── */}
+      <Dialog open={showTypePicker} onOpenChange={(o) => !o && setShowTypePicker(false)}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Link workflow</DialogTitle></DialogHeader>
-          <Input value={pickerSearch} onChange={(e) => setPickerSearch(e.target.value)} placeholder="Search workflows…" className="mb-3" />
+          <DialogHeader><DialogTitle>Link case type</DialogTitle></DialogHeader>
+          <Input value={pickerSearch} onChange={(e) => setPickerSearch(e.target.value)} placeholder="Search case types…" className="mb-3" />
           <div className="space-y-1 max-h-72 overflow-y-auto">
-            {unlinkedWfs.length === 0 ? <p className="text-sm text-center py-6" style={{ color: 'var(--ink-4)' }}>No workflows to link.</p>
-              : unlinkedWfs.map((w) => (
-                <button key={w.id} onClick={() => linkWorkflow(w.id)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[2px] hover:bg-[var(--paper-2)] text-left transition-colors">
-                  <WorkflowIcon size={14} className="shrink-0" style={{ color: 'var(--ink-4)' }} />
+            {unlinkedCaseTypes.length === 0 ? <p className="text-sm text-center py-6" style={{ color: 'var(--ink-4)' }}>No case types to link.</p>
+              : unlinkedCaseTypes.map((w) => (
+                <button key={w.id} onClick={() => linkCaseType(w.id)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[2px] hover:bg-[var(--paper-2)] text-left transition-colors">
+                  <ClipboardList size={14} className="shrink-0" style={{ color: 'var(--ink-4)' }} />
                   <span className="text-sm flex-1 truncate" style={{ color: 'var(--ink)' }}>{w.name}</span>
                   <Badge variant={statusVariant[w.status] ?? 'default'} className="text-xs">{w.status}</Badge>
                 </button>

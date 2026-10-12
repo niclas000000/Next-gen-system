@@ -5,7 +5,7 @@ import { ProcessDetailClient } from './ProcessDetailClient'
 export default async function ProcessDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
-  const [process, allDocuments, allWorkflows, allUsers] = await Promise.all([
+  const [process, allDocuments, allCaseTypes, allUsers] = await Promise.all([
     prisma.process.findUnique({
       where: { id },
       include: {
@@ -16,13 +16,13 @@ export default async function ProcessDetailPage({ params }: { params: Promise<{ 
         documents: {
           include: { document: { select: { id: true, title: true, status: true, category: true, updatedAt: true } } },
         },
-        workflows: {
-          include: { workflow: { select: { id: true, name: true, status: true, updatedAt: true } } },
+        caseTypes: {
+          include: { caseType: { select: { id: true, name: true, status: true, updatedAt: true } } },
         },
       },
     }),
     prisma.document.findMany({ select: { id: true, title: true, status: true }, orderBy: { title: 'asc' } }),
-    prisma.workflow.findMany({ select: { id: true, name: true, status: true }, orderBy: { name: 'asc' } }),
+    prisma.caseType.findMany({ select: { id: true, name: true, status: true }, orderBy: { name: 'asc' } }),
     prisma.user.findMany({ where: { active: true }, select: { id: true, name: true }, orderBy: { name: 'asc' } }),
   ])
 
@@ -41,13 +41,13 @@ export default async function ProcessDetailPage({ params }: { params: Promise<{ 
           ...pd.document,
           updatedAt: pd.document.updatedAt.toISOString(),
         })),
-        workflows: process.workflows.map((pw) => ({
-          ...pw.workflow,
-          updatedAt: pw.workflow.updatedAt.toISOString(),
+        caseTypes: process.caseTypes.map((pw) => ({
+          ...pw.caseType,
+          updatedAt: pw.caseType.updatedAt.toISOString(),
         })),
       }}
       allDocuments={allDocuments}
-      allWorkflows={allWorkflows}
+      allCaseTypes={allCaseTypes}
       allUsers={allUsers}
     />
   )

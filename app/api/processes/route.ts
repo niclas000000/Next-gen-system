@@ -10,7 +10,7 @@ export async function GET() {
     orderBy: { name: 'asc' },
     include: {
       owner: { select: { id: true, name: true } },
-      _count: { select: { documents: true, workflows: true, children: true } },
+      _count: { select: { documents: true, caseTypes: true, children: true } },
     },
   })
   return NextResponse.json({ processes })
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     },
     include: {
       owner: { select: { id: true, name: true } },
-      _count: { select: { documents: true, workflows: true, children: true } },
+      _count: { select: { documents: true, caseTypes: true, children: true } },
     },
   })
   return NextResponse.json({ process }, { status: 201 })

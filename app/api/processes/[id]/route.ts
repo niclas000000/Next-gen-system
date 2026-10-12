@@ -20,9 +20,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
           },
         },
       },
-      workflows: {
+      caseTypes: {
         include: {
-          workflow: {
+          caseType: {
             select: { id: true, name: true, status: true, updatedAt: true },
           },
         },
@@ -46,7 +46,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     data,
     include: {
       owner: { select: { id: true, name: true } },
-      _count: { select: { documents: true, workflows: true, children: true } },
+      _count: { select: { documents: true, caseTypes: true, children: true } },
     },
   })
   return NextResponse.json({ process })

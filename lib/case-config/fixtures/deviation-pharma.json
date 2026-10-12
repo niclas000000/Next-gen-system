@@ -1,0 +1,2863 @@
+{
+  "caseTypeName": "Deviation",
+  "prefix": "DEV",
+  "securityLevel": 1,
+  "description": "Deviation handling for a GMP-regulated Life Science company: Registration → Coordination → Root cause investigation → QA assessment/closure. Inbox groups (deviation leader group, QA assessor group) pick or assign the individual role holder via a button. Classification (Critical/Major/Minor/Observation) drives which fields are shown and mandatory; observations are quick-closed in Coordination. ERP integration fetches article data from batch number. E-signature on quick close and on forward from investigation and QA.",
+  "roles": [
+    {
+      "id": "initiator",
+      "name": "Initiator",
+      "description": "Registers the deviation (orig. Initierare)",
+      "kind": "user"
+    },
+    {
+      "id": "reporter",
+      "name": "Reporter",
+      "description": "Auto: logged-in user at registration (orig. Inrapportör)",
+      "kind": "user"
+    },
+    {
+      "id": "deviationLeader",
+      "name": "Deviation leader",
+      "description": "Drives coordination and root cause investigation (orig. Avvikelseledare)",
+      "kind": "user"
+    },
+    {
+      "id": "deviationLeaderGroup",
+      "name": "Deviation leader group",
+      "description": "Inbox group per discovery area – picks or assigns the deviation leader (orig. Avvikelseledare grupp)",
+      "kind": "group"
+    },
+    {
+      "id": "qaAssessor",
+      "name": "QA assessor",
+      "description": "Performs QA assessment and closes the case (orig. QA-bedömare)",
+      "kind": "user"
+    },
+    {
+      "id": "qaAssessorGroup",
+      "name": "QA assessor group",
+      "description": "Inbox group – picks or assigns the QA assessor (orig. QA-bedömare grupp)",
+      "kind": "group"
+    }
+  ],
+  "registries": [
+    {
+      "id": "r-discoveryArea",
+      "name": "Discovery area",
+      "values": [
+        "Production",
+        "QC laboratory",
+        "Warehouse",
+        "Packaging",
+        "Facilities",
+        "IT",
+        "Quality assurance"
+      ],
+      "comments": "Where in the organisation/flow the deviation was discovered. Role assignment: Deviation leader group. Customer-specific list.",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-geoLocation",
+      "name": "Geographic location",
+      "values": [
+        "Site A",
+        "Site B"
+      ],
+      "comments": "Customer-specific list",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-itSystem",
+      "name": "IT system",
+      "values": [
+        "ERP",
+        "LIMS",
+        "MES",
+        "Document management"
+      ],
+      "comments": "Customer-specific list",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-room",
+      "name": "Room number",
+      "values": [],
+      "comments": "Customer-specific list (rooms)",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-area",
+      "name": "Area",
+      "values": [],
+      "comments": "Ownership area of the equipment – customer-specific list",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-equipment",
+      "name": "Equipment (category + ID)",
+      "values": [],
+      "comments": "Customer-specific equipment register",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-yesNo",
+      "name": "Yes/No",
+      "values": [
+        "Yes",
+        "No"
+      ],
+      "comments": "",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-oos",
+      "name": "OOS/OOE/OOT",
+      "values": [
+        "OOS",
+        "OOE",
+        "OOT"
+      ],
+      "comments": "",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-origin",
+      "name": "Origin",
+      "values": [
+        "DEV",
+        "CC",
+        "CAPA",
+        "Audit"
+      ],
+      "comments": "Hidden field, default DEV – used to trace where the case was created",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-ownership",
+      "name": "Ownership of the deviation",
+      "values": [
+        "Production",
+        "QC",
+        "QA",
+        "Engineering",
+        "Supply chain"
+      ],
+      "comments": "Customer-specific list",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-site",
+      "name": "Affected site",
+      "values": [
+        "Site A",
+        "Site B"
+      ],
+      "comments": "Customer-specific list",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-classification",
+      "name": "Classification",
+      "values": [
+        "Critical deviation",
+        "Major deviation",
+        "Minor deviation",
+        "Observation"
+      ],
+      "comments": "Orig. Kritisk, Större, Mindre, Observation",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-trend",
+      "name": "Trending – previous occurrence",
+      "values": [
+        "First time",
+        "Occasional",
+        "Recurring"
+      ],
+      "comments": "Orig. Trendning tidigare förekomst",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-rootCause",
+      "name": "Root cause",
+      "values": [
+        "Man",
+        "Machine",
+        "Method",
+        "Material",
+        "Measurement",
+        "Environment",
+        "Documentation",
+        "Supplier"
+      ],
+      "comments": "Customer-specific list",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-contributingCause",
+      "name": "Contributing cause",
+      "values": [
+        "Training",
+        "Communication",
+        "Workload",
+        "Equipment condition",
+        "Unclear instruction"
+      ],
+      "comments": "Customer-specific list",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-errorCode",
+      "name": "Error code",
+      "values": [],
+      "comments": "Categorisation of errors for trending where they occur – customer-specific list (orig. Felkod)",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-batchStatus",
+      "name": "Batch status",
+      "values": [
+        "Released",
+        "Released with justification",
+        "Rejected",
+        "On hold",
+        "Not applicable"
+      ],
+      "comments": "Orig. Vad är status för satsen?",
+      "parentRegistryId": null,
+      "parents": {}
+    },
+    {
+      "id": "r-users",
+      "name": "Users",
+      "values": [],
+      "comments": "The system's user register",
+      "parentRegistryId": null,
+      "parents": {}
+    }
+  ],
+  "fields": [
+    {
+      "id": "caseCreated",
+      "name": "Case created",
+      "type": "date",
+      "section": "Registration",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Date + time, auto today's date & time. Read-only (orig. Ärende skapat)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "reporter",
+      "name": "Reporter",
+      "type": "registrySearch",
+      "section": "Registration",
+      "mandatory": false,
+      "registryId": "r-users",
+      "multi": false,
+      "comments": "Auto: logged-in user. Read-only (orig. Inrapportör)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "discoveryArea",
+      "name": "Discovery area",
+      "type": "registryDropdown",
+      "section": "Registration",
+      "mandatory": true,
+      "registryId": "r-discoveryArea",
+      "multi": false,
+      "comments": "Role assignment → Deviation leader group (orig. Upptäcktsområde)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "geoPremises",
+      "name": "Geographic location – affected premises",
+      "type": "registryDropdown",
+      "section": "Affected premises, equipment and IT systems",
+      "mandatory": false,
+      "registryId": "r-geoLocation",
+      "multi": true,
+      "comments": "Only if the deviation affects specific premises (orig. Geografisk plats – Berörd lokal)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "geoEquipment",
+      "name": "Geographic location – affected equipment",
+      "type": "registryDropdown",
+      "section": "Affected premises, equipment and IT systems",
+      "mandatory": false,
+      "registryId": "r-geoLocation",
+      "multi": true,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "itSystem",
+      "name": "Affected IT system",
+      "type": "registryDropdown",
+      "section": "Affected premises, equipment and IT systems",
+      "mandatory": false,
+      "registryId": "r-itSystem",
+      "multi": true,
+      "comments": "Orig. Berört IT-system",
+      "assignsRoleId": null
+    },
+    {
+      "id": "room",
+      "name": "Room number",
+      "type": "registryDropdown",
+      "section": "Affected premises, equipment and IT systems",
+      "mandatory": false,
+      "registryId": "r-room",
+      "multi": true,
+      "comments": "Orig. Rumsnummer",
+      "assignsRoleId": null
+    },
+    {
+      "id": "area",
+      "name": "Area",
+      "type": "registryDropdown",
+      "section": "Affected premises, equipment and IT systems",
+      "mandatory": false,
+      "registryId": "r-area",
+      "multi": true,
+      "comments": "By ownership of the equipment (orig. Område)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "equipment",
+      "name": "Category + ID",
+      "type": "registryDropdown",
+      "section": "Affected premises, equipment and IT systems",
+      "mandatory": false,
+      "registryId": "r-equipment",
+      "multi": true,
+      "comments": "Equipment affected by the deviation",
+      "assignsRoleId": null
+    },
+    {
+      "id": "productAffected",
+      "name": "Product/material affected?",
+      "type": "registryDropdown",
+      "section": "Product / material",
+      "mandatory": true,
+      "registryId": "r-yesNo",
+      "multi": false,
+      "comments": "Rule: fields below hidden unless = Yes (orig. Berörs produkt/insatsmaterial?)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "productAffectedBtn",
+      "name": "Confirm selection",
+      "type": "button",
+      "section": "Product / material",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Shows the product/material fields",
+      "assignsRoleId": null
+    },
+    {
+      "id": "batchNumber",
+      "name": "Batch number",
+      "type": "text",
+      "section": "Product / material",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Orig. Satsnummer",
+      "assignsRoleId": null
+    },
+    {
+      "id": "getArticleBtn",
+      "name": "Get article data",
+      "type": "button",
+      "section": "Product / material",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Web service call: fetches article number/name from the ERP based on batch number",
+      "assignsRoleId": null
+    },
+    {
+      "id": "articleNumber",
+      "name": "Article number",
+      "type": "text",
+      "section": "Product / material",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Response from integration",
+      "assignsRoleId": null
+    },
+    {
+      "id": "articleName",
+      "name": "Article name",
+      "type": "text",
+      "section": "Product / material",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Response from integration",
+      "assignsRoleId": null
+    },
+    {
+      "id": "integrationResult",
+      "name": "Integration result",
+      "type": "text",
+      "section": "Product / material",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Response/error code from integration. Rule: hidden for all except admin",
+      "assignsRoleId": null
+    },
+    {
+      "id": "analysisAffected",
+      "name": "Analysis affected?",
+      "type": "registryDropdown",
+      "section": "Analysis",
+      "mandatory": true,
+      "registryId": "r-yesNo",
+      "multi": false,
+      "comments": "Rule: fields below hidden unless = Yes (orig. Berörs analys?)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "analysisAffectedBtn",
+      "name": "Confirm selection",
+      "type": "button",
+      "section": "Analysis",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Shows the analysis fields",
+      "assignsRoleId": null
+    },
+    {
+      "id": "sampleNumber",
+      "name": "Sample number",
+      "type": "text",
+      "section": "Analysis",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Sample number(s) according to LIMS, separated by semicolon (orig. Provnummer)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "labInvestigationAttached",
+      "name": "Lab investigation attached?",
+      "type": "registryDropdown",
+      "section": "Analysis",
+      "mandatory": false,
+      "registryId": "r-yesNo",
+      "multi": false,
+      "comments": "If yes, attach the document to the case",
+      "assignsRoleId": null
+    },
+    {
+      "id": "suspectedOos",
+      "name": "Suspected OOS/OOE/OOT?",
+      "type": "registryDropdown",
+      "section": "Analysis",
+      "mandatory": false,
+      "registryId": "r-oos",
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "documentRef",
+      "name": "Reference to affected document",
+      "type": "text",
+      "section": "Event",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Document ID incl. version if the deviation is linked to a method/instruction (orig. Referera till berört dokument)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "eventDate",
+      "name": "Event date",
+      "type": "date",
+      "section": "Event",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "Orig. Händelsedatum",
+      "assignsRoleId": null
+    },
+    {
+      "id": "problem",
+      "name": "Describe the problem",
+      "type": "textMultiline",
+      "section": "Event",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "What happened, what is the deviation? (orig. Beskriv problemet)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "discovery",
+      "name": "Describe the discovery",
+      "type": "textMultiline",
+      "section": "Event",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "Who discovered it, how, which work step; anything unusual? (orig. Beskriv upptäckten)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "immediateAction",
+      "name": "Decision and immediate action",
+      "type": "textMultiline",
+      "section": "Event",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "Decisions taken and by whom, immediate action performed (orig. Beslut och akut åtgärd)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "comments",
+      "name": "Comments",
+      "type": "subcase",
+      "section": "Event",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Sub case: Comment (orig. Kommentarer)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "attachments",
+      "name": "Attached files and documents",
+      "type": "attachments",
+      "section": "Event",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "origin",
+      "name": "Origin",
+      "type": "registryDropdown",
+      "section": "Event",
+      "mandatory": false,
+      "registryId": "r-origin",
+      "multi": false,
+      "comments": "Hidden, default DEV (orig. Ursprung)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "deviationLeader",
+      "name": "Select deviation leader",
+      "type": "registrySearch",
+      "section": "Coordination",
+      "mandatory": true,
+      "registryId": "r-users",
+      "multi": false,
+      "comments": "Role assignment: Deviation leader, chosen from the Deviation leader group. The only field the group may edit (orig. Välj avvikelseledare)",
+      "assignsRoleId": "deviationLeader"
+    },
+    {
+      "id": "deviationLeaderBtn",
+      "name": "Confirm deviation leader",
+      "type": "button",
+      "section": "Coordination",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Saves the case, sets the role and sends e-mail to the deviation leader",
+      "assignsRoleId": null
+    },
+    {
+      "id": "plannedDate",
+      "name": "Planned completion date",
+      "type": "date",
+      "section": "Coordination",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "Default today + 30 days. When changed later, a comment with the reason is required (orig. Planerat klardatum)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "ownership",
+      "name": "Ownership of the deviation",
+      "type": "registryDropdown",
+      "section": "Coordination",
+      "mandatory": true,
+      "registryId": "r-ownership",
+      "multi": false,
+      "comments": "Orig. Ägandeskap av avvikelsen",
+      "assignsRoleId": null
+    },
+    {
+      "id": "affectedSite",
+      "name": "Affected site",
+      "type": "registryDropdown",
+      "section": "Coordination",
+      "mandatory": true,
+      "registryId": "r-site",
+      "multi": true,
+      "comments": "Orig. Ort som berörs",
+      "assignsRoleId": null
+    },
+    {
+      "id": "initialClassification",
+      "name": "Initial classification",
+      "type": "registryDropdown",
+      "section": "Initial classification",
+      "mandatory": true,
+      "registryId": "r-classification",
+      "multi": false,
+      "comments": "Consider scope and impact. Rules: Observation → the case must be quick-closed (P); Critical/Major/Minor → must be sent forward (orig. Initial klassificering)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "initialClassificationBtn",
+      "name": "Confirm classification",
+      "type": "button",
+      "section": "Initial classification",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Shows fields based on the initial classification",
+      "assignsRoleId": null
+    },
+    {
+      "id": "initialJustification",
+      "name": "Justification for initial classification",
+      "type": "textMultiline",
+      "section": "Initial classification",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "Orig. Motivering till initial klassificering",
+      "assignsRoleId": null
+    },
+    {
+      "id": "observationCorrection",
+      "name": "Observation – additional correction",
+      "type": "textMultiline",
+      "section": "Initial classification",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Describe additional corrections: when, how, who. Mandatory on quick close (orig. Observation – Ytterligare korrigering)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "changeLeader",
+      "name": "Change deviation leader",
+      "type": "registrySearch",
+      "section": "Root cause investigation",
+      "mandatory": false,
+      "registryId": "r-users",
+      "multi": false,
+      "comments": "Change of role holder – a comment with the reason is required (orig. Ändra avvikelseledare)",
+      "assignsRoleId": "deviationLeader"
+    },
+    {
+      "id": "changeLeaderBtn",
+      "name": "Confirm change",
+      "type": "button",
+      "section": "Root cause investigation",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Changes the role, sends e-mail and checks in the case",
+      "assignsRoleId": null
+    },
+    {
+      "id": "classification",
+      "name": "Classification",
+      "type": "registryDropdown",
+      "section": "Root cause investigation",
+      "mandatory": true,
+      "registryId": "r-classification",
+      "multi": false,
+      "comments": "Final classification. Rules: which fields are shown/mandatory depend on the value (orig. Klassificering)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "classificationBtn",
+      "name": "Show fields",
+      "type": "button",
+      "section": "Root cause investigation",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Shows/hides the fields below",
+      "assignsRoleId": null
+    },
+    {
+      "id": "rcaPanel",
+      "name": "Root cause fields based on classification",
+      "type": "collapsiblePanel",
+      "section": "Root cause investigation",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "additionalCorrections",
+      "name": "Additional corrections",
+      "type": "textMultiline",
+      "section": "Root cause investigation",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Corrections identified and performed: when, how, who (orig. Ytterligare korrigeringar)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "rcaDocuments",
+      "name": "Documents for root cause investigation",
+      "type": "attachments",
+      "section": "Root cause investigation",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Advanced document (orig. Dokument för orsaksutredning)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "rootCauseInvestigation",
+      "name": "Root cause investigation",
+      "type": "textMultiline",
+      "section": "Root cause investigation",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "Perform directly in the field or summarise the document (orig. Orsaksutredning)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "statementDocuments",
+      "name": "Documents for statement",
+      "type": "attachments",
+      "section": "Root cause investigation",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "When a statement is needed: add document, appoint author, check in (orig. Dokument för utlåtande)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "riskDocuments",
+      "name": "Documents for risk assessment",
+      "type": "attachments",
+      "section": "Root cause investigation",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Orig. Dokument för riskbedömning",
+      "assignsRoleId": null
+    },
+    {
+      "id": "riskAssessment",
+      "name": "Risk assessment",
+      "type": "textMultiline",
+      "section": "Root cause investigation",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "Text field hidden for Critical/Major (document used instead) (orig. Riskbedömning)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "impactStatement",
+      "name": "Statement – impact on product/patient/quality risk",
+      "type": "textMultiline",
+      "section": "Root cause investigation",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "Assess impact on product/batch quality, patient risk and GxP compliance (orig. Utlåtande påverkan produktrisk/patientrisk/kvalitetsrisk)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "supplierAffected",
+      "name": "Supplier/manufacturer involved?",
+      "type": "registryDropdown",
+      "section": "Supplier / manufacturer",
+      "mandatory": false,
+      "registryId": "r-yesNo",
+      "multi": false,
+      "comments": "Rule: fields below hidden unless = Yes (orig. Berörs leverantör/tillverkare?)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "supplierAffectedBtn",
+      "name": "Confirm selection",
+      "type": "button",
+      "section": "Supplier / manufacturer",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "confirmedArticle",
+      "name": "Confirmed article number",
+      "type": "text",
+      "section": "Supplier / manufacturer",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "supplierId",
+      "name": "Supplier ID",
+      "type": "text",
+      "section": "Supplier / manufacturer",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "supplierName",
+      "name": "Supplier name",
+      "type": "text",
+      "section": "Supplier / manufacturer",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "manufacturerId",
+      "name": "Manufacturer ID",
+      "type": "text",
+      "section": "Supplier / manufacturer",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "manufacturerName",
+      "name": "Manufacturer name",
+      "type": "text",
+      "section": "Supplier / manufacturer",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "trend",
+      "name": "Trending – previous occurrence",
+      "type": "registryDropdown",
+      "section": "Cause and trending",
+      "mandatory": true,
+      "registryId": "r-trend",
+      "multi": false,
+      "comments": "Related deviations are linked via Related cases in the menu (orig. Trendning tidigare förekomst)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "rootCause",
+      "name": "Root cause",
+      "type": "registryDropdown",
+      "section": "Cause and trending",
+      "mandatory": true,
+      "registryId": "r-rootCause",
+      "multi": false,
+      "comments": "Orig. Grundorsak",
+      "assignsRoleId": null
+    },
+    {
+      "id": "contributingCause",
+      "name": "Contributing cause",
+      "type": "registryDropdown",
+      "section": "Cause and trending",
+      "mandatory": false,
+      "registryId": "r-contributingCause",
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    },
+    {
+      "id": "errorCode",
+      "name": "Error code",
+      "type": "registryDropdown",
+      "section": "Cause and trending",
+      "mandatory": true,
+      "registryId": "r-errorCode",
+      "multi": false,
+      "comments": "Orig. Felkod",
+      "assignsRoleId": null
+    },
+    {
+      "id": "confirmedOos",
+      "name": "Confirmed OOS/OOE/OOT?",
+      "type": "registryDropdown",
+      "section": "Cause and trending",
+      "mandatory": false,
+      "registryId": "r-oos",
+      "multi": false,
+      "comments": "Orig. Bekräftad OOS/OOE/OOT?",
+      "assignsRoleId": null
+    },
+    {
+      "id": "summary",
+      "name": "Summary / conclusion",
+      "type": "textMultiline",
+      "section": "Cause and trending",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "Summarise root cause, risk and statement (orig. Summering/Slutsats)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "capa",
+      "name": "CAPA",
+      "type": "subcase",
+      "section": "Cause and trending",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Sub case: CAPA. Hidden for Minor deviation that is first time/occasional",
+      "assignsRoleId": null
+    },
+    {
+      "id": "qaAssessorGroup",
+      "name": "QA assessor group",
+      "type": "registryDropdown",
+      "section": "Role assignment",
+      "mandatory": true,
+      "registryId": "r-discoveryArea",
+      "multi": false,
+      "comments": "Role assignment → QA assessor group (orig. QA-bedömare grupp)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "qaAssessor",
+      "name": "Select/change QA assessor",
+      "type": "registrySearch",
+      "section": "QA assessment",
+      "mandatory": true,
+      "registryId": "r-users",
+      "multi": false,
+      "comments": "Role assignment: QA assessor. The only field the QA assessor group may edit (orig. Välj/byt QA-bedömare)",
+      "assignsRoleId": "qaAssessor"
+    },
+    {
+      "id": "qaAssessorBtn",
+      "name": "Confirm QA assessor",
+      "type": "button",
+      "section": "QA assessment",
+      "mandatory": false,
+      "registryId": null,
+      "multi": false,
+      "comments": "Sets the role and checks in the case",
+      "assignsRoleId": null
+    },
+    {
+      "id": "qaAssessment",
+      "name": "QA assessment",
+      "type": "textMultiline",
+      "section": "QA assessment",
+      "mandatory": true,
+      "registryId": null,
+      "multi": false,
+      "comments": "Document the QA assessment according to SOP. If the deviation needs completion: add a comment and send the case backwards (orig. QA-bedömning)",
+      "assignsRoleId": null
+    },
+    {
+      "id": "batchStatus",
+      "name": "What is the status of the batch?",
+      "type": "registryDropdown",
+      "section": "QA assessment",
+      "mandatory": true,
+      "registryId": "r-batchStatus",
+      "multi": false,
+      "comments": "",
+      "assignsRoleId": null
+    }
+  ],
+  "phases": [
+    {
+      "id": "registration",
+      "name": "Registration",
+      "description": "The initiator describes the event, what is affected (premises, equipment, IT system, product/batch, analysis) and the immediate action. On forward: e-mail to the Deviation leader group for the selected discovery area.",
+      "responsibleRoleIds": [
+        "initiator"
+      ],
+      "permissions": {
+        "initiator": {
+          "edit": true,
+          "forward": true,
+          "backward": false,
+          "preEnd": false
+        }
+      },
+      "fields": {
+        "caseCreated": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "reporter": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "discoveryArea": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "geoPremises": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "geoEquipment": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "itSystem": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "room": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "area": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "equipment": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "productAffected": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "productAffectedBtn": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "batchNumber": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "getArticleBtn": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "articleNumber": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "articleName": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "integrationResult": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "analysisAffected": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "analysisAffectedBtn": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "sampleNumber": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "labInvestigationAttached": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "suspectedOos": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "documentRef": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "eventDate": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "problem": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "discovery": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "immediateAction": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "comments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "attachments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "origin": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        }
+      },
+      "layout": [],
+      "rules": [
+        {
+          "id": "r-batch-registration",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "productAffected",
+            "operator": "neq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "batchNumber",
+            "getArticleBtn",
+            "articleNumber",
+            "articleName"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-sample-registration",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "analysisAffected",
+            "operator": "neq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "sampleNumber",
+            "labInvestigationAttached",
+            "suspectedOos"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "m-1",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "email",
+          "recipientRoleIds": [
+            "deviationLeaderGroup"
+          ],
+          "recipientText": "",
+          "subject": "New deviation [ID] – [Title]",
+          "message": "A new deviation has been registered in your discovery area. Pick the case or assign a deviation leader."
+        }
+      ],
+      "deadlineDays": 1,
+      "deadlineHours": null
+    },
+    {
+      "id": "coordination",
+      "name": "Coordination",
+      "description": "The group assigns a deviation leader (button confirms and notifies). The leader sets ownership, affected site and the initial classification. Observation → the case is quick-closed here with e-signature; Critical/Major/Minor → sent forward.",
+      "responsibleRoleIds": [
+        "deviationLeader"
+      ],
+      "permissions": {
+        "deviationLeader": {
+          "edit": true,
+          "forward": true,
+          "backward": true,
+          "preEnd": true
+        },
+        "deviationLeaderGroup": {
+          "edit": true,
+          "forward": false,
+          "backward": false,
+          "preEnd": false
+        }
+      },
+      "fields": {
+        "caseCreated": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "reporter": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "discoveryArea": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "geoPremises": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "geoEquipment": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "itSystem": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "room": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "area": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "equipment": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "productAffected": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "productAffectedBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "batchNumber": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "getArticleBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "articleNumber": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "articleName": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "integrationResult": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "analysisAffected": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "analysisAffectedBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "sampleNumber": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "labInvestigationAttached": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "suspectedOos": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "documentRef": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "eventDate": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "problem": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "discovery": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "immediateAction": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "comments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "attachments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "origin": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "deviationLeader": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "deviationLeaderBtn": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "plannedDate": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "ownership": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "affectedSite": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "initialClassification": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "initialClassificationBtn": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "initialJustification": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "observationCorrection": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        }
+      },
+      "layout": [],
+      "rules": [
+        {
+          "id": "pr-coord-esign",
+          "name": "",
+          "triggers": [
+            "onPreEnd"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "eSignature"
+        },
+        {
+          "id": "pr-coord-obs",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": {
+            "fieldId": "initialClassification",
+            "operator": "eq",
+            "value": "Observation"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "direction",
+          "allowed": "preEnd",
+          "message": "Observations are closed here – use quick close."
+        },
+        {
+          "id": "pr-coord-dev",
+          "name": "",
+          "triggers": [
+            "onPreEnd"
+          ],
+          "when": {
+            "fieldId": "initialClassification",
+            "operator": "neq",
+            "value": "Observation"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "direction",
+          "allowed": "forward",
+          "message": "Deviations must be sent forward for root cause investigation."
+        },
+        {
+          "id": "r-batch-coordination",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "productAffected",
+            "operator": "neq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "batchNumber",
+            "getArticleBtn",
+            "articleNumber",
+            "articleName"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-sample-coordination",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "analysisAffected",
+            "operator": "neq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "sampleNumber",
+            "labInvestigationAttached",
+            "suspectedOos"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-obs-coordination",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "initialClassification",
+            "operator": "neq",
+            "value": "Observation"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "observationCorrection"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-obs2-coordination",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": {
+            "fieldId": "initialClassification",
+            "operator": "eq",
+            "value": "Observation"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "mandatory",
+          "fieldIds": [
+            "observationCorrection"
+          ]
+        },
+        {
+          "id": "m-2",
+          "name": "",
+          "triggers": [
+            "onButtonClick"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "Sent when the deviation leader is confirmed with the button",
+          "type": "email",
+          "recipientRoleIds": [
+            "deviationLeader"
+          ],
+          "recipientText": "",
+          "subject": "You have been assigned deviation [ID]",
+          "message": ""
+        },
+        {
+          "id": "m-3",
+          "name": "",
+          "triggers": [
+            "onBackward"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "email",
+          "recipientRoleIds": [
+            "initiator"
+          ],
+          "recipientText": "",
+          "subject": "Deviation [ID] sent back for completion",
+          "message": ""
+        }
+      ],
+      "deadlineDays": 5,
+      "deadlineHours": null
+    },
+    {
+      "id": "rootCause",
+      "name": "Root cause investigation",
+      "description": "Final classification decides which fields are shown and mandatory (Critical/Major: documents for investigation and risk assessment; Minor: text fields only, CAPA hidden if first time/occasional). E-signature on forward. On forward: e-mail to the QA assessor group.",
+      "responsibleRoleIds": [
+        "deviationLeader"
+      ],
+      "permissions": {
+        "deviationLeader": {
+          "edit": true,
+          "forward": true,
+          "backward": false,
+          "preEnd": false
+        }
+      },
+      "fields": {
+        "caseCreated": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "reporter": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "discoveryArea": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "geoPremises": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "geoEquipment": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "itSystem": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "room": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "area": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "equipment": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "productAffected": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "productAffectedBtn": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "batchNumber": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "getArticleBtn": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "articleNumber": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "articleName": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "integrationResult": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "analysisAffected": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "analysisAffectedBtn": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "sampleNumber": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "labInvestigationAttached": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "suspectedOos": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "documentRef": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "eventDate": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "problem": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "discovery": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "immediateAction": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "comments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "attachments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "origin": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "deviationLeader": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "deviationLeaderBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "plannedDate": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "ownership": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "affectedSite": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "initialClassification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "initialClassificationBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "initialJustification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "observationCorrection": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeLeader": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "changeLeaderBtn": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "classification": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "classificationBtn": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "rcaPanel": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "additionalCorrections": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "rcaDocuments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "rootCauseInvestigation": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "statementDocuments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "riskDocuments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "riskAssessment": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "impactStatement": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "supplierAffected": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierAffectedBtn": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "confirmedArticle": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierId": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierName": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "manufacturerId": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "manufacturerName": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "trend": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "rootCause": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "contributingCause": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "errorCode": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "confirmedOos": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "summary": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "capa": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "qaAssessorGroup": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        }
+      },
+      "layout": [],
+      "rules": [
+        {
+          "id": "pr-rca-esign",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "eSignature"
+        },
+        {
+          "id": "r-batch-rootCause",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "productAffected",
+            "operator": "neq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "batchNumber",
+            "getArticleBtn",
+            "articleNumber",
+            "articleName"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-sample-rootCause",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "analysisAffected",
+            "operator": "neq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "sampleNumber",
+            "labInvestigationAttached",
+            "suspectedOos"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-obs-rootCause",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "initialClassification",
+            "operator": "neq",
+            "value": "Observation"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "observationCorrection"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-obs2-rootCause",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": {
+            "fieldId": "initialClassification",
+            "operator": "eq",
+            "value": "Observation"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "mandatory",
+          "fieldIds": [
+            "observationCorrection"
+          ]
+        },
+        {
+          "id": "r-rcadoc-rootCause",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "classification",
+            "operator": "eq",
+            "value": "Minor deviation"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "rcaDocuments",
+            "riskDocuments"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-sup1-rootCause",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "supplierAffected",
+            "operator": "neq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "confirmedArticle",
+            "supplierId",
+            "supplierName",
+            "manufacturerId",
+            "manufacturerName"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-coos-rootCause",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": {
+            "fieldId": "analysisAffected",
+            "operator": "eq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "mandatory",
+          "fieldIds": [
+            "confirmedOos"
+          ]
+        },
+        {
+          "id": "m-4",
+          "name": "",
+          "triggers": [
+            "onButtonClick"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "Change of deviation leader",
+          "type": "email",
+          "recipientRoleIds": [
+            "deviationLeader"
+          ],
+          "recipientText": "",
+          "subject": "You have been assigned deviation [ID]",
+          "message": ""
+        },
+        {
+          "id": "m-5",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "email",
+          "recipientRoleIds": [
+            "qaAssessorGroup"
+          ],
+          "recipientText": "",
+          "subject": "Deviation [ID] ready for QA assessment",
+          "message": ""
+        }
+      ],
+      "deadlineDays": 30,
+      "deadlineHours": null
+    },
+    {
+      "id": "qaAssessment",
+      "name": "QA assessment / closure",
+      "description": "The group assigns a QA assessor. QA documents the assessment according to SOP and decides the batch status. E-signature on forward (closure). Backwards to the deviation leader if completion is needed.",
+      "responsibleRoleIds": [
+        "qaAssessor"
+      ],
+      "permissions": {
+        "qaAssessor": {
+          "edit": true,
+          "forward": true,
+          "backward": true,
+          "preEnd": false
+        },
+        "qaAssessorGroup": {
+          "edit": true,
+          "forward": false,
+          "backward": false,
+          "preEnd": false
+        }
+      },
+      "fields": {
+        "caseCreated": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "reporter": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "discoveryArea": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "geoPremises": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "geoEquipment": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "itSystem": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "room": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "area": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "equipment": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "productAffected": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "productAffectedBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "batchNumber": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "getArticleBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "articleNumber": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "articleName": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "integrationResult": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "analysisAffected": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "analysisAffectedBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "sampleNumber": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "labInvestigationAttached": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "suspectedOos": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "documentRef": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "eventDate": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "problem": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "discovery": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "immediateAction": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "comments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "attachments": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "origin": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "deviationLeader": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "deviationLeaderBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "plannedDate": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "ownership": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "affectedSite": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "initialClassification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "initialClassificationBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "initialJustification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "observationCorrection": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeLeader": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "changeLeaderBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "classification": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "classificationBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "rcaPanel": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "additionalCorrections": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "rcaDocuments": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "rootCauseInvestigation": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "statementDocuments": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "riskDocuments": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "riskAssessment": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "impactStatement": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierAffected": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierAffectedBtn": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "confirmedArticle": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierId": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "supplierName": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "manufacturerId": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "manufacturerName": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "trend": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "rootCause": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "contributingCause": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "errorCode": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "confirmedOos": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "summary": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "capa": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "qaAssessorGroup": {
+          "access": "readOnly",
+          "mandatory": null,
+          "title": null
+        },
+        "qaAssessor": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "qaAssessorBtn": {
+          "access": "edit",
+          "mandatory": null,
+          "title": null
+        },
+        "qaAssessment": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        },
+        "batchStatus": {
+          "access": "edit",
+          "mandatory": true,
+          "title": null
+        }
+      },
+      "layout": [],
+      "rules": [
+        {
+          "id": "pr-qa-esign",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "eSignature"
+        },
+        {
+          "id": "fr-1",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": null,
+          "condition": "Completion needed (comment with reason)",
+          "comments": "",
+          "type": "flowChange",
+          "toPhaseId": "rootCause"
+        },
+        {
+          "id": "r-batch-qaAssessment",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "productAffected",
+            "operator": "neq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "batchNumber",
+            "getArticleBtn",
+            "articleNumber",
+            "articleName"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-sample-qaAssessment",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "analysisAffected",
+            "operator": "neq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "sampleNumber",
+            "labInvestigationAttached",
+            "suspectedOos"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-obs-qaAssessment",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "initialClassification",
+            "operator": "neq",
+            "value": "Observation"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "observationCorrection"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-obs2-qaAssessment",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": {
+            "fieldId": "initialClassification",
+            "operator": "eq",
+            "value": "Observation"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "mandatory",
+          "fieldIds": [
+            "observationCorrection"
+          ]
+        },
+        {
+          "id": "r-rcadoc-qaAssessment",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "classification",
+            "operator": "eq",
+            "value": "Minor deviation"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "rcaDocuments",
+            "riskDocuments"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-sup1-qaAssessment",
+          "name": "",
+          "triggers": [
+            "afterSave"
+          ],
+          "when": {
+            "fieldId": "supplierAffected",
+            "operator": "neq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "fieldAccess",
+          "fieldIds": [
+            "confirmedArticle",
+            "supplierId",
+            "supplierName",
+            "manufacturerId",
+            "manufacturerName"
+          ],
+          "access": "hidden"
+        },
+        {
+          "id": "r-coos-qaAssessment",
+          "name": "",
+          "triggers": [
+            "onForward"
+          ],
+          "when": {
+            "fieldId": "analysisAffected",
+            "operator": "eq",
+            "value": "Yes"
+          },
+          "condition": "",
+          "comments": "",
+          "type": "mandatory",
+          "fieldIds": [
+            "confirmedOos"
+          ]
+        },
+        {
+          "id": "m-6",
+          "name": "",
+          "triggers": [
+            "onButtonClick"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "email",
+          "recipientRoleIds": [
+            "qaAssessor"
+          ],
+          "recipientText": "",
+          "subject": "You have been assigned deviation [ID] for QA assessment",
+          "message": ""
+        },
+        {
+          "id": "m-7",
+          "name": "",
+          "triggers": [
+            "onBackward"
+          ],
+          "when": null,
+          "condition": "",
+          "comments": "",
+          "type": "email",
+          "recipientRoleIds": [
+            "deviationLeader"
+          ],
+          "recipientText": "",
+          "subject": "Deviation [ID] sent back from QA – completion needed",
+          "message": ""
+        }
+      ],
+      "deadlineDays": 10,
+      "deadlineHours": null
+    }
+  ],
+  "views": [
+    {
+      "id": "v-1",
+      "name": "Open deviations",
+      "columns": [
+        "ID",
+        "Title",
+        "Created date",
+        "Phase overview",
+        "Role column",
+        "Propertycategory column"
+      ],
+      "filters": "Workflow = Deviation, Closed = False",
+      "comments": "Propertycategory column = Classification"
+    },
+    {
+      "id": "v-2",
+      "name": "Deviations per discovery area",
+      "columns": [
+        "ID",
+        "Title",
+        "Created date",
+        "Propertycategory column",
+        "Phase overview"
+      ],
+      "filters": "Workflow = Deviation",
+      "comments": "Propertycategory column = Discovery area"
+    }
+  ],
+  "systemRoles": [
+    {
+      "id": "sys-admin",
+      "name": "Admin",
+      "isDefault": false,
+      "securityLevel": 10,
+      "permissions": [
+        "Use the module",
+        "Create cases",
+        "Manage cases",
+        "See views",
+        "See diagrams",
+        "Create case views",
+        "Create diagram",
+        "Create templates",
+        "Manage all cases",
+        "Conf. Module",
+        "Admin"
+      ]
+    },
+    {
+      "id": "sys-reporter",
+      "name": "Reporter",
+      "isDefault": true,
+      "securityLevel": 1,
+      "permissions": [
+        "Use the module",
+        "Create cases",
+        "See views"
+      ]
+    },
+    {
+      "id": "sys-handler",
+      "name": "Case handler",
+      "isDefault": false,
+      "securityLevel": 1,
+      "permissions": [
+        "Use the module",
+        "Create cases",
+        "Manage cases",
+        "See views",
+        "See diagrams",
+        "Create case views",
+        "Manage all cases"
+      ]
+    }
+  ],
+  "relatedCaseTypes": [
+    {
+      "id": "rel-1",
+      "name": "Comment",
+      "relation": "sub",
+      "description": "Comments/case log (orig. Kommentarer)"
+    },
+    {
+      "id": "rel-2",
+      "name": "CAPA",
+      "relation": "sub",
+      "description": "Created from Root cause investigation when required by classification"
+    },
+    {
+      "id": "rel-3",
+      "name": "Change request (CC)",
+      "relation": "related",
+      "description": "Change control raised from the deviation"
+    },
+    {
+      "id": "rel-4",
+      "name": "Activity (AKT)",
+      "relation": "related",
+      "description": "Activities in change control"
+    },
+    {
+      "id": "rel-5",
+      "name": "Change request (CR)",
+      "relation": "related",
+      "description": "Change request"
+    }
+  ],
+  "requirements": [
+    {
+      "standard": "GMP",
+      "clause": "EU GMP Ch. 1.4 (xiv)",
+      "title": "Deviation handling"
+    },
+    {
+      "standard": "GMP",
+      "clause": "EU GMP Ch. 1.8",
+      "title": "CAPA"
+    },
+    {
+      "standard": "GMP",
+      "clause": "EU GMP Annex 11",
+      "title": "Computerised systems – electronic signatures"
+    },
+    {
+      "standard": "ISO 9001",
+      "clause": "10.2",
+      "title": "Nonconformity and corrective action"
+    }
+  ],
+  "notes": "Reference configuration EX-26714 (Workflow – Avvikelse – Life Science, Pharma), translated to English.\n\nRules in the original (CANEA rule engine):\n- Registration: mandatory fields on forward; e-mail to Deviation leader group on forward; product/analysis fields hidden unless the Yes/No field = Yes; integration result hidden for all but admin; web service calls on the buttons (batch number → article number/name).\n- Coordination: mandatory fields on forward & quick close; Observation → mandatory 'Observation – additional correction' and quick close only (error message if sent forward); Critical/Major/Minor → forward only (error message on quick close); fields editable only for the Deviation leader (the group may only edit 'Select deviation leader'); e-signature on quick close; e-mail to initiator on backward.\n- Root cause investigation: mandatory fields per classification; 'Confirmed OOS/OOE/OOT?' mandatory if 'Analysis affected' = Yes; risk assessment text hidden for Critical/Major (document used), documents hidden for Minor; CAPA hidden for Minor + first time/occasional; e-signature on forward.\n- QA assessment: fields editable only for the QA assessor (the group may only edit 'Select/change QA assessor'); e-signature on forward.\n\nInbox groups: when cases appear in the group inboxes, users in the group roles can pick the case themselves or assign it to a colleague, who is notified after the button is clicked in phase 2/4."
+}

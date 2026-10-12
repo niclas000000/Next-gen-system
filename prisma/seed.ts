@@ -1,6 +1,9 @@
 import { PrismaClient } from '@prisma/client'
 import { scrypt, randomBytes } from 'crypto'
 import { promisify } from 'util'
+import { readFileSync } from 'fs'
+import { join } from 'path'
+import { CaseTypeConfigSchema } from '../lib/case-config/schema'
 
 const prisma = new PrismaClient()
 const scryptAsync = promisify(scrypt)
@@ -78,6 +81,29 @@ async function main() {
     }
   }
   console.log('Default system views seeded.')
+
+  // Demo case type: CANEA reference configuration EX-26714 (Deviation, Life Science/Pharma),
+  // exported from Workshop-tool. Published as v1 if no case type uses the prefix yet.
+  const deviation = CaseTypeConfigSchema.parse(
+    JSON.parse(readFileSync(join(__dirname, '../lib/case-config/fixtures/deviation-pharma.json'), 'utf8'))
+  )
+  const owner = await prisma.user.findFirst({
+    where: { role: 'admin', active: true, id: { not: 'system-placeholder-user' } },
+    orderBy: { createdAt: 'asc' },
+  })
+  if (owner && !(await prisma.caseType.findUnique({ where: { prefix: deviation.prefix } }))) {
+    await prisma.caseType.create({
+      data: {
+        name: deviation.caseTypeName,
+        prefix: deviation.prefix,
+        status: 'published',
+        draft: deviation as never,
+        createdBy: owner.id,
+        versions: { create: { version: 1, config: deviation as never, publishedBy: owner.id } },
+      },
+    })
+    console.log(`Case type "${deviation.caseTypeName}" (${deviation.prefix}) seeded and published.`)
+  }
 }
 
 main()

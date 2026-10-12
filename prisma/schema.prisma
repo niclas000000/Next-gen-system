@@ -32,6 +32,9 @@ model User {
   documentVersions  DocumentVersion[]  @relation("VersionAuthor")
   readReceipts      ReadReceipt[]      @relation("ReadReceiptUser")
   notifications     Notification[]
+  caseTypes         CaseType[]         @relation("CaseTypeCreator")
+  cases             Case[]             @relation("CaseCreator")
+  caseEvents        CaseEvent[]        @relation("CaseEventActor")
 }
 
 model Group {
@@ -458,4 +461,79 @@ model SystemView {
   isDefault Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Phase-based case management (CANEA ONE model). Config JSON = CaseTypeConfig
+// in lib/case-config/schema.ts.
+// ---------------------------------------------------------------------------
+
+model CaseType {
+  id           String            @id @default(cuid())
+  name         String
+  prefix       String            @unique
+  status       String            @default("draft") // draft | published | archived
+  draft        Json // CaseTypeConfig being edited; publishing snapshots it into a CaseTypeVersion
+  // Who holds group roles in this environment: { [roleId]: { userIds: string[], groupIds: string[] } }.
+  // Kept outside the config so the config stays portable between environments.
+  roleBindings Json              @default("{}")
+  nextNumber   Int               @default(1)
+  createdBy    String
+  creator      User              @relation("CaseTypeCreator", fields: [createdBy], references: [id])
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  versions     CaseTypeVersion[]
+  cases        Case[]
+}
+
+// Immutable snapshot; running cases keep the version they were started on.
+model CaseTypeVersion {
+  id          String   @id @default(cuid())
+  caseTypeId  String
+  caseType    CaseType @relation(fields: [caseTypeId], references: [id], onDelete: Cascade)
+  version     Int
+  config      Json
+  publishedBy String
+  publishedAt DateTime @default(now())
+  cases       Case[]
+
+  @@unique([caseTypeId, version])
+}
+
+model Case {
+  id         String          @id @default(cuid())
+  number     String          @unique // prefix + running number, e.g. DEV12
+  title      String
+  caseTypeId String
+  caseType   CaseType        @relation(fields: [caseTypeId], references: [id])
+  versionId  String
+  version    CaseTypeVersion @relation(fields: [versionId], references: [id])
+  phaseId    String
+  status     String          @default("open") // open | closed | preClosed | cancelled
+  values     Json            @default("{}") // { [fieldId]: value }
+  roles      Json            @default("{}") // { [roleId]: userId[] }
+  revision   Int             @default(0) // optimistic locking: bumped on every write
+  createdBy  String
+  creator    User            @relation("CaseCreator", fields: [createdBy], references: [id])
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  closedAt   DateTime?
+  events     CaseEvent[]
+
+  @@index([caseTypeId, status])
+}
+
+model CaseEvent {
+  id          String   @id @default(cuid())
+  caseId      String
+  case        Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  type        String // created | saved | forward | backward | preEnd | roleAssigned | signed | cancelled
+  fromPhaseId String?
+  toPhaseId   String?
+  actorId     String
+  actor       User     @relation("CaseEventActor", fields: [actorId], references: [id])
+  data        Json     @default("{}") // changed values, signature meaning, message …
+  at          DateTime @default(now())
+
+  @@index([caseId, at])
 }

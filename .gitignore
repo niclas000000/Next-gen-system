@@ -34,3 +34,10 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Customer exports from CANEA ONE (contain real names) — keep out of git
+/wf_*.txt
+/wf_*.xlsx
+
+# TypeScript
+tsconfig.tsbuildinfo

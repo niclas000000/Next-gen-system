@@ -236,6 +236,15 @@ Admin
   └── System           /admin/system
 ```
 
+### Phase-based case model (rebuild in progress — Nexus is a vision/demo)
+The graph workflow module (`Workflow`/`WorkflowInstance`, `lib/workflow-engine`) is being replaced by a CANEA ONE-style phase model:
+- `lib/case-config/schema.ts` — `CaseTypeConfig` (zod), a port of Workshop-tool `shared/src/workflowConfig.ts`; keep field names in sync so Blueprint JSON imports unchanged. Case type → ordered phases → fields placed per phase (`edit`/`readOnly`/`hidden`, mandatory override) → role × phase permissions (edit/forward/backward/preEnd) → phase rules with triggers and structured `when` conditions
+- `lib/case-config/validate.ts` — errors block publishing, warnings don't; `publish.ts` snapshots the draft into an immutable `CaseTypeVersion`
+- Prisma: `CaseType` (draft JSON, unique `prefix`, `roleBindings` = who holds group roles, `nextNumber`), `CaseTypeVersion`, `Case` (number, phaseId, values by fieldId, roles by roleId, `revision` for optimistic locking), `CaseEvent`
+- API: `/api/case-types` (GET, POST `{name}` or `{config}`), `/api/case-types/[id]` (GET/PATCH/DELETE), `/api/case-types/[id]/publish`
+- Fixture `lib/case-config/fixtures/deviation-pharma.json` = CANEA reference EX-26714, exported from Workshop-tool; seeded and published as `DEV` v1
+- Next: pure runtime evaluator (field states, allowed actions, rule violations) → case page → phase designer → importers (Blueprint JSON, CANEA ONE SQL export)
+
 ### Possible next areas
 - Email delivery for `send_email` rule action + approval notifications (SMTP — currently console stub)
 - Full-text search across documents/cases
@@ -255,6 +264,8 @@ Admin
 - Sidebar uses `useSearchParams()` — requires Suspense boundary in `layout.tsx`
 - `proxy.ts` replaces `middleware.ts` (Next.js 16 convention change); its matcher protects everything except `/api/auth`, `_next`, `login`, `register` — so API route handlers can rely on the middleware for auth
 - `params` in pages and API routes is a `Promise` — always `await params`
+- Authorization: `proxy.ts` requires the admin role for `/admin/*` and `/api/admin/*`; elsewhere use `requireUser()` / `requireAdmin()` from `lib/auth/session.ts` (they return the user or a NextResponse to return)
+- Tests: `npm test` (Vitest, `*.test.ts`). npm installs need `--legacy-peer-deps` (pre-existing eslint 8 vs eslint-config-next 16 conflict)
 - **Node forms live in the `WorkflowForm` table** (keyed by `workflowId_nodeId`), NOT in `node.data` — the engine reads `prisma.workflowForm` to extract `user_role` submissions into `WorkflowInstance.roles`
 - **Role key consistency**: `user_role` field `roleName`, `workflow_role` assignment `value`, and `WorkflowInstance.roles` keys are all the `ProcessRole.name` (never the id)
 - Prisma JSON fields use `as never` casts on write (repo convention) since `Record<string, unknown>` / `unknown[]` aren't assignable to `InputJsonValue`
@@ -308,7 +319,7 @@ Workflow: GET_VARIABLE, SET_VARIABLE, GET_STEP_DATA
 All UI text must be in English. No Swedish strings in components, pages, or data.
 
 ## Startup
-1. `docker-compose up -d` — start PostgreSQL
+1. `docker-compose up -d` — start PostgreSQL (host port 5433; 5432 is taken by Workshop-tool's DB)
 2. `npx prisma db push` — sync schema (first time or after schema changes)
 3. `npx prisma generate` — regenerate client after schema changes (stop dev server first — EPERM otherwise)
 4. `npx prisma db seed` — create default admin user (idempotent, safe to re-run)

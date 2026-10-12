@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/client'
+import { requireAdmin } from '@/lib/auth/session'
 
 const DEFAULTS: Record<string, string> = {
   theme: 'default',
@@ -14,6 +15,9 @@ export async function GET() {
 }
 
 export async function PATCH(req: Request) {
+  const admin = await requireAdmin()
+  if (admin instanceof NextResponse) return admin
+
   const body = await req.json() as Record<string, string>
   const allowed = Object.keys(DEFAULTS)
   for (const [key, value] of Object.entries(body)) {

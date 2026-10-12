@@ -28,13 +28,14 @@ export default async function CasesPage({ searchParams }: { searchParams: Promis
     prisma.caseType.findMany({ where: { status: 'published' }, select: { id: true, name: true }, orderBy: { name: 'asc' } }),
   ])
   const typeName = caseTypes.find((t) => t.id === p.caseTypeId)?.name
+  const STATUS_TITLE: Record<string, string> = { open: 'Open cases', closed: 'Closed cases', cancelled: 'Cancelled cases', all: 'All cases' }
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="mono-meta">Cases</p>
-          <h1 className="text-2xl font-semibold text-ink font-display">{typeName ?? (p.view === 'mine' ? 'My cases' : 'All cases')}</h1>
+          <h1 className="text-2xl font-semibold text-ink font-display">{typeName ?? (p.view === 'mine' ? 'My cases' : STATUS_TITLE[status] ?? 'Cases')}</h1>
         </div>
         <NewCaseButton caseTypeId={p.caseTypeId} />
       </div>

@@ -3,7 +3,7 @@ import { AppearanceClient } from './AppearanceClient'
 
 export default async function AppearancePage() {
   const rows = await prisma.systemSetting.findMany()
-  const settings: Record<string, string> = { theme: 'default' }
+  const settings: Record<string, string> = { theme: 'light' }
   for (const row of rows) settings[row.key] = row.value
   return <AppearanceClient initialSettings={settings} />
 }

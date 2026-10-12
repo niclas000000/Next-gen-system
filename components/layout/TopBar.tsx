@@ -1,111 +1,117 @@
 'use client'
 
-import { Search, ChevronRight } from 'lucide-react'
+import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { ChevronRight, ChevronsRight, Menu, Search } from 'lucide-react'
 import { NotificationBell } from './NotificationBell'
+import { useShell } from './AppShell'
+import { hasPanel } from './ContextPanel'
+import type { ModuleId } from './nav'
 
-const routeLabels: Record<string, string> = {
-  dashboard: 'Dashboard',
+const LABELS: Record<string, string> = {
+  tasks: 'My work',
+  cases: 'Cases',
   documents: 'Documents',
   processes: 'Processes',
-  cases: 'Cases',
-  workflows: 'Workflows',
   design: 'Design',
-  instances: 'Cases',
-  forms: 'Forms',
-  'document-types': 'Document Types',
-  'approval-flows': 'Approval Flows',
-  'lookup-tables': 'Lookup Tables',
+  'case-types': 'Case types',
+  'document-types': 'Document types',
+  'approval-flows': 'Approval flows',
+  views: 'Views',
   admin: 'Admin',
   users: 'Users',
-  settings: 'Settings',
+  settings: 'Groups',
   register: 'Labels',
-  system: 'System',
+  'lookup-tables': 'Lookup tables',
+  roles: 'Roles',
   appearance: 'Appearance',
-  groups: 'Groups',
+  system: 'System',
+  notifications: 'Notifications',
 }
 
-function Breadcrumb() {
+/** What to call an id segment, by the segment before it. */
+const ITEM_LABELS: Record<string, string> = {
+  documents: 'Document',
+  processes: 'Process',
+  'case-types': 'Editor',
+  'document-types': 'Document type',
+  'lookup-tables': 'Table',
+}
+
+/** Sections without a page of their own link to their first page. */
+const SECTION_HREF: Record<string, string> = { design: '/design/case-types', admin: '/admin/users' }
+
+function crumbs(pathname: string): { label: string; href: string; mono?: boolean }[] {
+  const segs = pathname.split('/').filter(Boolean)
+  if (!segs.length) return [{ label: 'Home', href: '/' }]
+  return segs.map((seg, i) => {
+    const href = SECTION_HREF[seg] && i === 0 ? SECTION_HREF[seg] : `/${segs.slice(0, i + 1).join('/')}`
+    if (LABELS[seg]) return { label: LABELS[seg], href }
+    const parent = segs[i - 1]
+    if (parent === 'cases') return { label: decodeURIComponent(seg).toUpperCase(), href, mono: true }
+    return { label: ITEM_LABELS[parent] ?? decodeURIComponent(seg), href }
+  })
+}
+
+export function TopBar({ module }: { module: ModuleId }) {
   const pathname = usePathname()
-  const segments = pathname.split('/').filter(Boolean)
-
-  if (segments.length === 0) {
-    return (
-      <span className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
-        Dashboard
-      </span>
-    )
-  }
+  const { openPalette, openMobileNav, panelOpen, togglePanel } = useShell()
+  const items = crumbs(pathname)
 
   return (
-    <nav className="flex items-center gap-1 text-sm" aria-label="Breadcrumb">
-      {segments.map((seg, i) => {
-        const isId = !routeLabels[seg] && seg.length > 20
-        const label = isId ? '…' : (routeLabels[seg] ?? seg)
-        const isLast = i === segments.length - 1
-        return (
-          <span key={i} className="flex items-center gap-1">
-            {i > 0 && (
-              <ChevronRight size={12} style={{ color: 'var(--ink-4)' }} />
-            )}
-            <span
-              style={{
-                color: isLast ? 'var(--ink)' : 'var(--ink-4)',
-                fontWeight: isLast ? '500' : '400',
-                fontFamily: isId ? 'var(--font-mono)' : undefined,
-              }}
-            >
-              {label}
-            </span>
-          </span>
-        )
-      })}
-    </nav>
-  )
-}
+    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-rule bg-paper px-4 md:px-5">
+      <button
+        onClick={openMobileNav}
+        aria-label="Open navigation"
+        className="rounded-[2px] p-1.5 text-ink-3 hover:bg-paper-2 md:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nw-accent"
+      >
+        <Menu size={18} />
+      </button>
+      {hasPanel(module) && !panelOpen && (
+        <button
+          onClick={togglePanel}
+          aria-label="Show panel"
+          title="Show panel"
+          className="hidden rounded-[2px] p-1.5 text-ink-4 hover:bg-paper-2 hover:text-ink md:block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nw-accent"
+        >
+          <ChevronsRight size={15} />
+        </button>
+      )}
 
-export function TopBar() {
-  return (
-    <header
-      className="h-14 flex items-center gap-4 px-5 shrink-0"
-      style={{
-        background: 'var(--paper)',
-        borderBottom: '1px solid var(--rule)',
-      }}
-    >
-      {/* Breadcrumb */}
-      <div className="flex-1 min-w-0">
-        <Breadcrumb />
-      </div>
+      <nav aria-label="Breadcrumb" className="min-w-0 flex-1">
+        <ol className="flex items-center gap-1 text-sm">
+          {items.map((c, i) => {
+            const last = i === items.length - 1
+            return (
+              <li key={c.href} className="flex min-w-0 items-center gap-1">
+                {i > 0 && <ChevronRight size={12} className="shrink-0 text-ink-4" />}
+                {last ? (
+                  <span aria-current="page" className={`truncate font-medium text-ink ${c.mono ? 'font-mono text-[13px]' : ''}`}>
+                    {c.label}
+                  </span>
+                ) : (
+                  <Link href={c.href} className="truncate rounded-[2px] text-ink-4 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nw-accent">
+                    {c.label}
+                  </Link>
+                )}
+              </li>
+            )
+          })}
+        </ol>
+      </nav>
 
-      {/* Notifications */}
       <NotificationBell />
 
-      {/* Search hint */}
       <button
-        className="hidden md:flex items-center gap-2 px-3 h-8 rounded text-sm transition-colors"
-        style={{
-          background: 'var(--surface)',
-          border: '1px solid var(--rule)',
-          color: 'var(--ink-4)',
-          minWidth: '200px',
-        }}
-        onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--ink-4)')}
-        onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--rule)')}
-        onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { ctrlKey: true, key: 'k', bubbles: true }))}
+        onClick={openPalette}
+        className="hidden h-8 min-w-[220px] items-center gap-2 rounded-[2px] border border-rule bg-surface px-3 text-sm text-ink-4 transition-colors hover:border-ink-4 md:flex focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nw-accent"
       >
         <Search size={13} />
-        <span className="flex-1 text-left text-sm">Search…</span>
-        <kbd
-          className="text-[10px] px-1 rounded"
-          style={{
-            fontFamily: 'var(--font-mono)',
-            background: 'var(--paper-3)',
-            color: 'var(--ink-4)',
-          }}
-        >
-          Ctrl+K
-        </kbd>
+        <span className="flex-1 text-left">Search cases, documents…</span>
+        <kbd className="rounded-[2px] bg-paper-3 px-1 font-mono text-[10px] text-ink-4">Ctrl K</kbd>
+      </button>
+      <button onClick={openPalette} aria-label="Search" className="rounded-[2px] p-1.5 text-ink-3 hover:bg-paper-2 md:hidden">
+        <Search size={17} />
       </button>
     </header>
   )

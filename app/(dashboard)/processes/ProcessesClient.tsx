@@ -20,6 +20,7 @@ import {
   Link2, Unlink,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+import { confirmDialog } from '@/components/ui/confirm'
 
 // ── Canvas node types ──────────────────────────────────────────────────────
 function StartNode({ data }: { data: { label: string } }) {
@@ -331,7 +332,7 @@ export function ProcessesClient({ initialProcesses, allDocuments, allWorkflows, 
 
   const handleDelete = async (p: Process) => {
     setContextMenu(null)
-    if (!confirm(`Delete "${p.name}"?${p._count.children > 0 ? `\n\nThis will also delete ${p._count.children} sub-process(es).` : ''}`)) return
+    if (!(await confirmDialog(`Delete "${p.name}"?${p._count.children > 0 ? `\n\nThis will also delete ${p._count.children} sub-process(es).` : ''}`))) return
     setProcesses((prev) => prev.filter((x) => x.id !== p.id))
     if (selectedId === p.id) setSelectedId(null)
     await fetch(`/api/processes/${p.id}`, { method: 'DELETE' })

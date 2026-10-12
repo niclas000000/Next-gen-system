@@ -3,8 +3,7 @@ import { prisma } from '@/lib/db/client'
 import { requireAdmin } from '@/lib/auth/session'
 
 const DEFAULTS: Record<string, string> = {
-  theme: 'default',
-  navMode: 'v1',
+  theme: 'light',
 }
 
 export async function GET() {

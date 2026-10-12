@@ -24,6 +24,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DocumentPropertiesForm, validateProperties } from '@/components/documents/DocumentPropertiesForm'
 import type { FormField } from '@/types/field'
+import { confirmDialog } from '@/components/ui/confirm'
 
 // ---- Types ----
 
@@ -284,7 +285,7 @@ export function DocumentEditor({ doc, versions, receipts, currentUserId, hasRead
 
   const rejectPhase = async () => {
     if (!currentApproval) return
-    if (!confirm('Reject this document? It will be returned to draft.')) return
+    if (!(await confirmDialog('Reject this document? It will be returned to draft.'))) return
     setActioning(true)
     try {
       await fetch(`/api/documents/${doc.id}/reject`, {
@@ -312,7 +313,7 @@ export function DocumentEditor({ doc, versions, receipts, currentUserId, hasRead
   }
 
   const handleDelete = async () => {
-    if (!confirm(`Delete "${doc.title}"? This cannot be undone.`)) return
+    if (!(await confirmDialog(`Delete "${doc.title}"? This cannot be undone.`))) return
     await fetch(`/api/documents/${doc.id}`, { method: 'DELETE' })
     router.push('/documents')
   }

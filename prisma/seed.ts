@@ -56,12 +56,11 @@ async function main() {
   // Seed default system views (idempotent — upsert by section+name+isDefault)
   const defaultViews = [
     // Cases
-    { name: 'All cases',    section: 'cases',     icon: 'List',        filters: {},                      order: 0 },
-    { name: 'Running',      section: 'cases',     icon: 'Clock',       filters: { status: 'running' },   order: 1 },
-    { name: 'Completed',    section: 'cases',     icon: 'CheckCircle', filters: { status: 'completed' }, order: 2 },
+    { name: 'Open cases',   section: 'cases',     icon: 'Clock',       filters: {},                      order: 0 },
+    { name: 'My cases',     section: 'cases',     icon: 'User',        filters: { view: 'mine' },        order: 1 },
+    { name: 'Closed',       section: 'cases',     icon: 'CheckCircle', filters: { status: 'closed' },    order: 2 },
     { name: 'Cancelled',    section: 'cases',     icon: 'FileX',       filters: { status: 'cancelled' }, order: 3 },
-    { name: 'My cases',     section: 'cases',     icon: 'User',        filters: { view: 'mine' },        order: 4 },
-    { name: 'Per workflow', section: 'cases',     icon: 'GitBranch',   filters: { view: 'by-workflow' }, order: 5 },
+    { name: 'All cases',    section: 'cases',     icon: 'List',        filters: { status: 'all' },       order: 4 },
     // Documents
     { name: 'Library',          section: 'documents', icon: 'Library',     filters: {},                       order: 0 },
     { name: 'Pending Approval', section: 'documents', icon: 'Clock',       filters: { status: 'pending' },    order: 1 },
@@ -69,6 +68,16 @@ async function main() {
     { name: 'Drafts',           section: 'documents', icon: 'FileInput',   filters: { status: 'draft' },      order: 3 },
     { name: 'Archived',         section: 'documents', icon: 'Archive',     filters: { status: 'archived' },   order: 4 },
   ]
+
+  // Default case views from the graph-workflow era used other statuses
+  await prisma.systemView.deleteMany({
+    where: { section: 'cases', isDefault: true, name: { in: ['Running', 'Completed', 'Per workflow'] } },
+  })
+  await prisma.systemView.updateMany({
+    where: { section: 'cases', isDefault: true, name: 'All cases', filters: { equals: {} } },
+    data: { filters: { status: 'all' }, order: 4 },
+  })
+  await prisma.systemView.updateMany({ where: { section: 'cases', isDefault: true, name: 'My cases' }, data: { order: 1 } })
 
   for (const v of defaultViews) {
     const existing = await prisma.systemView.findFirst({

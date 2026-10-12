@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Plus, Shield, Trash2, Pencil, Loader2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+import { confirmDialog } from '@/components/ui/confirm'
 
 interface ProcessRole {
   id: string
@@ -48,7 +49,7 @@ export function RolesClient({ initialRoles }: { initialRoles: ProcessRole[] }) {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this role? Workflows and approval flows referencing it will need to be updated.')) return
+    if (!(await confirmDialog('Delete this role? Workflows and approval flows referencing it will need to be updated.'))) return
     setDeleting(id)
     try {
       await fetch(`/api/roles/${id}`, { method: 'DELETE' })

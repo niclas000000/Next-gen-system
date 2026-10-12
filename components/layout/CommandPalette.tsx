@@ -1,207 +1,193 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, FileText, Layers, GitBranch, Workflow, Settings, ArrowRight, Clock } from 'lucide-react'
+import { ArrowRight, Clock, CornerDownLeft, FilePlus2, FileText, FolderPlus, Layers, Search } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { readRecent } from '@/lib/recent'
+import { useShell } from './AppShell'
+import { ADMIN_LINKS, CONFIG_MODULES, DESIGN_LINKS, WORK_MODULES } from './nav'
 
-interface Result {
+interface Item {
   id: string
   label: string
   sub?: string
-  href: string
-  icon: React.ReactNode
   group: string
+  icon: React.ReactNode
+  run: () => void
+  keywords?: string
 }
 
-const STATIC_RESULTS: Result[] = [
-  { id: 'lib',       label: 'Document Library',    href: '/documents',                icon: <FileText size={15} />,  group: 'Navigation' },
-  { id: 'drafts',    label: 'Drafts',               href: '/documents?status=draft',   icon: <FileText size={15} />,  group: 'Navigation' },
-  { id: 'pending',   label: 'Pending Approval',     href: '/documents?status=pending', icon: <FileText size={15} />,  group: 'Navigation' },
-  { id: 'cases',     label: 'All Cases',            href: '/cases',                    icon: <Layers size={15} />,    group: 'Navigation' },
-  { id: 'processes', label: 'Processes',            href: '/processes',                icon: <GitBranch size={15} />, group: 'Navigation' },
-  { id: 'workflows', label: 'Workflow Designer',    href: '/design/workflows',         icon: <Workflow size={15} />,  group: 'Navigation' },
-  { id: 'users',     label: 'Users',                href: '/admin/users',              icon: <Settings size={15} />,  group: 'Admin' },
-  { id: 'lookup',    label: 'Lookup Tables',        href: '/admin/lookup-tables',      icon: <Settings size={15} />,  group: 'Admin' },
-  { id: 'appear',    label: 'Appearance',           href: '/admin/appearance',         icon: <Settings size={15} />,  group: 'Admin' },
-]
-
-interface CommandPaletteProps {
-  open: boolean
-  onClose: () => void
-}
-
-export function CommandPalette({ open, onClose }: CommandPaletteProps) {
+export function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const router = useRouter()
+  const { isAdmin, openNewCase } = useShell()
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
-  const [docResults, setDocResults] = useState<Result[]>([])
-  const [caseResults, setCaseResults] = useState<Result[]>([])
+  const [remote, setRemote] = useState<Item[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
-  const router = useRouter()
+  const listRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    if (!query.trim() || query.length < 2) { setDocResults([]); setCaseResults([]); return }
-    const ctrl = new AbortController()
-    Promise.all([
-      fetch(`/api/documents?q=${encodeURIComponent(query)}&limit=5`, { signal: ctrl.signal })
-        .then((r) => r.json())
-        .then((d: { documents: { id: string; title: string; status: string; documentType?: { prefix: string } }[] }) =>
-          (d.documents ?? []).map((doc) => ({
-            id: doc.id, label: doc.title, sub: doc.documentType?.prefix,
-            href: `/documents/${doc.id}`, icon: <FileText size={15} />, group: 'Documents',
-          }))
-        ),
-      fetch(`/api/instances?q=${encodeURIComponent(query)}&limit=5`, { signal: ctrl.signal })
-        .then((r) => r.json())
-        .then((d: { instances: { id: string; title: string; status: string; workflow: { name: string } }[] }) =>
-          (d.instances ?? []).map((inst) => ({
-            id: inst.id, label: inst.title, sub: inst.workflow.name,
-            href: `/workflows/instances/${inst.id}`, icon: <Clock size={15} />, group: 'Cases',
-          }))
-        ),
-    ])
-      .then(([docs, cases]) => { setDocResults(docs); setCaseResults(cases) })
-      .catch(() => {})
-    return () => ctrl.abort()
-  }, [query])
-
-  const filtered = query.trim()
-    ? [
-        ...docResults,
-        ...caseResults,
-        ...STATIC_RESULTS.filter(
-          (r) =>
-            r.label.toLowerCase().includes(query.toLowerCase()) ||
-            r.group.toLowerCase().includes(query.toLowerCase())
-        ),
-      ]
-    : STATIC_RESULTS
-
-  const grouped = filtered.reduce<Record<string, Result[]>>((acc, r) => {
-    acc[r.group] = [...(acc[r.group] ?? []), r]
-    return acc
-  }, {})
-
-  const flat = Object.values(grouped).flat()
-
-  useEffect(() => { setActive(0) }, [query])
-
-  useEffect(() => {
-    if (open) {
-      setQuery('')
-      setDocResults([])
-      setActive(0)
-      setTimeout(() => inputRef.current?.focus(), 50)
-    }
-  }, [open])
-
-  const navigate = useCallback((href: string) => {
-    onClose()
-    router.push(href)
-  }, [onClose, router])
+  const go = (href: string) => () => router.push(href)
 
   useEffect(() => {
     if (!open) return
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowDown') { e.preventDefault(); setActive((a) => Math.min(a + 1, flat.length - 1)) }
-      if (e.key === 'ArrowUp')   { e.preventDefault(); setActive((a) => Math.max(a - 1, 0)) }
-      if (e.key === 'Enter')     { e.preventDefault(); if (flat[active]) navigate(flat[active].href) }
-      if (e.key === 'Escape')    { e.preventDefault(); onClose() }
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [open, flat, active, navigate, onClose])
+    setQuery('')
+    setActive(0)
+    setTimeout(() => inputRef.current?.focus(), 10)
+  }, [open])
+
+  // Cases and documents from the server
+  useEffect(() => {
+    const q = query.trim()
+    if (q.length < 2) return setRemote([])
+    const ctrl = new AbortController()
+    Promise.all([
+      fetch(`/api/cases?status=all&pageSize=6&q=${encodeURIComponent(q)}`, { signal: ctrl.signal })
+        .then((r) => (r.ok ? r.json() : { cases: [] }))
+        .then((d: { cases: { number: string; title: string; phaseName: string; status: string }[] }) =>
+          d.cases.map<Item>((c) => ({
+            id: `case-${c.number}`,
+            label: `${c.number} · ${c.title}`,
+            sub: c.status === 'open' ? c.phaseName : 'Closed',
+            group: 'Cases',
+            icon: <Layers size={15} />,
+            run: go(`/cases/${c.number}`),
+          }))
+        ),
+      fetch(`/api/documents?q=${encodeURIComponent(q)}&limit=5`, { signal: ctrl.signal })
+        .then((r) => (r.ok ? r.json() : { documents: [] }))
+        .then((d: { documents: { id: string; title: string; documentType?: { prefix: string } | null }[] }) =>
+          (d.documents ?? []).slice(0, 5).map<Item>((doc) => ({
+            id: `doc-${doc.id}`,
+            label: doc.title,
+            sub: doc.documentType?.prefix,
+            group: 'Documents',
+            icon: <FileText size={15} />,
+            run: go(`/documents/${doc.id}`),
+          }))
+        ),
+    ])
+      .then(([cases, docs]) => setRemote([...cases, ...docs]))
+      .catch(() => {})
+    return () => ctrl.abort()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query])
+
+  const items = useMemo(() => {
+    const actions: Item[] = [
+      { id: 'new-case', label: 'New case', group: 'Actions', icon: <FolderPlus size={15} />, run: openNewCase, keywords: 'create register deviation' },
+      { id: 'new-doc', label: 'New document', group: 'Actions', icon: <FilePlus2 size={15} />, run: go('/documents?new=1'), keywords: 'create' },
+    ]
+    const nav: Item[] = [
+      ...WORK_MODULES.map((m) => ({ id: `nav-${m.id}`, label: m.label, group: 'Go to', icon: <m.icon size={15} />, run: go(m.href), keywords: m.id === 'work' ? 'tasks inbox' : '' })),
+      ...(isAdmin
+        ? [...DESIGN_LINKS.map((l) => ({ ...l, label: `Design: ${l.label}` })), ...ADMIN_LINKS.map((l) => ({ ...l, label: `Admin: ${l.label}` }))].map((l) => ({
+            id: `nav-${l.href}`,
+            label: l.label,
+            group: 'Go to',
+            icon: <l.icon size={15} />,
+            run: go(l.href),
+          }))
+        : []),
+    ]
+    const recent: Item[] = readRecent().map((r) => ({
+      id: `recent-${r.href}`,
+      label: r.label,
+      sub: r.sub,
+      group: 'Recent',
+      icon: <Clock size={15} />,
+      run: go(r.href),
+    }))
+    const q = query.trim().toLowerCase()
+    if (!q) return [...recent, ...actions, ...nav.slice(0, WORK_MODULES.length + (isAdmin ? CONFIG_MODULES.length : 0))]
+    const match = (i: Item) => `${i.label} ${i.keywords ?? ''}`.toLowerCase().includes(q)
+    return [...remote, ...actions.filter(match), ...nav.filter(match), ...recent.filter(match)]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, remote, isAdmin, open])
+
+  useEffect(() => setActive(0), [query, remote.length])
+  useEffect(() => {
+    listRef.current?.querySelector<HTMLElement>(`[data-index="${active}"]`)?.scrollIntoView({ block: 'nearest' })
+  }, [active])
 
   if (!open) return null
 
-  let idx = -1
+  const run = (i: Item) => {
+    onClose()
+    i.run()
+  }
+
+  const groups = items.reduce<Record<string, { item: Item; index: number }[]>>((acc, item, index) => {
+    ;(acc[item.group] ??= []).push({ item, index })
+    return acc
+  }, {})
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]"
-      style={{ background: 'rgba(17,17,17,0.4)' }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
+    <div className="fixed inset-0 z-[90] flex items-start justify-center bg-black/30 px-4 pt-[12vh]" onMouseDown={onClose}>
       <div
-        className="w-full max-w-xl rounded-[2px] overflow-hidden"
-        style={{
-          background: 'var(--surface)',
-          border: '1px solid var(--rule)',
-          boxShadow: '0 20px 60px rgba(17,17,17,0.18)',
-        }}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Search and commands"
+        className="w-full max-w-xl overflow-hidden rounded-[2px] border border-rule bg-surface shadow-[0_24px_64px_-24px_rgba(0,0,0,0.4)]"
+        onMouseDown={(e) => e.stopPropagation()}
       >
-        {/* Search input */}
-        <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid var(--rule)' }}>
-          <Search size={16} style={{ color: 'var(--ink-4)', flexShrink: 0 }} />
+        <div className="flex items-center gap-2.5 border-b border-rule px-4">
+          <Search size={16} className="text-ink-4" />
           <input
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Jump to anything…"
-            className="flex-1 outline-none bg-transparent text-sm"
-            style={{ color: 'var(--ink)', fontFamily: 'var(--font-inter)' }}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') onClose()
+              else if (e.key === 'ArrowDown') {
+                e.preventDefault()
+                setActive((a) => Math.min(a + 1, items.length - 1))
+              } else if (e.key === 'ArrowUp') {
+                e.preventDefault()
+                setActive((a) => Math.max(a - 1, 0))
+              } else if (e.key === 'Enter' && items[active]) run(items[active])
+            }}
+            placeholder="Search cases by number or title, documents, pages…"
+            className="h-12 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-4"
+            role="combobox"
+            aria-expanded="true"
+            aria-controls="palette-list"
+            aria-activedescendant={items[active] ? `palette-${active}` : undefined}
           />
-          <kbd
-            className="text-[10px] px-1.5 py-0.5 rounded-[2px]"
-            style={{ fontFamily: 'var(--font-mono)', background: 'var(--paper-3)', color: 'var(--ink-4)' }}
-          >
-            ESC
-          </kbd>
+          <kbd className="rounded-[2px] bg-paper-3 px-1.5 font-mono text-[10px] text-ink-4">Esc</kbd>
         </div>
-
-        {/* Results */}
-        <div className="max-h-80 overflow-y-auto py-1">
-          {flat.length === 0 ? (
-            <p className="text-sm text-center py-8" style={{ color: 'var(--ink-4)' }}>No results for &ldquo;{query}&rdquo;</p>
-          ) : (
-            Object.entries(grouped).map(([group, items]) => (
-              <div key={group}>
-                <div className="px-4 py-1.5">
-                  <span className="mono-meta text-[10px]">{group}</span>
-                </div>
-                {items.map((item) => {
-                  idx++
-                  const i = idx
-                  const isActive = active === i
-                  return (
-                    <button
-                      key={item.id}
-                      onMouseEnter={() => setActive(i)}
-                      onClick={() => navigate(item.href)}
-                      className="w-full flex items-center gap-3 px-4 py-2 text-left transition-colors"
-                      style={{
-                        background: isActive ? 'var(--accent-tint)' : '',
-                        color: isActive ? 'var(--nw-accent)' : 'var(--ink-3)',
-                      }}
-                    >
-                      <span style={{ color: isActive ? 'var(--nw-accent)' : 'var(--ink-4)', flexShrink: 0 }}>
-                        {item.icon}
-                      </span>
-                      <span className="flex-1 text-sm" style={{ color: isActive ? 'var(--nw-accent)' : 'var(--ink)' }}>
-                        {item.sub && (
-                          <span className="mr-1.5" style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--ink-4)' }}>
-                            {item.sub}
-                          </span>
-                        )}
-                        {item.label}
-                      </span>
-                      {isActive && <ArrowRight size={13} style={{ color: 'var(--nw-accent)', flexShrink: 0 }} />}
-                    </button>
-                  )
-                })}
-              </div>
-            ))
-          )}
+        <div ref={listRef} id="palette-list" role="listbox" className="max-h-[50vh] overflow-y-auto p-1.5">
+          {Object.entries(groups).map(([group, entries]) => (
+            <div key={group} className="pb-1">
+              <p className="mono-meta px-2.5 pb-1 pt-2 text-[10px]">{group}</p>
+              {entries.map(({ item, index }) => (
+                <button
+                  key={item.id}
+                  id={`palette-${index}`}
+                  data-index={index}
+                  role="option"
+                  aria-selected={index === active}
+                  onMouseEnter={() => setActive(index)}
+                  onClick={() => run(item)}
+                  className={cn(
+                    'flex w-full items-center gap-3 rounded-[2px] px-2.5 py-2 text-left text-sm',
+                    index === active ? 'bg-accent-tint text-ink' : 'text-ink-3'
+                  )}
+                >
+                  <span className={index === active ? 'text-nw-accent' : 'text-ink-4'}>{item.icon}</span>
+                  <span className="flex-1 truncate">{item.label}</span>
+                  {item.sub && <span className="text-xs text-ink-4">{item.sub}</span>}
+                  {index === active && <ArrowRight size={13} className="text-nw-accent" />}
+                </button>
+              ))}
+            </div>
+          ))}
+          {!items.length && <p className="px-3 py-6 text-center text-sm text-ink-4">Nothing found for “{query}”</p>}
         </div>
-
-        {/* Footer hint */}
-        <div
-          className="flex items-center gap-3 px-4 py-2 text-[11px]"
-          style={{ borderTop: '1px solid var(--rule)', color: 'var(--ink-4)', fontFamily: 'var(--font-mono)' }}
-        >
-          <span>↑↓ navigate</span>
-          <span>↵ open</span>
-          <span>Ctrl+K toggle</span>
-          <span>ESC close</span>
+        <div className="flex items-center gap-4 border-t border-rule px-4 py-2 text-[11px] text-ink-4">
+          <span className="inline-flex items-center gap-1"><CornerDownLeft size={11} /> open</span>
+          <span>↑↓ move</span>
+          <span>Esc close</span>
         </div>
       </div>
     </div>

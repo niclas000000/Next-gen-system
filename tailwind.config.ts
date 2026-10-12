@@ -32,6 +32,7 @@ const config: Config = {
         'accent-tint': 'var(--accent-tint)',
         'on-fill': 'var(--on-fill)',
         rail:     'var(--rail)',
+        'chart-1': 'var(--chart-1)',
         // Status
         ok:      'var(--ok)',
         warn:    'var(--warn)',

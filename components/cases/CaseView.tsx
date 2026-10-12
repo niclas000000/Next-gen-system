@@ -20,6 +20,7 @@ import { FieldControl } from './FieldControl'
 import { SignDialog } from './SignDialog'
 import { CaseSidePanel } from './CaseSidePanel'
 import { formatDate } from './format'
+import { pushRecent } from '@/lib/recent'
 
 const STATUS: Record<string, { label: string; variant: 'warn' | 'ok' | 'default' | 'risk' }> = {
   open: { label: 'Open', variant: 'warn' },
@@ -54,6 +55,10 @@ export function CaseView({ detail }: { detail: CaseDetail }) {
     setDirty(new Set())
     setInvalid(new Set())
   }, [c.revision, c.values])
+
+  useEffect(() => {
+    pushRecent({ label: `${c.number} · ${c.title}`, sub: c.status === 'open' ? phase.name : 'Closed', href: `/cases/${c.number}`, kind: 'case' })
+  }, [c.number, c.title, c.status, phase.name])
 
   useEffect(() => {
     if (!dirty.size) return

@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Plus, Trash2, GripVertical, ChevronDown, ChevronRight, Loader2, Edit2, GitBranch } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+import { confirmDialog } from '@/components/ui/confirm'
 
 interface Phase {
   id: string
@@ -261,7 +262,7 @@ export function ApprovalFlowsClient({ initialFlows }: Props) {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this approval flow?')) return
+    if (!(await confirmDialog('Delete this approval flow?'))) return
     setDeleting(id)
     try {
       await fetch(`/api/approval-flows/${id}`, { method: 'DELETE' })

@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Plus, Pencil, Trash2, Users } from 'lucide-react'
+import { confirmDialog } from '@/components/ui/confirm'
 
 interface Group {
   id: string
@@ -100,7 +101,7 @@ export function GroupsClient({ initialGroups, users }: Props) {
   }
 
   const handleDelete = async (g: Group) => {
-    if (!confirm(`Delete group "${g.name}"?`)) return
+    if (!(await confirmDialog(`Delete group "${g.name}"?`))) return
     setGroups((prev) => prev.filter((x) => x.id !== g.id))
     await fetch(`/api/admin/groups/${g.id}`, { method: 'DELETE' })
     refresh()

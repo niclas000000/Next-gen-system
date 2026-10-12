@@ -1,96 +1,67 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { useSettings } from '@/lib/settings-context'
-import { Check, Sidebar, Grip } from 'lucide-react'
+import { Check, Monitor, Moon, Sun } from 'lucide-react'
+import { useSettings, type ThemeChoice } from '@/lib/settings-context'
+import { useToast } from '@/components/ui/toast'
+import { cn } from '@/lib/utils'
 
-interface Props {
-  initialSettings: Record<string, string>
-}
+const OPTIONS: { id: ThemeChoice; label: string; hint: string; icon: React.ReactNode }[] = [
+  { id: 'light', label: 'Light', hint: 'Paper and ink', icon: <Sun size={16} /> },
+  { id: 'dark', label: 'Dark', hint: 'Easy on the eyes', icon: <Moon size={16} /> },
+  { id: 'system', label: 'System', hint: 'Follows the device', icon: <Monitor size={16} /> },
+]
 
-export function AppearanceClient({ initialSettings }: Props) {
+export function AppearanceClient({ initialSettings }: { initialSettings: Record<string, string> }) {
   const { reload } = useSettings()
-  const [navMode, setNavMode] = useState<'v1' | 'v2'>((initialSettings.navMode as 'v1' | 'v2') ?? 'v1')
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const toast = useToast()
+  const initial = (['light', 'dark', 'system'] as const).find((t) => t === initialSettings.theme) ?? 'light'
+  const [theme, setTheme] = useState<ThemeChoice>(initial)
 
-  const save = async (overrides?: Partial<{ navMode: string }>) => {
-    setSaving(true)
-    await fetch('/api/settings', {
+  async function choose(t: ThemeChoice) {
+    setTheme(t)
+    const res = await fetch('/api/settings', {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ navMode: overrides?.navMode ?? navMode }),
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ theme: t }),
     })
-    setSaving(false)
-    setSaved(true)
+    if (!res.ok) return toast.error('The setting could not be saved')
     reload()
-    setTimeout(() => setSaved(false), 2000)
-  }
-
-  const handleNavMode = async (mode: 'v1' | 'v2') => {
-    setNavMode(mode)
-    await save({ navMode: mode })
+    toast.ok('Default theme updated')
   }
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
+    <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold" style={{ color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>Appearance</h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--ink-4)' }}>Customize the look and feel of the application.</p>
+        <p className="mono-meta">Admin</p>
+        <h1 className="font-display text-2xl font-semibold text-ink">Appearance</h1>
+        <p className="mt-1 text-sm text-ink-3">The default theme for everyone. People can still pick their own in the account menu.</p>
       </div>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <Sidebar size={16} className="text-[var(--ink-3)]" /> Navigation style
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm mb-4" style={{ color: 'var(--ink-3)' }}>
-            Choose between the classic labeled sidebar or the compact icon rail with Ctrl+K command palette for power users.
-          </p>
-          <div className="grid grid-cols-2 gap-3">
+      <section className="rounded-[2px] border border-rule bg-surface p-5">
+        <h2 className="text-sm font-semibold text-ink">Default theme</h2>
+        <div className="mt-3 grid gap-3 sm:grid-cols-3" role="radiogroup" aria-label="Default theme">
+          {OPTIONS.map((o) => (
             <button
-              onClick={() => handleNavMode('v1')}
-              className="rounded-[2px] border-2 p-4 text-left transition-all"
-              style={{
-                borderColor: navMode === 'v1' ? 'var(--nw-accent)' : 'var(--rule)',
-                background: navMode === 'v1' ? 'var(--accent-tint)' : 'var(--surface)',
-              }}
+              key={o.id}
+              role="radio"
+              aria-checked={theme === o.id}
+              onClick={() => choose(o.id)}
+              className={cn(
+                'flex items-center gap-3 rounded-[2px] border px-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nw-accent',
+                theme === o.id ? 'border-nw-accent bg-accent-tint' : 'border-rule hover:bg-paper-2'
+              )}
             >
-              <div className="flex items-center gap-2 mb-2">
-                <Sidebar size={16} style={{ color: navMode === 'v1' ? 'var(--nw-accent)' : 'var(--ink-3)' }} />
-                <span className="font-medium text-sm" style={{ color: 'var(--ink)' }}>Sidebar</span>
-                {navMode === 'v1' && <Check size={13} className="ml-auto" style={{ color: 'var(--nw-accent)' }} />}
-              </div>
-              <p className="text-xs" style={{ color: 'var(--ink-4)' }}>Labeled rail, discoverable. Default for most users.</p>
+              <span className={theme === o.id ? 'text-nw-accent' : 'text-ink-3'}>{o.icon}</span>
+              <span className="flex-1">
+                <span className="block text-sm font-medium text-ink">{o.label}</span>
+                <span className="block text-xs text-ink-4">{o.hint}</span>
+              </span>
+              {theme === o.id && <Check size={14} className="text-nw-accent" />}
             </button>
-            <button
-              onClick={() => handleNavMode('v2')}
-              className="rounded-[2px] border-2 p-4 text-left transition-all"
-              style={{
-                borderColor: navMode === 'v2' ? 'var(--nw-accent)' : 'var(--rule)',
-                background: navMode === 'v2' ? 'var(--accent-tint)' : 'var(--surface)',
-              }}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <Grip size={16} style={{ color: navMode === 'v2' ? 'var(--nw-accent)' : 'var(--ink-3)' }} />
-                <span className="font-medium text-sm" style={{ color: 'var(--ink)' }}>Icon rail + Ctrl+K</span>
-                {navMode === 'v2' && <Check size={13} className="ml-auto" style={{ color: 'var(--nw-accent)' }} />}
-              </div>
-              <p className="text-xs" style={{ color: 'var(--ink-4)' }}>Compact icon rail, keyboard-first. For power users.</p>
-            </button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="flex justify-end gap-3">
-        <Button onClick={() => save()} disabled={saving} className="min-w-[120px]">
-          {saved ? <><Check size={14} className="mr-1" />Saved!</> : saving ? 'Saving…' : 'Save changes'}
-        </Button>
-      </div>
+          ))}
+        </div>
+      </section>
     </div>
   )
 }

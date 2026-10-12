@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Plus, Pencil, Trash2, Tag, Layers } from 'lucide-react'
+import { confirmDialog } from '@/components/ui/confirm'
 
 interface RegistryItem {
   id: string
@@ -109,7 +110,7 @@ export function RegistryClient({ initialItems }: Props) {
   }
 
   const handleDelete = async (item: RegistryItem) => {
-    if (!confirm(`Delete "${item.name}"?`)) return
+    if (!(await confirmDialog(`Delete "${item.name}"?`))) return
     setItems((prev) => prev.filter((i) => i.id !== item.id))
     await fetch(`/api/registry/${item.id}`, { method: 'DELETE' })
     refresh()

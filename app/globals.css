@@ -34,6 +34,9 @@
     --warn-ink:  oklch(0.48 0.14 70);
     --risk-ink:  oklch(0.42 0.17 25);
 
+    /* data marks — validated (dataviz validator) against light and dark surfaces */
+    --chart-1:   #008C99;
+
     /* text on ink/accent fills, and the dark icon rail */
     --on-fill:   #FFFFFF;
     --rail:      #121212;

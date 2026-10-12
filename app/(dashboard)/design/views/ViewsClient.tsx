@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Plus, Trash2, Edit2, Loader2, LayoutList } from 'lucide-react'
+import { confirmDialog } from '@/components/ui/confirm'
 
 interface SystemView {
   id: string
@@ -230,7 +231,7 @@ export function ViewsClient({ initialViews }: Props) {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this view?')) return
+    if (!(await confirmDialog('Delete this view?'))) return
     setDeleting(id)
     try {
       await fetch(`/api/system-views/${id}`, { method: 'DELETE' })

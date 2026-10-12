@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Plus, Table2, Loader2, ChevronRight, Trash2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+import { confirmDialog } from '@/components/ui/confirm'
 
 interface LookupTableRow {
   id: string
@@ -61,7 +62,7 @@ export function LookupTablesClient({ initialTables }: { initialTables: LookupTab
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this lookup table and all its values?')) return
+    if (!(await confirmDialog('Delete this lookup table and all its values?'))) return
     setDeleting(id)
     try {
       await fetch(`/api/lookup-tables/${id}`, { method: 'DELETE' })

@@ -1,324 +1,247 @@
-import { prisma } from '@/lib/db/client'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth/config'
-import { FileText, Clock, CheckCircle, GitBranch, ArrowRight, Plus, FileClock, FileCheck, FileX, Bell, CheckSquare } from 'lucide-react'
 import Link from 'next/link'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { redirect } from 'next/navigation'
+import { AlertTriangle, ArrowRight, CheckCircle2, FileText, Inbox } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+import { prisma } from '@/lib/db/client'
+import { getSessionUser } from '@/lib/auth/session'
+import { inbox } from '@/lib/cases/service'
+import { CaseTypeConfigSchema } from '@/lib/case-config/schema'
+import { Badge } from '@/components/ui/badge'
+import { formatDate } from '@/components/cases/format'
+import { cn } from '@/lib/utils'
 
-export default async function DashboardPage() {
-  const session = await getServerSession(authOptions)
-  const userId = (session?.user as { id?: string } | undefined)?.id ?? ''
-  const userName = (session?.user as { name?: string } | undefined)?.name ?? 'there'
-  const firstName = userName.split(' ')[0].replace(/^\w/, (c) => c.toUpperCase())
-  const hour = new Date().getHours()
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+const DAY = 86_400_000
 
-  const [
-    activeCases,
-    publishedWorkflows,
-    completedToday,
-    totalDocuments,
-    publishedDocuments,
-    activeProcesses,
-    recentInstances,
-    recentDocuments,
-    myPendingApprovals,
-    myAssignedSteps,
-  ] = await Promise.all([
-    prisma.workflowInstance.count({ where: { status: 'running' } }),
-    prisma.workflow.count({ where: { status: 'published' } }),
-    prisma.workflowInstance.count({
-      where: {
-        status: 'completed',
-        completedAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) },
-      },
+const EVENT_TEXT: Record<string, string> = {
+  created: 'registered',
+  forward: 'sent forward',
+  backward: 'sent back',
+  preEnd: 'closed early',
+  signed: 'signed',
+  taken: 'took',
+}
+
+export default async function HomePage() {
+  const user = await getSessionUser()
+  if (!user) redirect('/login')
+  const now = new Date()
+
+  const [work, openCases, closedRecent, caseTypes, events, documents] = await Promise.all([
+    inbox(user.id),
+    prisma.case.findMany({ where: { status: 'open' }, select: { caseTypeId: true, phaseId: true, phaseDueAt: true } }),
+    prisma.case.findMany({
+      where: { status: { in: ['closed', 'preClosed'] }, closedAt: { gte: new Date(now.getTime() - 30 * DAY) } },
+      select: { createdAt: true, closedAt: true },
     }),
-    prisma.document.count(),
-    prisma.document.count({ where: { status: 'published' } }),
-    prisma.process.count({ where: { status: 'active' } }),
-    prisma.workflowInstance.findMany({
-      where: { status: { in: ['running', 'completed', 'cancelled'] } },
-      orderBy: { createdAt: 'desc' },
-      take: 6,
-      include: {
-        workflow: { select: { name: true } },
-        steps: { where: { status: 'in_progress' }, take: 1 },
-      },
+    prisma.caseType.findMany({
+      where: { status: 'published' },
+      orderBy: { name: 'asc' },
+      include: { versions: { orderBy: { version: 'desc' }, take: 1, select: { config: true } } },
     }),
-    prisma.document.findMany({
-      orderBy: { updatedAt: 'desc' },
-      take: 5,
-      include: { author: { select: { name: true } } },
+    prisma.caseEvent.findMany({
+      where: { type: { in: Object.keys(EVENT_TEXT) } },
+      orderBy: { at: 'desc' },
+      take: 8,
+      include: { actor: { select: { name: true } }, case: { select: { number: true, title: true } } },
     }),
-    prisma.documentApproval.findMany({
-      where: { status: 'pending', assignedTo: { has: userId } },
-      orderBy: { startedAt: 'desc' },
-      take: 5,
-      include: { document: { select: { id: true, title: true } } },
-    }),
-    prisma.workflowStep.findMany({
-      where: { status: 'in_progress', assignedTo: userId },
-      orderBy: { startedAt: 'desc' },
-      take: 5,
-      include: { instance: { select: { id: true, title: true, workflow: { select: { name: true } } } } },
-    }),
+    prisma.document.findMany({ orderBy: { updatedAt: 'desc' }, take: 5, select: { id: true, title: true, status: true, updatedAt: true } }),
   ])
 
-  const stats = [
-    { label: 'Active Cases',        value: activeCases,        sub: `${activeCases} running`,      icon: <Clock size={18} />,     color: 'var(--warn)' },
-    { label: 'Completed Today',      value: completedToday,     sub: 'finished today',              icon: <CheckCircle size={18} />, color: 'var(--ok)' },
-    { label: 'Published Workflows',  value: publishedWorkflows, sub: 'available to start',          icon: <GitBranch size={18} />, color: 'var(--nw-accent)' },
-    { label: 'Documents',            value: totalDocuments,     sub: `${publishedDocuments} published`, icon: <FileText size={18} />, color: 'var(--ink-3)' },
-    { label: 'Active Processes',     value: activeProcesses,    sub: 'in management system',        icon: <GitBranch size={18} />, color: 'var(--nw-accent)' },
-  ]
+  const mine = work.filter((c) => !c.inGroupInbox)
+  const group = work.filter((c) => c.inGroupInbox)
+  const myOverdue = mine.filter((c) => c.phaseDueAt && c.phaseDueAt < now).length
+  const overdue = openCases.filter((c) => c.phaseDueAt && c.phaseDueAt < now).length
+  const leadTimes = closedRecent.map((c) => (c.closedAt!.getTime() - c.createdAt.getTime()) / DAY).sort((a, b) => a - b)
+  const medianLead = leadTimes.length ? leadTimes[Math.floor(leadTimes.length / 2)] : null
 
-  const caseStatusVariant: Record<string, 'warn' | 'ok' | 'default'> = {
-    running: 'warn', completed: 'ok', cancelled: 'default',
-  }
-  const caseStatusLabel: Record<string, string> = {
-    running: 'Running', completed: 'Completed', cancelled: 'Cancelled',
-  }
+  const byPhase = caseTypes.map((t) => {
+    const config = CaseTypeConfigSchema.parse(t.versions[0]?.config ?? { caseTypeName: t.name })
+    const open = openCases.filter((c) => c.caseTypeId === t.id)
+    return {
+      id: t.id,
+      name: t.name,
+      total: open.length,
+      phases: config.phases.map((p) => ({
+        name: p.name,
+        count: open.filter((c) => c.phaseId === p.id).length,
+        overdue: open.filter((c) => c.phaseId === p.id && c.phaseDueAt && c.phaseDueAt < now).length,
+      })),
+    }
+  })
 
-  const docStatusVariant: Record<string, 'ok' | 'default'> = {
-    draft: 'default', published: 'ok', archived: 'default',
-  }
-  const docStatusIcon: Record<string, React.ReactNode> = {
-    draft: <FileClock size={10} />, published: <FileCheck size={10} />, archived: <FileX size={10} />,
-  }
-  const docStatusLabel: Record<string, string> = {
-    draft: 'Draft', published: 'Published', archived: 'Archived',
-  }
-
-  const quickActions = [
-    { label: 'Browse Workflows', href: '/design/workflows', icon: <GitBranch size={16} /> },
-    { label: 'All Cases',        href: '/cases',            icon: <Clock size={16} /> },
-    { label: 'Documents',        href: '/documents',        icon: <FileText size={16} /> },
-    { label: 'Manage Users',     href: '/admin/users',      icon: <Plus size={16} /> },
-  ]
+  const hour = now.getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="mx-auto max-w-[1400px] space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold" style={{ color: 'var(--ink)' }}>{greeting}, {firstName}</h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--ink-4)' }}>Here&apos;s what&apos;s going on today.</p>
+        <p className="mono-meta">{formatDate(now)}</p>
+        <h1 className="font-display text-2xl font-semibold text-ink">
+          {greeting}, {user.name.split(' ')[0]}
+        </h1>
       </div>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
-        {stats.map((stat) => (
-          <Card key={stat.label}>
-            <CardContent className="p-5">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs" style={{ color: 'var(--ink-4)' }}>{stat.label}</p>
-                  <p className="text-3xl font-semibold mt-1" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink)' }}>{stat.value}</p>
-                  <p className="text-xs mt-1" style={{ color: 'var(--ink-4)' }}>{stat.sub}</p>
-                </div>
-                <span style={{ color: stat.color }}>{stat.icon}</span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,2fr)]">
+        {/* Hero: what is waiting for me */}
+        <Link
+          href="/tasks"
+          className="group flex flex-col justify-between rounded-[2px] border border-rule bg-surface p-5 hover:border-nw-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nw-accent"
+        >
+          <div className="flex items-center gap-2 text-sm text-ink-3">
+            <Inbox size={15} className="text-nw-accent" /> Waiting for you
+          </div>
+          <div className="mt-3 flex items-end gap-4">
+            <span className="text-[56px] font-semibold leading-none text-ink tabular-nums">{mine.length}</span>
+            <div className="pb-1.5 text-sm text-ink-3">
+              {myOverdue > 0 && (
+                <p className="flex items-center gap-1 font-medium text-risk-ink"><AlertTriangle size={13} /> {myOverdue} overdue</p>
+              )}
+              {group.length > 0 && <p>{group.length} in your group inboxes</p>}
+              {!mine.length && !group.length && <p className="flex items-center gap-1"><CheckCircle2 size={13} className="text-ok" /> All caught up</p>}
+            </div>
+          </div>
+          <span className="mt-4 inline-flex items-center gap-1 text-sm text-nw-accent">
+            Open My work <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
+          </span>
+        </Link>
 
-      {/* My work row */}
-      {(myPendingApprovals.length > 0 || myAssignedSteps.length > 0) && (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          {/* My pending approvals */}
-          {myPendingApprovals.length > 0 && (
-            <Card>
-              <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <Bell size={15} style={{ color: 'var(--warn)' }} /> Pending Approvals
-                </CardTitle>
-                <Button variant="ghost" size="sm" asChild>
-                  <Link href="/documents?status=pending" className="flex items-center gap-1 text-sm" style={{ color: 'var(--nw-accent)' }}>
-                    See all <ArrowRight size={14} />
-                  </Link>
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-0.5">
-                  {myPendingApprovals.map((approval) => (
-                    <Link
-                      key={approval.id}
-                      href={`/documents/${approval.document.id}`}
-                      className="flex items-center gap-3 px-2 py-2.5 rounded-[2px] transition-colors hover:bg-[var(--paper-2)]"
-                    >
-                      <FileText size={14} className="shrink-0" style={{ color: 'var(--ink-4)' }} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate" style={{ color: 'var(--ink)' }}>{approval.document.title}</p>
-                        <p className="text-xs truncate" style={{ color: 'var(--ink-4)' }}>Phase: {approval.phase}</p>
-                      </div>
-                      <Badge variant="warn" className="text-xs shrink-0">Review</Badge>
-                    </Link>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* My assigned cases */}
-          {myAssignedSteps.length > 0 && (
-            <Card>
-              <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <CheckSquare size={15} style={{ color: 'var(--nw-accent)' }} /> My Tasks
-                </CardTitle>
-                <Button variant="ghost" size="sm" asChild>
-                  <Link href="/cases?view=mine" className="flex items-center gap-1 text-sm" style={{ color: 'var(--nw-accent)' }}>
-                    See all <ArrowRight size={14} />
-                  </Link>
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-0.5">
-                  {myAssignedSteps.map((step) => (
-                    <Link
-                      key={step.id}
-                      href={`/workflows/instances/${step.instance.id}`}
-                      className="flex items-center gap-3 px-2 py-2.5 rounded-[2px] transition-colors hover:bg-[var(--paper-2)]"
-                    >
-                      <CheckSquare size={14} className="shrink-0" style={{ color: 'var(--nw-accent)' }} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate" style={{ color: 'var(--ink)' }}>{step.stepName}</p>
-                        <p className="text-xs truncate" style={{ color: 'var(--ink-4)' }}>{step.instance.title}</p>
-                      </div>
-                      <Badge variant="warn" className="text-xs shrink-0">In Progress</Badge>
-                    </Link>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <Stat label="Open cases" value={openCases.length} href="/cases" />
+          <Stat label="Overdue phases" value={overdue} href="/cases" tone={overdue ? 'risk' : undefined} />
+          <Stat
+            label="Closed, last 30 days"
+            value={closedRecent.length}
+            hint={medianLead !== null ? `Median ${medianLead < 1 ? '<1' : Math.round(medianLead)} days to close` : undefined}
+            href="/cases?status=closed"
+          />
         </div>
-      )}
+      </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Recent cases */}
-        <Card className="xl:col-span-2">
-          <CardHeader className="pb-3 flex flex-row items-center justify-between">
-            <CardTitle className="text-base font-semibold">Recent Cases</CardTitle>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/cases" className="flex items-center gap-1 text-sm" style={{ color: 'var(--nw-accent)' }}>
-                See all <ArrowRight size={14} />
-              </Link>
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {recentInstances.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-sm" style={{ color: 'var(--ink-4)' }}>No cases yet.</p>
-                <Button variant="outline" size="sm" className="mt-3" asChild>
-                  <Link href="/design/workflows">Start from a workflow</Link>
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-0.5">
-                {recentInstances.map((inst) => {
-                  const currentStep = inst.steps[0]?.stepName
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="space-y-4">
+          {byPhase.map((t) => (
+            <PhaseChart key={t.id} {...t} />
+          ))}
+
+          <section className="rounded-[2px] border border-rule bg-surface">
+            <header className="flex items-center justify-between border-b border-rule px-5 py-3">
+              <h2 className="text-sm font-semibold text-ink">Next up for you</h2>
+              <Link href="/tasks" className="text-xs text-nw-accent hover:underline">See all</Link>
+            </header>
+            {mine.length ? (
+              <ul className="divide-y divide-rule-soft">
+                {mine.slice(0, 5).map((c) => {
+                  const late = c.phaseDueAt && c.phaseDueAt < now
                   return (
-                    <Link
-                      key={inst.id}
-                      href={`/workflows/instances/${inst.id}`}
-                      className="flex items-center gap-4 px-3 py-2.5 rounded-[2px] transition-colors group hover:bg-[var(--paper-2)]"
-                      style={{ color: 'var(--ink)' }}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate" style={{ color: 'var(--ink)' }}>{inst.title}</p>
-                        <p className="text-xs truncate mt-0.5" style={{ color: 'var(--ink-4)' }}>
-                          {inst.workflow.name}{currentStep && ` · ${currentStep}`}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <div className="w-[90px] flex justify-end">
-                          <Badge variant={caseStatusVariant[inst.status] ?? 'default'} className="text-xs">
-                            {caseStatusLabel[inst.status] ?? inst.status}
-                          </Badge>
-                        </div>
-                        <span className="text-xs hidden sm:block w-28 text-right" style={{ color: 'var(--ink-4)' }}>
-                          {formatDistanceToNow(new Date(inst.createdAt), { addSuffix: true })}
+                    <li key={c.id}>
+                      <Link href={`/cases/${c.number}`} className="flex items-center gap-4 px-5 py-3 hover:bg-paper-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-nw-accent">
+                        <span className="w-12 shrink-0 font-mono text-xs text-nw-accent">{c.number}</span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm text-ink">{c.title}</span>
+                          <span className="text-xs text-ink-4">{c.phaseName}</span>
                         </span>
-                      </div>
-                    </Link>
+                        {c.phaseDueAt && (
+                          <span className={cn('text-xs whitespace-nowrap', late ? 'font-medium text-risk-ink' : 'text-ink-4')}>
+                            {late ? 'Overdue' : 'Due'} {formatDate(c.phaseDueAt)}
+                          </span>
+                        )}
+                      </Link>
+                    </li>
                   )
                 })}
-              </div>
+              </ul>
+            ) : (
+              <p className="px-5 py-6 text-sm text-ink-4">Nothing assigned to you right now.</p>
             )}
-          </CardContent>
-        </Card>
+          </section>
+        </div>
 
-        {/* Right column */}
-        <div className="space-y-6">
-          {/* Quick actions */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-semibold">Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {quickActions.map((action) => (
-                <Button key={action.label} variant="outline" className="w-full justify-start gap-2 text-sm h-9" asChild>
-                  <Link href={action.href}>
-                    {action.icon}
-                    {action.label}
+        <div className="space-y-4">
+          <section className="rounded-[2px] border border-rule bg-surface">
+            <h2 className="border-b border-rule px-5 py-3 text-sm font-semibold text-ink">Recent activity</h2>
+            <ul className="divide-y divide-rule-soft">
+              {events.map((e) => (
+                <li key={e.id} className="px-5 py-2.5">
+                  <Link href={`/cases/${e.case.number}`} className="block text-[13px] leading-snug text-ink-3 hover:text-ink">
+                    <span className="font-medium text-ink">{e.actor.name}</span> {EVENT_TEXT[e.type]}{' '}
+                    <span className="font-mono text-xs text-nw-accent">{e.case.number}</span> {e.case.title}
                   </Link>
-                </Button>
+                  <p className="text-[11px] text-ink-4">{formatDistanceToNow(e.at, { addSuffix: true })}</p>
+                </li>
               ))}
-            </CardContent>
-          </Card>
+              {!events.length && <li className="px-5 py-6 text-sm text-ink-4">No activity yet.</li>}
+            </ul>
+          </section>
 
-          {/* Recent documents */}
-          <Card>
-            <CardHeader className="pb-3 flex flex-row items-center justify-between">
-              <CardTitle className="text-base font-semibold">Recent Documents</CardTitle>
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/documents" className="flex items-center gap-1 text-sm" style={{ color: 'var(--nw-accent)' }}>
-                  See all <ArrowRight size={14} />
-                </Link>
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {recentDocuments.length === 0 ? (
-                <div className="text-center py-6">
-                  <p className="text-sm" style={{ color: 'var(--ink-4)' }}>No documents yet.</p>
-                  <Button variant="outline" size="sm" className="mt-3" asChild>
-                    <Link href="/documents">Create one</Link>
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-0.5">
-                  {recentDocuments.map((doc) => {
-                    const variant = docStatusVariant[doc.status] ?? 'default'
-                    const icon = docStatusIcon[doc.status]
-                    const label = docStatusLabel[doc.status] ?? doc.status
-                    return (
-                      <Link
-                        key={doc.id}
-                        href="/documents"
-                        className="flex items-center gap-3 px-2 py-2 rounded-[2px] transition-colors group hover:bg-[var(--paper-2)]"
-                      >
-                        <FileText size={14} className="shrink-0" style={{ color: 'var(--ink-4)' }} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate" style={{ color: 'var(--ink)' }}>{doc.title}</p>
-                          <p className="text-xs truncate" style={{ color: 'var(--ink-4)' }}>
-                            {doc.author.name} · {formatDistanceToNow(new Date(doc.updatedAt), { addSuffix: true })}
-                          </p>
-                        </div>
-                        <Badge variant={variant} className="text-[10px] flex items-center gap-1 shrink-0">
-                          {icon}{label}
-                        </Badge>
-                      </Link>
-                    )
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <section className="rounded-[2px] border border-rule bg-surface">
+            <header className="flex items-center justify-between border-b border-rule px-5 py-3">
+              <h2 className="text-sm font-semibold text-ink">Recently updated documents</h2>
+              <Link href="/documents" className="text-xs text-nw-accent hover:underline">Library</Link>
+            </header>
+            <ul className="divide-y divide-rule-soft">
+              {documents.map((d) => (
+                <li key={d.id}>
+                  <Link href={`/documents/${d.id}`} className="flex items-center gap-3 px-5 py-2.5 hover:bg-paper-2">
+                    <FileText size={14} className="shrink-0 text-ink-4" />
+                    <span className="min-w-0 flex-1 truncate text-sm text-ink">{d.title}</span>
+                    <Badge variant={d.status === 'published' ? 'ok' : d.status === 'pending' ? 'warn' : 'default'}>{d.status}</Badge>
+                  </Link>
+                </li>
+              ))}
+              {!documents.length && <li className="px-5 py-6 text-sm text-ink-4">No documents yet.</li>}
+            </ul>
+          </section>
         </div>
       </div>
     </div>
+  )
+}
+
+function Stat({ label, value, hint, href, tone }: { label: string; value: number; hint?: string; href: string; tone?: 'risk' }) {
+  return (
+    <Link href={href} className="rounded-[2px] border border-rule bg-surface p-4 hover:border-nw-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nw-accent">
+      <p className="text-xs text-ink-3">{label}</p>
+      <p className={cn('mt-2 text-3xl font-semibold tabular-nums', tone === 'risk' ? 'text-risk-ink' : 'text-ink')}>{value}</p>
+      {hint && <p className="mt-1 text-xs text-ink-4">{hint}</p>}
+    </Link>
+  )
+}
+
+/** Open cases per phase: one series, horizontal bars from a shared baseline, value at the tip. */
+function PhaseChart({ id, name, total, phases }: { id: string; name: string; total: number; phases: { name: string; count: number; overdue: number }[] }) {
+  const max = Math.max(1, ...phases.map((p) => p.count))
+  return (
+    <section className="rounded-[2px] border border-rule bg-surface">
+      <header className="flex items-baseline justify-between border-b border-rule px-5 py-3">
+        <h2 className="text-sm font-semibold text-ink">
+          Open {name.toLowerCase()} cases by phase
+        </h2>
+        <Link href={`/cases?caseTypeId=${id}`} className="text-xs text-nw-accent hover:underline">{total} open</Link>
+      </header>
+      <div className="space-y-2.5 px-5 py-4" role="img" aria-label={`Open ${name} cases by phase: ${phases.map((p) => `${p.name} ${p.count}`).join(', ')}`}>
+        {phases.map((p) => (
+          <div key={p.name} className="group relative grid grid-cols-[minmax(120px,190px)_1fr] items-center gap-3">
+            <span className="truncate text-xs text-ink-3">{p.name}</span>
+            <div className="flex h-6 min-w-0 items-center gap-2">
+              {p.count > 0 && (
+                <span
+                  className="h-4 max-w-full rounded-r-[4px] bg-chart-1 transition-opacity group-hover:opacity-80"
+                  style={{ width: `${(p.count / max) * 72}%`, minWidth: 6 }}
+                />
+              )}
+              <span className="text-xs tabular-nums text-ink-2">{p.count}</span>
+              {p.overdue > 0 && (
+                <span className="inline-flex items-center gap-0.5 whitespace-nowrap text-[11px] text-risk-ink">
+                  <AlertTriangle size={11} /> {p.overdue} overdue
+                </span>
+              )}
+            </div>
+            <span className="pointer-events-none absolute left-[200px] top-[-26px] z-10 hidden whitespace-nowrap rounded-[2px] bg-ink px-2 py-1 text-[11px] text-paper group-hover:block">
+              {p.name}: {p.count} open{p.overdue ? `, ${p.overdue} overdue` : ''}
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
   )
 }

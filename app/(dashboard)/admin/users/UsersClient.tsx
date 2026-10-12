@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Switch } from '@/components/ui/switch'
 import { Search, UserPlus, Pencil, Trash2, ShieldCheck, Shield, User } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+import { confirmDialog } from '@/components/ui/confirm'
 
 interface UserRow {
   id: string
@@ -97,7 +98,7 @@ export function UsersClient({ initialUsers, groups }: Props) {
   }
 
   const handleDelete = async (u: UserRow) => {
-    if (!confirm(`Delete user "${u.name}"? This cannot be undone.`)) return
+    if (!(await confirmDialog(`Delete user "${u.name}"? This cannot be undone.`))) return
     setUsers((prev) => prev.filter((x) => x.id !== u.id))
     await fetch(`/api/admin/users/${u.id}`, { method: 'DELETE' })
     refresh()

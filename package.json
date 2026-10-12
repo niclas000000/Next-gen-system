@@ -9,7 +9,8 @@
     "lint": "next lint",
     "seed": "npx ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts",
     "test": "vitest run",
-    "demo:reset": "tsx prisma/demo.ts"
+    "demo:reset": "tsx prisma/demo.ts",
+    "import:canea": "tsx scripts/import-canea.ts"
   },
   "prisma": {
     "seed": "npx ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"

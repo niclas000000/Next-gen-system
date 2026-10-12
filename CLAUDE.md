@@ -146,11 +146,16 @@ Never use raw Tailwind palette colours (blue/green/slate …) or hex in componen
 - Documents (library, editor, versions, read receipts, approval flows), processes (tree, canvas, links to
   documents and case types), admin pages.
 - Demo: `npm run demo:reset` → demo users (password `demo`), inbox groups, 8 DEV cases in every state.
+- CANEA ONE import: `npm run import:canea -- --workflow wf_dev.txt --rules wf_dev_rules.txt --registry wf_reg.xlsx [--out x.json] [--create]`
+  (`lib/case-config/importers/canea-sql.ts`, pure + tested). Property categories merge per-phase items into one field;
+  ConstraintType 0/4 = eq/neq; ProtectedFieldRule Value1 False/True = hidden/read-only, IDType 1 = fields, 7 = roles it
+  applies to (missing roles are exempt); CheckValueRule IDType 2 = mandatory fields; checks on non-editable fields become
+  forced directions; chained sub-choices walk down the registry tree. People in the registry export are not imported.
 
 ### Not yet / ideas
+- Group roles set from a chosen org unit (CANEA "role from registry") need manual group bindings after import.
 - Sub cases (CAPA, Action) are placeholders; e-mail is a console stub; SMS/web service/computed/alarm rules are
   kept from imports but not executed; no per-case security levels; property categories for cross-case reporting.
-- Import of CANEA ONE SQL exports (`wf_dev.txt` + `wf_dev_rules.txt` from conf-import-tool).
 
 ---
 

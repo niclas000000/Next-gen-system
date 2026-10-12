@@ -74,6 +74,16 @@ export function FieldsTab() {
                   </td>
                   <td className="px-3 py-2">
                     <TextInput value={f.section} list="field-sections" aria-label="Section" className="h-8 w-44" onChange={(e) => update((d) => void (d.fields[index].section = e.target.value))} />
+                    {!layout && (
+                      <TextInput
+                        value={f.propertyCategory ?? ''}
+                        placeholder="Report category"
+                        title="Fields with the same category are one dimension in reports across case types"
+                        aria-label="Property category"
+                        className="mt-1.5 h-7 w-44 text-xs"
+                        onChange={(e) => update((d) => void (d.fields[index].propertyCategory = e.target.value.trim() ? e.target.value : null))}
+                      />
+                    )}
                   </td>
                   <td className="px-3 py-2">
                     {isRegistry ? (
@@ -161,7 +171,7 @@ export function FieldsTab() {
         onClick={() =>
           update((d) => {
             const id = makeId('New field', d.fields.map((f) => f.id))
-            d.fields.push({ id, name: 'New field', type: 'text', section: sections[sections.length - 1] ?? '', mandatory: false, registryId: null, multi: false, comments: '', assignsRoleId: null, subcaseTypeName: null, subcasesMustBeClosed: false })
+            d.fields.push({ id, name: 'New field', type: 'text', section: sections[sections.length - 1] ?? '', mandatory: false, registryId: null, multi: false, comments: '', assignsRoleId: null, propertyCategory: null, subcaseTypeName: null, subcasesMustBeClosed: false })
             // Editable in the first phase so it shows up right away; adjust in the matrix
             if (d.phases[0]) d.phases[0].fields[id] = { access: 'edit', mandatory: null, title: null }
           })

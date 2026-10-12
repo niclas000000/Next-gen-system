@@ -1,7 +1,7 @@
 import {
   Archive, Bell, Bookmark, CheckCircle, Clock, FileInput, FileText, FileType, FileX, Filter, GitBranch, Home, Inbox,
   Layers, LayoutList, Library, List, PenTool, Settings, Shield, Star, Table2, Tag, User, Users, Database, Palette,
-  Server, AlertCircle, Search, ClipboardList,
+  Server, AlertCircle, Search, ClipboardList, BarChart3,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -11,7 +11,7 @@ export const VIEW_ICONS: Record<string, LucideIcon> = {
   Filter, Shield, Bell, Tag, Search, AlertCircle, LayoutList,
 }
 
-export type ModuleId = 'home' | 'work' | 'cases' | 'documents' | 'processes' | 'design' | 'admin'
+export type ModuleId = 'home' | 'work' | 'cases' | 'documents' | 'processes' | 'reports' | 'design' | 'admin'
 
 export interface ModuleDef {
   id: ModuleId
@@ -27,6 +27,7 @@ export const WORK_MODULES: ModuleDef[] = [
   { id: 'cases', label: 'Cases', href: '/cases', icon: Layers },
   { id: 'documents', label: 'Documents', href: '/documents', icon: FileText },
   { id: 'processes', label: 'Processes', href: '/processes', icon: GitBranch },
+  { id: 'reports', label: 'Reports', href: '/reports', icon: BarChart3 },
 ]
 
 export const CONFIG_MODULES: ModuleDef[] = [
@@ -63,6 +64,7 @@ export function moduleFor(pathname: string): ModuleId {
   if (pathname.startsWith('/cases')) return 'cases'
   if (pathname.startsWith('/documents')) return 'documents'
   if (pathname.startsWith('/processes') || pathname.startsWith('/design/processes')) return 'processes'
+  if (pathname.startsWith('/reports')) return 'reports'
   if (pathname.startsWith('/design')) return 'design'
   if (pathname.startsWith('/admin')) return 'admin'
   return 'home'

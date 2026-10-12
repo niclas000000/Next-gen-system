@@ -96,8 +96,12 @@ prisma/  schema.prisma, seed.ts (admin, system views, DEV case type), demo.ts (d
   so mandatory checks count sub cases. `subcasesMustBeClosed` blocks forward/quick close while children are open
   (`CaseSnapshot.openSubcases`). A child closing notifies whoever has the parent and logs `subcaseClosed` there.
 - Built-in case types live in `lib/case-config/fixtures`: CANEA reference JSON exported unchanged from Workshop-tool
-  (Deviation EX-26714, CAPA EX-26738, Action) + idempotent Nexus adjustments in `fixtures/index.ts` (sub case targets,
+  (Deviation EX-26714, CAPA EX-26738, Change control EX-26755, Action) + idempotent Nexus adjustments in `fixtures/index.ts` (sub case targets,
   structured CAPA QA rules, hidden "Comments" sub cases). Seed creates them; `demo:reset` re-applies the adjustments.
+- **Reports** (`/reports`, `lib/reports/service.ts`): KPIs, breakdown by a dimension with drill-down, created/closed
+  per month, median time in phase from the event log. Dimensions: case type, status, phase, creator, and properties —
+  choice/people fields merged across case types by `Field.propertyCategory` (CANEA metadata category; the importer sets
+  it) or else by field name.
 - Other models: `User`, `Group` (members[] used for role bindings), `Document*`, `ApprovalFlow`, `DocumentType`,
   `Process*`, `ProcessRole`, `LookupTable/Value`, `RegistryItem`, `SystemView`, `SavedView`, `ViewFolder`,
   `Notification`, `SystemSetting`. JSON writes use `as never` casts (repo convention).
@@ -118,12 +122,13 @@ Never use raw Tailwind palette colours (blue/green/slate …) or hex in componen
 - Fonts: `font-display` (Inter Tight) for headings and numbers, Inter for UI, `font-mono` / `.mono-meta` for
   IDs, case numbers and eyebrows. Radius `rounded-[2px]` (pills `rounded-full`). Borders, no shadows on cards.
 - Badges: `variant="ok|warn|risk|accent|default"`. Buttons: default = ink fill.
-- Charts: `chart-1` (#008C99) is validated for light and dark surfaces (dataviz validator).
+- Charts: `chart-1` (#008C99) and `chart-2` (orange, #EB6834 / dark #D95926) are validated for light and dark surfaces
+  as a pair (dataviz validator). Single-series charts use chart-1 only.
 - Theme: `data-theme` on `<html>` from `SettingsProvider` (admin default in Appearance, user override in the
   account menu, stored in localStorage `nexus-theme`).
 
 ### Navigation
-- Dark icon **rail** (Home, My work with count, Cases, Documents, Processes, + New; Design/Admin for admins,
+- Dark icon **rail** (Home, My work with count, Cases, Documents, Processes, Reports, + New; Design/Admin for admins,
   account menu) + light **context panel** per module (Cases: system views + case types; Documents: views;
   Design; Admin). Panel collapses (localStorage `nexus-panel`), drawer on mobile. Definitions in `components/layout/nav.tsx`.
 - Ctrl+K command palette: case number/title search, documents, actions, recent items.
@@ -163,7 +168,7 @@ Never use raw Tailwind palette colours (blue/green/slate …) or hex in componen
 
 ### Not yet / ideas
 - Group roles set from a chosen org unit (CANEA "role from registry") need manual group bindings after import.
-- Change control (CC) sub cases have no case type yet; e-mail is a console stub; SMS/web service/computed/alarm rules are
+- E-mail is a console stub; SMS/web service/computed/alarm rules are
   kept from imports but not executed; no per-case security levels; property categories for cross-case reporting.
 
 ---

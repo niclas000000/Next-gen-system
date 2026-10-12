@@ -18,13 +18,20 @@ function hideCommentSubcases(c: CaseTypeConfig) {
   }
 }
 
+/** Report dimensions shared across case types whose fields are named differently. */
+function categorise(c: CaseTypeConfig, categories: Record<string, string>) {
+  for (const f of c.fields) if (categories[f.id]) f.propertyCategory = categories[f.id]
+}
+
 function adjustDeviation(c: CaseTypeConfig) {
+  categorise(c, { ownership: 'Ownership' })
   const capaField = c.fields.find((f) => f.id === 'capa')
   if (capaField) capaField.subcaseTypeName = 'CAPA'
   hideCommentSubcases(c)
 }
 
 function adjustCapa(c: CaseTypeConfig) {
+  categorise(c, { ownership: 'Ownership' })
   const activities = c.fields.find((f) => f.id === 'activities')
   if (activities) {
     activities.subcaseTypeName = 'Action'

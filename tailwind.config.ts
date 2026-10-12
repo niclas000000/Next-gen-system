@@ -33,6 +33,7 @@ const config: Config = {
         'on-fill': 'var(--on-fill)',
         rail:     'var(--rail)',
         'chart-1': 'var(--chart-1)',
+        'chart-2': 'var(--chart-2)',
         // Status
         ok:      'var(--ok)',
         warn:    'var(--warn)',

@@ -401,6 +401,7 @@ export function convertCaneaExport(workflowSql: string, rulesSql: string | null,
       multi: it.render === 'UserChoice' ? num(it.values.IsSingleChoice) === 0 : false,
       comments: category ? `CANEA ONE property category: ${wf.categories.get(category)}` : '',
       assignsRoleId: type === 'registrySearch' && roleToSet ? roleIdOf.get(roleToSet) ?? null : null,
+      propertyCategory: category ? wf.categories.get(category) ?? null : null,
       subcaseTypeName: it.render === 'SubCase' ? wf.subFlows.get(ref(it.values.SubCaseTypeID, 'SubFlowMap') ?? -1) ?? null : null,
       subcasesMustBeClosed: false,
     }

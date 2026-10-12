@@ -27,6 +27,7 @@ const LABELS: Record<string, string> = {
   appearance: 'Appearance',
   system: 'System',
   notifications: 'Notifications',
+  reports: 'Reports',
 }
 
 /** What to call an id segment, by the segment before it. */

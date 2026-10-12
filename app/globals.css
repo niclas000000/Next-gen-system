@@ -36,6 +36,7 @@
 
     /* data marks — validated (dataviz validator) against light and dark surfaces */
     --chart-1:   #008C99;
+    --chart-2:   #EB6834; /* pair with chart-1 validated: CVD ΔE 13.6, normal 28.6 */
 
     /* text on ink/accent fills, and the dark icon rail */
     --on-fill:   #FFFFFF;
@@ -101,6 +102,7 @@
 
     --on-fill: #121211;
     --rail:    #0C0C0B;
+    --chart-2: #D95926;
 
     --rule:      #33322E;
     --rule-soft: #282724;
